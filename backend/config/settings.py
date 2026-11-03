@@ -35,6 +35,7 @@ INSTALLED_APPS = [
     "accounts",
     "creators",
     "content",
+    "rest_framework",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
