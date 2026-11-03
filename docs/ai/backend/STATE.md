@@ -1,15 +1,16 @@
 # Backend State
 
-- BE-003 status: Complete.
+- BE-004 status: Complete.
+- Base checkpoint: `6adade6e52d6d801c388284cf1ed38268e1035c5` (`master`, accepted/pushed BE-003).
 - Django project: `backend/` with configuration package `backend/config/`.
-- Custom User: `backend/accounts/models.py` (`accounts.User`), based on Django's `AbstractUser`.
-- Core additions: `display_name` and Persian/English `preferred_ui_language`; Django's built-in authentication and password machinery remain intact.
-- Authentication setting: `AUTH_USER_MODEL = "accounts.User"`.
-- Admin: The custom User is registered with Django's `UserAdmin` infrastructure.
-- Active database engine: PostgreSQL 18.6, using local database `insightink_dev` at `127.0.0.1:5432` and non-superuser development role `insightink_app`.
-- PostgreSQL development configuration approach: `backend/config/settings.py` strictly reads `DATABASE_NAME`, `DATABASE_USER`, `DATABASE_PASSWORD`, `DATABASE_HOST`, and `DATABASE_PORT`; there is no SQLite fallback. Non-secret example values are in `.env.example`, while the real local password remains only in the Git-ignored `.env`.
-- PostgreSQL driver: Psycopg 3.3.6 with its binary extra, reproducibly recorded alongside Django 5.2.18 in `requirements.txt`.
-- Migration: All initial Django migrations and `accounts.0001_initial` are applied to PostgreSQL; the `accounts_user` table exists and `django_migrations` contains 19 records.
-- Validation: Django system checks pass, the accounts test passes, all migrations show as applied, migration drift reports no changes, ORM/introspection confirms PostgreSQL and the Custom User table, no SQLite database file exists, and Git whitespace validation passes.
-- Virtual environment: Simple stale `InkSight` paths were repaired in the Bash, csh, and fish activation scripts; activation now resolves Python 3.14.9 and Django 5.2.18 from the repository `.venv`.
-- Next milestone: Continue the Django foundation with the next separately scoped backend task; do not add Phase 2 business-domain models until authorized.
+- Custom User: `backend/accounts/models.py` (`accounts.User`), based on Django's `AbstractUser`; `AUTH_USER_MODEL = "accounts.User"`.
+- Creator domain: `backend/creators/`, registered as a dedicated Django app in accordance with the documented domain boundary.
+- CreatorProfile: a creator-specific capability extension with a required one-to-one relationship to `settings.AUTH_USER_MODEL`. A User may exist without a CreatorProfile, and the database uniqueness constraint permits at most one CreatorProfile per User.
+- CreatorProfile fields: `id`, `user`, optional `bio_fa`, optional `bio_en`, optional `avatar`, `is_verified` defaulting to false, and automatically populated `created_at`.
+- Lifecycle: deleting the related User cascades through Django to delete its CreatorProfile because the profile has no independent identity or lifecycle.
+- Future content relationship: BE-005 must implement `Idea.creator -> CreatorProfile`, not a direct relationship to User.
+- Deferred: Topic, Source, Idea, UserInterest, CreatorFollow, creator APIs/onboarding, authorization/RBAC, and all other content or creator workflows.
+- Database: PostgreSQL 18.6 using local database `insightink_dev`; `creators.0001_initial` is applied and `creators_creatorprofile` exists with the expected unique user constraint and foreign key to `accounts_user`.
+- Validation: Django system checks pass; migration drift reports no changes; all six tests pass against the PostgreSQL test database; all migrations show as applied; Git whitespace validation passes.
+- Known issue: initial database-backed command attempts intermittently returned Psycopg `connection is bad: no error details available`, matching the transient symptom recorded in BE-003. PostgreSQL remained active and accepted direct Psycopg/psql connections; clean retries of migration, drift check, migration status, and the full test suite all passed.
+- Next milestone: BE-005 — Core Content Models (`Topic`, `Source`, and `Idea`) with `Idea.creator` targeting `CreatorProfile`.
