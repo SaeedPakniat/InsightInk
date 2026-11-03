@@ -1,0 +1,193 @@
+
+\chapter{Playbookهای پیاده‌سازی Feature}
+
+این فصل می‌گوید وقتی AI در دسترس نیست و می‌خواهی Feature جدید بسازی، چه ترتیب ثابتی را طی کنی.
+
+\section{Playbook ساخت Model جدید}
+
+فرض: می‌خواهی Model جدید بسازی.
+
+\begin{enumerate}
+  \item Requirement را بنویس.
+  \item Entity و Relation را روی کاغذ مشخص کن.
+  \item آیا Model جدید واقعاً لازم است؟
+  \item Fieldها و data typeها را تعیین کن.
+  \item unique/check/index را مشخص کن.
+  \item deletion behavior ForeignKey را تعیین کن.
+  \item Model code بنویس.
+  \item \tech{makemigrations}.
+  \item Migration را بخوان.
+  \item \tech{migrate}.
+  \item Django shell query.
+  \item Model test.
+  \item Admin در صورت نیاز.
+  \item Commit.
+\end{enumerate}
+
+\section{Playbook ساخت API جدید}
+
+\begin{enumerate}
+  \item Use case را دقیق بنویس.
+  \item Method/path را تعیین کن.
+  \item Request body/query params.
+  \item Authentication.
+  \item Permission/object ownership.
+  \item Serializer/validation.
+  \item Query/Service.
+  \item Response schema.
+  \item status codes.
+  \item happy-path test.
+  \item invalid-data test.
+  \item unauthorized test.
+  \item object-ownership test.
+  \item document.
+\end{enumerate}
+
+\section{Playbook ساخت React Screen}
+
+\begin{enumerate}
+  \item Route؛
+  \item data requirement؛
+  \item loading state؛
+  \item empty state؛
+  \item error state؛
+  \item static semantic markup؛
+  \item responsive CSS؛
+  \item RTL/LTR؛
+  \item component split؛
+  \item API integration؛
+  \item interaction؛
+  \item accessibility؛
+  \item tests.
+\end{enumerate}
+
+\section{Playbook Mutation مثل Save}
+
+\begin{enumerate}
+  \item server endpoint را اول درست کن؛
+  \item idempotency؛
+  \item auth/permission؛
+  \item DB constraint؛
+  \item API test؛
+  \item frontend button؛
+  \item mutation؛
+  \item optimistic state؛
+  \item rollback؛
+  \item query invalidation/reconciliation؛
+  \item cross-device event later.
+\end{enumerate}
+
+\section{Playbook Pagination}
+
+\begin{enumerate}
+  \item stable ordering؛
+  \item pagination method؛
+  \item page size؛
+  \item endpoint tests؛
+  \item frontend next page؛
+  \item duplicate prevention؛
+  \item loading indicator؛
+  \item no-more-results state؛
+  \item performance measurement.
+\end{enumerate}
+
+\section{Playbook Permission}
+
+برای هر Action جدول بساز:
+
+\begin{longtable}{p{5cm}cccc}
+\toprule
+Action & Reader & Creator & Moderator & Admin \\
+\midrule
+Read public idea & بله & بله & بله & بله \\
+Edit own creator idea & -- & بله & policy & بله \\
+Hide reported comment & -- & -- & بله & بله \\
+Assign moderator & -- & -- & -- & بله \\
+\bottomrule
+\end{longtable}
+
+سپس Test همان جدول را بنویس.
+
+\section{Playbook Recommendation تغییر Weight}
+
+\begin{enumerate}
+  \item Hypothesis؛
+  \item fixture scenario؛
+  \item old ranking؛
+  \item weight change؛
+  \item unit tests؛
+  \item diversity check؛
+  \item latency check؛
+  \item document reason.
+\end{enumerate}
+
+\section{Playbook Bug}
+
+\begin{enumerate}
+  \item reproduce؛
+  \item minimal case؛
+  \item log/inspect؛
+  \item locate layer؛
+  \item write failing test اگر ممکن؛
+  \item fix؛
+  \item rerun related tests؛
+  \item regression check؛
+  \item commit with explanation.
+\end{enumerate}
+
+\section{Playbook Database Performance}
+
+\begin{enumerate}
+  \item reproduce slow endpoint؛
+  \item measure؛
+  \item count queries؛
+  \item inspect N+1؛
+  \item \tech{select\_related/prefetch\_related}؛
+  \item inspect index/query plan؛
+  \item remeasure.
+\end{enumerate}
+
+Cache آخرین پاسخ پیش‌فرض نیست.
+
+\section{Playbook Dependency}
+
+قبل از نصب Package:
+\begin{enumerate}
+  \item Requirement؛
+  \item alternatives؛
+  \item maintenance؛
+  \item size/compatibility؛
+  \item security؛
+  \item install؛
+  \item minimal example؛
+  \item integrate؛
+  \item document.
+\end{enumerate}
+
+\section{Playbook Refactor}
+
+Refactor یعنی Behavior را حفظ کن:
+\begin{enumerate}
+  \item tests green before؛
+  \item small change؛
+  \item no feature addition mixed؛
+  \item tests green after؛
+  \item diff review.
+\end{enumerate}
+
+\section{Playbook وقتی گیر کردی}
+
+بدون AI:
+\begin{enumerate}
+  \item error را کامل بخوان؛
+  \item traceback از آخر به اول؛
+  \item کوچک‌ترین failing component؛
+  \item official docs؛
+  \item inspect input/output؛
+  \item reproduce in shell/test؛
+  \item تغییر یک چیز در هر بار.
+\end{enumerate}
+
+\begin{warningbox}
+ده Package نصب نکن تا Bug «شاید» حل شود. اول علت را پیدا کن.
+\end{warningbox}

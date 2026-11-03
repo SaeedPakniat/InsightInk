@@ -1,0 +1,162 @@
+
+\chapter{ردیابی کامل نیازمندی‌های منبع}
+
+\section{هدف}
+
+این فصل برای این است که در پایان پروژه بتوانیم نشان دهیم هر Story و NFR از کجا آمده، چگونه تفسیر شده و آیا پیاده‌سازی شده، ساده شده یا Deferred است.
+
+\section{Epic: AI-Powered Idea Discovery}
+
+\begin{enumerate}
+  \item به‌عنوان Reader می‌خواهم Ideaهای مشابه Idea فعلی را ببینم تا روی Theme موردعلاقه عمیق‌تر شوم. \eng{[NFR-17]}
+  \item می‌خواهم یک دلیل یک‌خطی برای پیشنهاد ببینم تا Recommendation قابل اعتماد باشد. \eng{[NFR-17]}
+  \item می‌خواهم Quick Suggestion Chip داشته باشم، مثل \eng{Summarize in 30s}، تا سریع‌تر Action بگیرم. \eng{[NFR-01]}
+  \item می‌خواهم Home Feed به Interestهای اعلام‌شده نزدیک باشد. \eng{[NFR-01]}
+  \item می‌خواهم Feed با Spark و Saveهای من adapt شود. \eng{[NFR-12]}
+  \item می‌خواهم Cross-format suggestion داشته باشم؛ مثلاً Book Idea به Podcast مرتبط برسد. \eng{[NFR-03]}
+  \item به‌عنوان User جدید می‌خواهم در Onboarding Topic انتخاب کنم. \eng{[NFR-01]}
+  \item می‌خواهم Interestها را بعداً از Profile تغییر بدهم. \eng{[NFR-12]}
+\end{enumerate}
+
+\begin{decisionbox}
+تفسیر پروژه: Recommendation کاملاً الگوریتمی است. Story «Summarize in 30s» generative پیاده نمی‌شود مگر با Short Content از پیش نوشته‌شده یا جایگزین غیرمولد.
+\end{decisionbox}
+
+\section{Epic: Real-Time, Cross-Device Experience}
+
+\begin{enumerate}
+  \item Save روی Phone ظرف چند ثانیه در Laptop Library دیده شود. \eng{[NFR-05]}
+  \item synced/pending indicator وجود داشته باشد. \eng{[NFR-05]}
+  \item Idea card و thumbnail در دنیا بدون delay محسوس load شود. \eng{[NFR-08]}
+  \item روی connection کند، TTS audio سریع شروع شود. \eng{[NFR-08]}
+  \item Backend در traffic spike scale شود. \eng{[NFR-04]}
+  \item App در peak hour available بماند. \eng{[NFR-06]}
+\end{enumerate}
+
+\section{Epic: Creator Direct-Access Network}
+
+\begin{enumerate}
+  \item Reader پروفایل Creator، Bio و Published Ideas را ببیند. \eng{[NFR-01]}
+  \item Reader Creator را Follow کند. \eng{[NFR-01]}
+  \item Creator reach خود شامل Idea/Spark/Follower را ببیند/نمایش دهد. \eng{[NFR-01]}
+  \item Reader بتواند Creator را مستقیم Message کند. \eng{[NFR-13]}
+  \item Creator داخل App Reply بدهد. \eng{[NFR-13]}
+  \item User بتواند در Conversation Report/Block کند. \eng{[NFR-15]}
+  \item Creator غیرانگلیسی‌زبان در زبان خودش discoverable باشد. \eng{[NFR-18]}
+\end{enumerate}
+
+\section{Epic: Library Membership \& eBooks}
+
+\begin{enumerate}
+  \item تمام Saved Ideaها در Library tab باشند. \eng{[NFR-05]}
+  \item تعداد Ideaهای خوانده‌شده ماه دیده شود. \eng{[NFR-11]}
+  \item eBookهای مرتبط با Ideaهای موردعلاقه browse شوند. \eng{[NFR-11]}
+  \item Library membership امن purchase شود. \eng{[NFR-14]}
+  \item Member بتواند eBook را offline download کند. \eng{[NFR-11]}
+\end{enumerate}
+
+\section{Epic: Core Idea Feed \& Multi-Format Content}
+
+\begin{enumerate}
+  \item Feed paginated باشد. \eng{[NFR-02]}
+  \item Estimated reading/listening time روی هر card باشد. \eng{[NFR-01]}
+  \item Idea full text باز شود. \eng{[NFR-01]}
+  \item Original source مشخص باشد. \eng{[NFR-08]}
+  \item Reader تجربه مرتبط با Book/Movie/Podcast/Article را Share کند. \eng{[NFR-08]}
+  \item Idea خارج از App Share شود. \eng{[NFR-08]}
+\end{enumerate}
+
+\section{Epic: Onboarding \& Account Setup}
+
+\begin{enumerate}
+  \item Account سریع با Email یا Social Sign-in ساخته شود. \eng{[NFR-09]}
+  \item User returning روی Device جدید Library قبلی را ببیند. \eng{[NFR-05]}
+  \item Intro کوتاه هدف InsightInk را توضیح دهد. \eng{[NFR-01]}
+\end{enumerate}
+
+\section{Epic: Engagement \& Social Signals}
+
+\begin{enumerate}
+  \item Reader بتواند Idea را Spark کند. \eng{[NFR-01]}
+  \item Reader Idea را Save کند. \eng{[NFR-05]}
+  \item Reader Comment بگذارد. \eng{[NFR-01]}
+  \item Reader Comment نامناسب را Report کند. \eng{[NFR-15]}
+\end{enumerate}
+
+\section{Epic: Multimodal Access (Text-to-Speech)}
+
+\begin{enumerate}
+  \item Play و شنیدن Idea. \eng{[NFR-08]}
+  \item playback progress و scrub. \eng{[NFR-16]}
+  \item انتخاب TTS voice. \eng{[NFR-16]}
+  \item Screen reader navigation بدون Mouse. \eng{[NFR-16]}
+\end{enumerate}
+
+\section{Epic: Notifications \& Activity Awareness}
+
+\begin{enumerate}
+  \item وضعیت Sync Save دیده شود. \eng{[NFR-05]}
+  \item Ideaهای جدید Creatorهای Follow شده batch شوند. \eng{[NFR-06]}
+  \item User بتواند Notification typeهای خاص را خاموش کند. \eng{[NFR-06]}
+\end{enumerate}
+
+\section{جدول Treatment NFR}
+
+\begin{longtable}{p{1.6cm}p{4cm}p{7.3cm}}
+\toprule
+ID & Source & Treatment پروژه \\
+\midrule
+NFR-01 & UI <100ms & perceived UI target + optimistic UI \\
+NFR-02 & feed page <300ms & measurable API/client target \\
+NFR-03 & thousands concurrent & progressive load testing, evidence-based claim \\
+NFR-04 & elastic scale & architecture path, نه Kubernetes baseline \\
+NFR-05 & sync <2s & Channels/Redis later + measurement \\
+NFR-06 & 99.9\% uptime & design target، نه SLA ادعایی \\
+NFR-07 & low idle CPU/RAM & device/browser measurement \\
+NFR-08 & CDN & deployment-dependent؛ limitation در صورت عدم اجرا \\
+NFR-09 & native iOS14+/Android9+ & web/PWA-first old-device strategy \\
+NFR-10 & installable PWA & retained where supported \\
+NFR-11 & relational SQL & PostgreSQL \\
+NFR-12 & export/delete personal data & lifecycle design \\
+NFR-13 & DM secure/participant-only & HTTPS/WSS + authorization \\
+NFR-14 & PCI/no raw card & external provider only \\
+NFR-15 & report/block/mute & retained \\
+NFR-16 & WCAG 2.1 AA & minimum accessibility target \\
+NFR-17 & AI <2s & algorithmic recommendation latency \\
+NFR-18 & multilingual & Persian + English from day one \\
+\bottomrule
+\end{longtable}
+
+\section{WSJF کامل}
+
+\begin{longtable}{p{5.5cm}rrrrr}
+\toprule
+Epic & BV & TC & RR/OE & Effort & WSJF \\
+\midrule
+AI-Powered Idea Discovery & 6 & 5 & 5 & 7 & 2.28 \\
+Real-Time Cross-Device & 8 & 7 & 8 & 5 & 4.60 \\
+Creator Direct-Access & 6 & 3 & 8 & 5 & 3.40 \\
+Library Membership/eBooks & 8 & 7 & 8 & 4 & 5.75 \\
+Core Feed/Multi-Format & 7 & 8 & 8 & 6 & 3.83 \\
+Onboarding/Account & 6 & 8 & 10 & 3 & 8.00 \\
+Engagement/Social Signals & 4 & 3 & 4 & 5 & 2.20 \\
+TTS/Multimodal & 6 & 2 & 7 & 4 & 3.75 \\
+Notifications & 3 & 2 & 5 & 4 & 2.50 \\
+\bottomrule
+\end{longtable}
+
+BV = User/Business Value، TC = Time Criticality، RR/OE = Risk Reduction/Opportunity Enablement.
+
+\section{Traceability Matrix پیشنهادی برای پایان پروژه}
+
+در پایان، جدول زیر تکمیل شود:
+
+\begin{longtable}{p{2.2cm}p{4.3cm}p{2.3cm}p{4cm}}
+\toprule
+Story/NFR & Implementation & Status & Evidence \\
+\midrule
+US-... & endpoint یا screen & وضعیت اجرا & test یا screenshot یا commit \\
+\bottomrule
+\end{longtable}
+
+این Matrix یکی از مهم‌ترین خروجی‌ها برای گزارش دانشگاهی است.

@@ -1,0 +1,295 @@
+
+\chapter{مسیر یادگیری Frontend از صفر}
+
+\section{چرا مستقیم وارد React نمی‌شویم؟}
+
+React روی مفاهیم Browser و JavaScript بنا شده است. اگر DOM، Event، Fetch و State را نفهمیم، React تبدیل به مجموعه‌ای از دستورهای حفظی می‌شود.
+
+بنابراین یادگیری Frontend در این پروژه مرحله‌ای است.
+
+\section{مرحله F1: HTML}
+
+موضوعات:
+\begin{itemize}
+  \item document structure؛
+  \item semantic elements؛
+  \item heading hierarchy؛
+  \item link vs button؛
+  \item form؛
+  \item label/input؛
+  \item nav/main/article/section؛
+  \item accessibility basics.
+\end{itemize}
+
+تمرین پروژه:
+\begin{itemize}
+  \item Idea Card استاتیک؛
+  \item Login form؛
+  \item Navigation ساده.
+\end{itemize}
+
+\begin{learningbox}
+اول باید بفهمی چرا \eng{button} برای Action و \eng{a} برای Navigation استفاده می‌شود. این تفاوت بعداً روی Accessibility و Keyboard behavior تأثیر دارد.
+\end{learningbox}
+
+\section{مرحله F2: CSS}
+
+موضوعات:
+\begin{itemize}
+  \item selector؛
+  \item cascade؛
+  \item specificity؛
+  \item box model؛
+  \item width/height؛
+  \item margin/padding؛
+  \item Flexbox؛
+  \item Grid؛
+  \item responsive؛
+  \item media query؛
+  \item CSS variable؛
+  \item logical properties؛
+  \item RTL/LTR.
+\end{itemize}
+
+تمرین:
+\begin{itemize}
+  \item بازسازی IdeaCard پروتوتایپ؛
+  \item ساخت Bottom Navigation؛
+  \item responsive کردن Feed.
+\end{itemize}
+
+\section{مرحله F3: Browser JavaScript}
+
+با وجود تجربه Node.js، باید Browser-specific concepts را یاد بگیری.
+
+\subsection{DOM}
+
+\begin{latin}
+\begin{lstlisting}
+const button = document.querySelector("#save-button");
+button.addEventListener("click", () => {
+  console.log("saved");
+});
+\end{lstlisting}
+\end{latin}
+
+موضوعات:
+\begin{itemize}
+  \item DOM tree؛
+  \item querySelector؛
+  \item event؛
+  \item event target؛
+  \item form submit؛
+  \item preventDefault.
+\end{itemize}
+
+\subsection{Fetch}
+
+\begin{latin}
+\begin{lstlisting}
+const response = await fetch("/api/v1/ideas/");
+const data = await response.json();
+\end{lstlisting}
+\end{latin}
+
+باید بفهمی:
+\begin{itemize}
+  \item Promise؛
+  \item async/await؛
+  \item network failure؛
+  \item HTTP error با exception جاوااسکریپت یکی نیست؛
+  \item JSON parsing.
+\end{itemize}
+
+\section{مرحله F4: npm و package.json}
+
+مفاهیم:
+\begin{itemize}
+  \item package؛
+  \item dependency؛
+  \item devDependency؛
+  \item script؛
+  \item lockfile؛
+  \item semantic versioning در حد عملی.
+\end{itemize}
+
+\section{مرحله F5: TypeScript}
+
+مثال JavaScript:
+\begin{latin}
+\begin{lstlisting}
+function formatIdea(idea) {
+  return idea.title;
+}
+\end{lstlisting}
+\end{latin}
+
+TypeScript:
+\begin{latin}
+\begin{lstlisting}
+type Idea = {
+  id: number;
+  title: string;
+  body: string;
+};
+
+function formatIdea(idea: Idea): string {
+  return idea.title;
+}
+\end{lstlisting}
+\end{latin}
+
+موضوعات:
+\begin{itemize}
+  \item primitive types؛
+  \item array/object؛
+  \item type alias؛
+  \item interface؛
+  \item union؛
+  \item optional field؛
+  \item function type؛
+  \item generic در حد لازم؛
+  \item narrowing؛
+  \item unknown vs any.
+\end{itemize}
+
+\begin{warningbox}
+برای سریع شدن، \eng{any} را به Default تبدیل نکن. اگر داده API را نمی‌دانیم، Contract را تعریف می‌کنیم.
+\end{warningbox}
+
+\section{مرحله F6: React Fundamentals}
+
+\subsection{Component}
+
+\begin{latin}
+\begin{lstlisting}
+function IdeaCard() {
+  return <article>...</article>;
+}
+\end{lstlisting}
+\end{latin}
+
+\subsection{Props}
+
+\begin{latin}
+\begin{lstlisting}
+type IdeaCardProps = {
+  title: string;
+  readingTime: string;
+};
+
+function IdeaCard({ title, readingTime }: IdeaCardProps) {
+  return (
+    <article>
+      <h2>{title}</h2>
+      <span>{readingTime}</span>
+    </article>
+  );
+}
+\end{lstlisting}
+\end{latin}
+
+\subsection{State}
+
+مثلاً local state برای باز/بسته بودن Menu.
+
+\subsection{Event}
+
+Save click، Language switch، Form submit.
+
+\subsection{List Rendering}
+
+Feed:
+\begin{latin}
+\begin{lstlisting}
+{ideas.map((idea) => (
+  <IdeaCard key={idea.id} idea={idea} />
+))}
+\end{lstlisting}
+\end{latin}
+
+\section{مرحله F7: Hooks}
+
+به ترتیب:
+\begin{itemize}
+  \item \tech{useState}
+  \item \tech{useEffect}
+  \item \tech{useMemo} فقط وقتی دلیل وجود دارد
+  \item custom hook
+  \item context.
+\end{itemize}
+
+\begin{warningbox}
+useEffect محل انجام هر نوع Logic نیست. قبل از استفاده باید بفهمیم آیا واقعاً Side Effect داریم یا می‌توان مقدار را مستقیم derive کرد.
+\end{warningbox}
+
+\section{مرحله F8: Routing}
+
+Routeهای اصلی:
+\begin{latin}
+\begin{lstlisting}
+/login
+/register
+/onboarding
+/feed
+/ideas/:ideaId
+/explore
+/library
+/creators/:creatorId
+/notifications
+/profile
+\end{lstlisting}
+\end{latin}
+
+Messaging later:
+\begin{latin}
+\begin{lstlisting}
+/messages
+/messages/:conversationId
+\end{lstlisting}
+\end{latin}
+
+\section{مرحله F9: Server State}
+
+بعد از اینکه fetch دستی را فهمیدی، TanStack Query وارد می‌شود.
+
+مفاهیم:
+\begin{itemize}
+  \item queryKey؛
+  \item queryFn؛
+  \item stale/fresh؛
+  \item cache؛
+  \item mutation؛
+  \item invalidation؛
+  \item optimistic update؛
+  \item infinite query.
+\end{itemize}
+
+\section{تمرین‌های Frontend در ترتیب واقعی}
+
+\begin{enumerate}
+  \item Static IdeaCard با HTML/CSS؛
+  \item Responsive mobile feed؛
+  \item language direction toggle؛
+  \item fetch ساده از endpoint آزمایشی؛
+  \item TypeScript type برای Idea؛
+  \item React IdeaCard؛
+  \item React feed از mock array؛
+  \item Routing؛
+  \item fetch real API؛
+  \item TanStack Query؛
+  \item Save mutation؛
+  \item optimistic UI.
+\end{enumerate}
+
+\section{معیار فهم Frontend}
+
+باید بتوانی توضیح دهی:
+\begin{itemize}
+  \item DOM چیست؟
+  \item React چه مشکلی را نسبت به DOM manipulation دستی حل می‌کند؟
+  \item Props و State چه فرقی دارند؟
+  \item چرا Server State را با TanStack Query نگه می‌داریم؟
+  \item TypeScript در Runtime وجود دارد یا Compile-time؟
+  \item Vite چه کاری می‌کند و چه کاری نمی‌کند؟
+\end{itemize}

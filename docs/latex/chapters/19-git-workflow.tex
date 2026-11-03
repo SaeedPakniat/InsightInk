@@ -1,0 +1,160 @@
+
+\chapter{Git Workflow، Branching و نظم توسعه}
+
+\section{هدف}
+
+Git فقط Backup نیست؛ تاریخچه تصمیم‌های پروژه است. برای پروژه یک‌نفره نیز باید قابل مرور باشد.
+
+\section{Phase 0 Cleanup}
+
+قبل از Code اصلی:
+\begin{enumerate}
+  \item \tech{git status}؛
+  \item بررسی فایل‌های Track شده؛
+  \item اضافه‌کردن \filepath{.gitignore}؛
+  \item untrack کردن \filepath{.idea/} در صورت تصمیم نهایی؛
+  \item حذف \filepath{main.py} starter در صورت تأیید؛
+  \item تصمیم Branch \eng{master/main}؛
+  \item Commit documentation.
+\end{enumerate}
+
+\section{Branch Strategy}
+
+برای یک developer، workflow پیچیده GitFlow لازم نیست.
+
+گزینه ساده:
+\begin{itemize}
+  \item \eng{main} یا \eng{master} = stable branch؛
+  \item feature branch برای کارهای چندمرحله‌ای در صورت نیاز.
+\end{itemize}
+
+مثال:
+\begin{latin}
+\begin{lstlisting}
+feature/content-models
+feature/feed-api
+feature/react-feed
+feature/recommendation
+\end{lstlisting}
+\end{latin}
+
+\section{Commit Message}
+
+Format پیشنهادی:
+\begin{latin}
+\begin{lstlisting}
+type(scope): short description
+\end{lstlisting}
+\end{latin}
+
+Type:
+\begin{itemize}
+  \item feat؛
+  \item fix؛
+  \item test؛
+  \item docs؛
+  \item refactor؛
+  \item chore.
+\end{itemize}
+
+مثال:
+\begin{latin}
+\begin{lstlisting}
+feat(content): add Topic, Source and Idea models
+feat(auth): add custom user model
+test(engagement): prevent duplicate saves
+docs(roadmap): document realtime phase
+fix(i18n): correct RTL spacing in profile screen
+\end{lstlisting}
+\end{latin}
+
+\section{قبل از Commit}
+
+\begin{enumerate}
+  \item \tech{git status}
+  \item \tech{git diff}
+  \item tests
+  \item check no secret
+  \item check migration
+  \item documentation if contract changed
+\end{enumerate}
+
+\section{Commitهای بد}
+
+\begin{latin}
+\begin{lstlisting}
+update
+stuff
+fix
+final
+final2
+changes
+\end{lstlisting}
+\end{latin}
+
+این پیام‌ها بعداً هیچ Contextی نمی‌دهند.
+
+\section{Migration و Commit}
+
+Model change و Migration مربوط باید در همان Commit باشند مگر دلیل واضح دیگری وجود داشته باشد.
+
+\section{Lockfile}
+
+Frontend lockfile باید Commit شود تا dependency resolution reproducible باشد.
+
+Python dependency strategy نیز باید reproducible باشد.
+
+\section{Secrets Check}
+
+قبل از Push:
+\begin{itemize}
+  \item \filepath{.env} نباشد؛
+  \item secret key نباشد؛
+  \item DB password نباشد؛
+  \item payment/email credential later نباشد.
+\end{itemize}
+
+\section{Tagهای Milestone}
+
+در پایان milestoneهای مهم:
+\begin{latin}
+\begin{lstlisting}
+v0.1-core-backend
+v0.2-core-feed
+v0.3-engagement
+v0.4-recommendation
+v1.0-bachelor-release
+\end{lstlisting}
+\end{latin}
+
+Tag naming نهایی می‌تواند ساده‌تر باشد.
+
+\section{Project Journal}
+
+یک فایل مثل:
+\begin{latin}
+\begin{lstlisting}
+docs/devlog/
+  2026-xx-xx-phase-01.md
+\end{lstlisting}
+\end{latin}
+اختیاری اما مفید است.
+
+محتوا:
+\begin{itemize}
+  \item learned؛
+  \item changed؛
+  \item bug؛
+  \item decision؛
+  \item next.
+\end{itemize}
+
+\section{Recovery Mindset}
+
+قبل از Command خطرناک Git:
+\begin{itemize}
+  \item وضعیت را بخوان؛
+  \item بفهم Command چه می‌کند؛
+  \item از reset --hard بدون نیاز استفاده نکن؛
+  \item uncommitted work را بی‌دلیل حذف نکن.
+\end{itemize}

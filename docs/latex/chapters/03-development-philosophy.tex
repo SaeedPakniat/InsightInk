@@ -1,0 +1,124 @@
+
+\chapter{فلسفه توسعه و روش یادگیری}
+
+\section{اصل اول: پروژه باید قابل فهم بماند}
+
+هر کتابخانه یا Framework هزینه ذهنی دارد. اضافه‌کردن Dependency زمانی مجاز است که:
+\begin{enumerate}
+  \item یک نیاز واقعی را حل کند؛
+  \item راه ساده‌تر built-in کافی نباشد؛
+  \item Maintenance مناسبی داشته باشد؛
+  \item بتوانیم توضیح دهیم چه کاری انجام می‌دهد؛
+  \item Test و Debug آن قابل مدیریت باشد.
+\end{enumerate}
+
+\section{اصل دوم: Learn Before Magic}
+
+\begin{learningbox}
+قرار نیست Code Generation جای یادگیری را بگیرد. هنگام پیاده‌سازی هر بخش ابتدا Concept توضیح داده می‌شود، سپس مثال کوچک، بعد کد واقعی InsightInk.
+\end{learningbox}
+
+مثال:
+\begin{enumerate}
+  \item ابتدا مفهوم Class در Python؛
+  \item بعد مفهوم Django Model؛
+  \item بعد رابطه Model با Table؛
+  \item سپس ساخت \eng{Idea}؛
+  \item سپس Migration؛
+  \item سپس Query با ORM؛
+  \item سپس Test.
+\end{enumerate}
+
+\section{اصل سوم: از دانسته‌های Node.js استفاده می‌کنیم}
+
+توسعه‌دهنده با \eng{Node.js/Express} آشناست. بنابراین برای کاهش بار یادگیری، Concepts جدید با مفاهیم آشنا مقایسه می‌شوند:
+
+\begin{longtable}{p{5.6cm}p{6.5cm}}
+\toprule
+\textbf{Node/Express} & \textbf{Python/Django} \\
+\midrule
+\endhead
+\eng{npm package} & Python package / pip dependency \\
+\eng{node\_modules} & virtual environment site-packages \\
+\eng{Express Router} & Django URLConf + Views \\
+\eng{Middleware} & Django Middleware \\
+\eng{Prisma/Sequelize Model} & Django Model/ORM \\
+\eng{Migration tool} & Django Migrations \\
+\eng{req/res} & Django request/response \\
+\eng{JWT/session middleware} & Django authentication/session/token strategy \\
+\eng{validation schema} & DRF Serializer validation \\
+\bottomrule
+\end{longtable}
+
+\section{اصل چهارم: کوچک‌ترین سیستم درست}
+
+در هر فاز ابتدا ساده‌ترین نسخه صحیح ساخته می‌شود.
+
+مثلاً Recommendation:
+\begin{enumerate}
+  \item Interest match؛
+  \item Save/Spark signal؛
+  \item Follow signal؛
+  \item Jaccard related ideas؛
+  \item فقط اگر لازم شد TF-IDF.
+\end{enumerate}
+
+نه اینکه از روز اول ML pipeline ساخته شود.
+
+\section{اصل پنجم: Database Source of Truth}
+
+تمام داده‌های ماندگار باید در PostgreSQL باشند. Redis، WebSocket یا Browser cache جایگزین Source of Truth نیستند.
+
+\section{اصل ششم: هر Feature شش حالت دارد}
+
+برای هر Screen/Feature حداقل این Stateها بررسی می‌شوند:
+\begin{itemize}
+  \item Idle؛
+  \item Loading؛
+  \item Success؛
+  \item Empty؛
+  \item Error؛
+  \item Offline/Degraded در صورت مرتبط بودن.
+\end{itemize}
+
+\section{اصل هفتم: Definition of Done واقعی}
+
+Feature فقط وقتی Done است که:
+\begin{itemize}
+  \item رفتار اصلی کار کند؛
+  \item Validation داشته باشد؛
+  \item Permission بررسی شده باشد؛
+  \item Error state وجود داشته باشد؛
+  \item ترجمه فارسی/انگلیسی در نظر گرفته شده باشد؛
+  \item Test مرتبط پاس شود؛
+  \item Documentation در صورت تغییر Contract به‌روز شود.
+\end{itemize}
+
+\section{اصل هشتم: هر Commit یک مفهوم}
+
+Commit باید کوچک و قابل مرور باشد. نمونه:
+\begin{latin}
+\begin{lstlisting}
+feat(content): add Idea and Source models
+test(auth): cover moderator permission boundaries
+docs(api): document save endpoint
+fix(i18n): correct RTL spacing in idea cards
+\end{lstlisting}
+\end{latin}
+
+\section{اصل نهم: Performance قبل از Optimization کور}
+
+تا وقتی اندازه‌گیری نکرده‌ایم، Optimization پیچیده نمی‌کنیم. Index، Cache، Redis و Queue بعد از مشاهده نیاز واقعی وارد می‌شوند.
+
+\section{اصل دهم: Project Journal}
+
+در هر فاز بهتر است یک فایل کوتاه Log نگهداری شود که پاسخ دهد:
+\begin{itemize}
+  \item امروز چه چیزی یاد گرفتم؟
+  \item چه چیزی ساختم؟
+  \item چه Bugی دیدم؟
+  \item چه Decisionی گرفتم؟
+  \item مرحله بعد چیست؟
+\end{itemize}
+
+این Log در دفاع و گزارش نهایی ارزش زیادی دارد.

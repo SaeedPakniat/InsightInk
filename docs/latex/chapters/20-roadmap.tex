@@ -1,0 +1,309 @@
+
+\chapter{Roadmap اجرایی کامل پروژه}
+
+\section{قاعده Roadmap}
+
+هر فاز:
+\[
+Learn \rightarrow Build \rightarrow Test \rightarrow Document \rightarrow Commit
+\]
+
+نباید به‌خاطر جذاب بودن یک فناوری، Dependency order شکسته شود.
+
+\section{Phase 0: Repository Foundation}
+
+\subsection*{یادگیری}
+\begin{itemize}
+  \item Git status/diff/add/commit؛
+  \item virtual environment؛
+  \item dependency؛
+  \item monorepo concept؛
+  \item env variable.
+\end{itemize}
+
+\subsection*{ساخت}
+\begin{itemize}
+  \item repo cleanup؛
+  \item .gitignore؛
+  \item backend/frontend directories؛
+  \item PostgreSQL ready؛
+  \item dependency strategy؛
+  \item documentation commit.
+\end{itemize}
+
+\begin{donebox}
+Environment قابل بازسازی است و Root structure تمیز است.
+\end{donebox}
+
+\section{Phase 1: Django Foundation}
+
+\subsection*{یادگیری}
+Project/App/Settings/URL/View/Model/Migration/ORM/Admin.
+
+\subsection*{ساخت}
+\begin{itemize}
+  \item Django project در backend؛
+  \item PostgreSQL config؛
+  \item custom User؛
+  \item health endpoint؛
+  \item admin superuser.
+\end{itemize}
+
+\begin{donebox}
+Django با PostgreSQL اجرا می‌شود و اولین Migration با Custom User ثبت شده است.
+\end{donebox}
+
+\section{Phase 2: Core Content Models}
+
+\subsection*{یادگیری}
+ForeignKey، OneToOne، ManyToMany، constraint، index.
+
+\subsection*{ساخت}
+\begin{itemize}
+  \item CreatorProfile؛
+  \item Topic؛
+  \item UserInterest؛
+  \item Source؛
+  \item Idea؛
+  \item Admin config؛
+  \item demo data.
+\end{itemize}
+
+\section{Phase 3: REST API Foundation}
+
+\subsection*{یادگیری}
+Serializer، validation، APIView/generic/ViewSet، HTTP status، pagination.
+
+\subsection*{ساخت}
+\begin{itemize}
+  \item Topic API؛
+  \item Idea API؛
+  \item Creator read API؛
+  \item feed baseline؛
+  \item tests.
+\end{itemize}
+
+\section{Phase 4: Authentication and Roles}
+
+\subsection*{یادگیری}
+Auth vs authorization، group/permission، object ownership.
+
+\subsection*{ساخت}
+\begin{itemize}
+  \item register/login/logout؛
+  \item profile؛
+  \item Creator permission؛
+  \item Moderator group؛
+  \item Admin-only moderator assignment؛
+  \item tests.
+\end{itemize}
+
+\section{Phase 5: Frontend Fundamentals}
+
+\subsection*{یادگیری}
+HTML، CSS، Browser JS، npm، TypeScript، Vite.
+
+\subsection*{ساخت}
+\begin{itemize}
+  \item React-TS scaffold؛
+  \item theme tokens؛
+  \item static mobile layout؛
+  \item RTL/LTR foundation.
+\end{itemize}
+
+\section{Phase 6: React Foundation}
+
+\subsection*{یادگیری}
+Component، props، state، hooks، routing.
+
+\subsection*{ساخت}
+\begin{itemize}
+  \item routing؛
+  \item IdeaCard؛
+  \item common states؛
+  \item API client skeleton؛
+  \item language switch.
+\end{itemize}
+
+\section{Phase 7: Onboarding}
+
+\begin{itemize}
+  \item intro؛
+  \item register/login integration؛
+  \item language selection؛
+  \item interest selection؛
+  \item persist interests؛
+  \item first feed redirect.
+\end{itemize}
+
+\section{Phase 8: Core Feed}
+
+\begin{itemize}
+  \item paginated endpoint؛
+  \item infinite query؛
+  \item IdeaCard real data؛
+  \item Idea Detail؛
+  \item Source display؛
+  \item reading estimate.
+\end{itemize}
+
+\section{Phase 9: Engagement}
+
+\begin{itemize}
+  \item Spark API/UI؛
+  \item Save API/UI؛
+  \item optimistic update؛
+  \item Comment؛
+  \item report comment؛
+  \item external share.
+\end{itemize}
+
+\section{Phase 10: Personal Library}
+
+\begin{itemize}
+  \item Saved Ideas؛
+  \item filters؛
+  \item reading statistics فقط بعد از تعریف read؛
+  \item cross-device foundation data.
+\end{itemize}
+
+\section{Phase 11: Creator Network}
+
+\begin{itemize}
+  \item Creator Profile؛
+  \item Creator ideas؛
+  \item Follow؛
+  \item follower/spark/idea counts.
+\end{itemize}
+
+\section{Phase 12: Explore and Search}
+
+\begin{itemize}
+  \item query search؛
+  \item topics؛
+  \item format filters؛
+  \item Persian normalization؛
+  \item trending definition ساده.
+\end{itemize}
+
+\section{Phase 13: Recommendation Algorithm}
+
+\begin{itemize}
+  \item cold start؛
+  \item interest score؛
+  \item save/spark affinity؛
+  \item follow signal؛
+  \item freshness/popularity؛
+  \item language fit؛
+  \item Jaccard related ideas؛
+  \item explanation؛
+  \item evaluation.
+\end{itemize}
+
+\section{Phase 14: Realtime Sync}
+
+در اینجا برای اولین بار:
+\begin{itemize}
+  \item Redis؛
+  \item Channels؛
+  \item WebSocket؛
+  \item reconnect؛
+  \item sync indicator.
+\end{itemize}
+
+\section{Phase 15: Messaging}
+
+\begin{itemize}
+  \item Conversation/Participant/Message؛
+  \item reader-creator rules؛
+  \item persisted history؛
+  \item realtime delivery؛
+  \item block/report.
+\end{itemize}
+
+\section{Phase 16: Notifications}
+
+\begin{itemize}
+  \item in-app center؛
+  \item preferences؛
+  \item batching؛
+  \item push feasibility later.
+\end{itemize}
+
+\section{Phase 17: TTS}
+
+\begin{enumerate}
+  \item compatibility prototype؛
+  \item compare browser vs generated audio؛
+  \item choose simplest acceptable؛
+  \item implement controls؛
+  \item test Persian/English.
+\end{enumerate}
+
+\section{Phase 18: Membership/eBooks}
+
+\begin{itemize}
+  \item eBook metadata؛
+  \item membership state؛
+  \item entitlement؛
+  \item payment only if final scope requires؛
+  \item offline sample/feature if feasible.
+\end{itemize}
+
+\section{Phase 19: Moderation Completion}
+
+\begin{itemize}
+  \item report queue؛
+  \item moderation action؛
+  \item audit؛
+  \item user restrictions؛
+  \item Admin moderator management.
+\end{itemize}
+
+\section{Phase 20: Hardening}
+
+\begin{itemize}
+  \item accessibility؛
+  \item old-device test؛
+  \item performance؛
+  \item security review؛
+  \item indexes؛
+  \item bilingual polish.
+\end{itemize}
+
+\section{Phase 21: Deployment}
+
+\begin{itemize}
+  \item production settings؛
+  \item env؛
+  \item PostgreSQL؛
+  \item HTTPS؛
+  \item static/media؛
+  \item logs/backup.
+\end{itemize}
+
+\section{Phase 22: Final Academic Package}
+
+\begin{itemize}
+  \item final architecture diagrams؛
+  \item ERD؛
+  \item screenshots؛
+  \item test evidence؛
+  \item NFR evaluation؛
+  \item limitations؛
+  \item installation guide؛
+  \item final report/presentation.
+\end{itemize}
+
+\section{Dependency Rules}
+
+\begin{warningbox}
+نمونه Jumpهای ممنوع:
+\begin{itemize}
+  \item WebSocket قبل از Save REST؛
+  \item Recommendation قبل از Topic/Idea data؛
+  \item Payment قبل از Library؛
+  \item PWA caching پیچیده قبل از responsive app؛
+  \item Redux قبل از مشاهده مشکل state management.
+\end{itemize}
+\end{warningbox}

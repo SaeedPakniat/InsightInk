@@ -1,0 +1,285 @@
+
+\chapter{REST API، Authentication و Roleها}
+
+\section{API Base}
+
+تمام Endpointهای Versioned:
+\begin{latin}
+\begin{lstlisting}
+/api/v1/
+\end{lstlisting}
+\end{latin}
+
+فرمت اصلی:
+\begin{latin}
+\begin{lstlisting}
+Content-Type: application/json
+\end{lstlisting}
+\end{latin}
+
+\section{HTTP Methodها}
+
+\begin{longtable}{p{2.6cm}p{10cm}}
+\toprule
+\textbf{Method} & \textbf{کاربرد} \\
+\midrule
+GET & خواندن Resource \\
+POST & ساخت Resource یا Action non-idempotent \\
+PUT & جایگزینی/Action idempotent در طراحی مناسب \\
+PATCH & تغییر بخشی از Resource \\
+DELETE & حذف Resource یا Relationship \\
+\bottomrule
+\end{longtable}
+
+\section{Endpointهای Core پیشنهادی}
+
+\subsection{Account}
+
+\begin{latin}
+\begin{lstlisting}
+POST   /api/v1/auth/register/
+POST   /api/v1/auth/login/
+POST   /api/v1/auth/logout/
+
+GET    /api/v1/me/
+PATCH  /api/v1/me/
+
+GET    /api/v1/me/interests/
+PUT    /api/v1/me/interests/
+\end{lstlisting}
+\end{latin}
+
+\subsection{Feed/Idea}
+
+\begin{latin}
+\begin{lstlisting}
+GET    /api/v1/feed/
+GET    /api/v1/ideas/{id}/
+GET    /api/v1/ideas/{id}/related/
+\end{lstlisting}
+\end{latin}
+
+\subsection{Engagement}
+
+\begin{latin}
+\begin{lstlisting}
+PUT    /api/v1/ideas/{id}/spark/
+DELETE /api/v1/ideas/{id}/spark/
+
+PUT    /api/v1/ideas/{id}/save/
+DELETE /api/v1/ideas/{id}/save/
+
+GET    /api/v1/ideas/{id}/comments/
+POST   /api/v1/ideas/{id}/comments/
+DELETE /api/v1/comments/{id}/
+POST   /api/v1/comments/{id}/report/
+\end{lstlisting}
+\end{latin}
+
+Spark/Save باید idempotent طراحی شوند؛ یعنی تکرار PUT duplicate نسازد.
+
+\subsection{Library}
+
+\begin{latin}
+\begin{lstlisting}
+GET    /api/v1/library/saved/
+GET    /api/v1/library/stats/
+\end{lstlisting}
+\end{latin}
+
+\subsection{Creator}
+
+\begin{latin}
+\begin{lstlisting}
+GET    /api/v1/creators/
+GET    /api/v1/creators/{id}/
+PUT    /api/v1/creators/{id}/follow/
+DELETE /api/v1/creators/{id}/follow/
+\end{lstlisting}
+\end{latin}
+
+\subsection{Search}
+
+\begin{latin}
+\begin{lstlisting}
+GET    /api/v1/search/?q=...
+GET    /api/v1/topics/
+GET    /api/v1/topics/{slug}/ideas/
+\end{lstlisting}
+\end{latin}
+
+\subsection{Recommendation}
+
+\begin{latin}
+\begin{lstlisting}
+GET    /api/v1/recommendations/
+GET    /api/v1/ideas/{id}/related/
+\end{lstlisting}
+\end{latin}
+
+هیچ Completion/Chat endpoint وجود ندارد.
+
+\section{Pagination}
+
+Feed برای long-running content بهتر است Cursor-like pagination داشته باشد تا Insert شدن محتوای جدید duplicate/missing کمتری ایجاد کند.
+
+Response مفهومی:
+\begin{latin}
+\begin{lstlisting}
+{
+  "next": "opaque-cursor",
+  "previous": null,
+  "results": [...]
+}
+\end{lstlisting}
+\end{latin}
+
+Implementation دقیق با DRF در زمان فاز Feed انتخاب می‌شود.
+
+\section{Authentication}
+
+Authentication پاسخ می‌دهد:
+\begin{center}
+«این Request متعلق به چه کسی است؟»
+\end{center}
+
+نیازها:
+\begin{itemize}
+  \item email/password؛
+  \item secure password hash؛
+  \item login/logout؛
+  \item password reset؛
+  \item authenticated API request؛
+  \item login روی Device دیگر.
+\end{itemize}
+
+Social Login در Source آمده اما هنوز Scope نهایی آن Open Question است.
+
+\section{Session یا Token؟}
+
+این تصمیم را قبل از دانستن Deployment topology قفل نمی‌کنیم.
+
+اگر Frontend/API same-origin باشند، Cookie/Session approach بسیار طبیعی است. اگر Origins جدا یا نیازهای PWA خاص داشته باشیم، Token strategy بررسی می‌شود.
+
+\begin{warningbox}
+فقط چون JWT معروف است، Custom JWT system نمی‌سازیم. ابتدا Threat model و Deployment را می‌فهمیم.
+\end{warningbox}
+
+\section{Authorization}
+
+Authorization پاسخ می‌دهد:
+\begin{center}
+«این کاربر اجازه انجام این Action روی این Object را دارد؟»
+\end{center}
+
+\section{Reader}
+
+Permissionهای اصلی:
+\begin{itemize}
+  \item read public content؛
+  \item save/spark؛
+  \item comment؛
+  \item follow؛
+  \item report؛
+  \item own profile/interests؛
+  \item message creator later.
+\end{itemize}
+
+\section{Creator}
+
+همه قابلیت‌های Reader +:
+\begin{itemize}
+  \item creator profile؛
+  \item own idea publishing/editing در صورت ساخت UI/API؛
+  \item own statistics؛
+  \item message reply.
+\end{itemize}
+
+Object ownership حیاتی است.
+
+\section{Moderator}
+
+\begin{itemize}
+  \item view reports؛
+  \item review flagged content؛
+  \item hide/remove طبق policy؛
+  \item resolve report؛
+  \item محدودیت‌های تعریف‌شده.
+\end{itemize}
+
+نمی‌تواند:
+\begin{itemize}
+  \item Moderator بسازد؛
+  \item Admin بسازد؛
+  \item هر تنظیم سیستمی را تغییر دهد.
+\end{itemize}
+
+\section{Admin}
+
+دسترسی کامل. در Django معمولاً با Superuser و permissionهای کامل نگاشت می‌شود.
+
+\section{Group/Permission Strategy}
+
+نگاشت پیشنهادی:
+\begin{latin}
+\begin{lstlisting}
+Reader    -> authenticated user
+Creator   -> User + CreatorProfile + creator permissions
+Moderator -> Moderator Group (+ limited staff/admin access)
+Admin     -> superuser
+\end{lstlisting}
+\end{latin}
+
+\section{Object-Level Permission Example}
+
+سناریو:
+\begin{itemize}
+  \item Creator A Idea A را دارد؛
+  \item Creator B لاگین است.
+\end{itemize}
+
+Creator B نباید بتواند:
+\begin{latin}
+\begin{lstlisting}
+PATCH /api/v1/ideas/A/
+\end{lstlisting}
+\end{latin}
+
+حتی اگر Role او Creator باشد.
+
+\section{Validation Error Format}
+
+Error response باید قابل پیش‌بینی باشد. مثال مفهومی:
+\begin{latin}
+\begin{lstlisting}
+{
+  "errors": {
+    "body": ["This field may not be blank."]
+  }
+}
+\end{lstlisting}
+\end{latin}
+
+فرمت نهایی هنگام DRF setup مشخص می‌شود.
+
+\section{OpenAPI}
+
+بعد از شکل‌گرفتن API:
+\begin{itemize}
+  \item Schema OpenAPI تولید می‌شود؛
+  \item Endpointها و Request/Response ثبت می‌شوند؛
+  \item در صورت ارزش عملی، Typeهای Frontend از Schema تولید می‌شوند.
+\end{itemize}
+
+\section{API Definition of Done}
+
+هر Endpoint:
+\begin{itemize}
+  \item method/path مشخص؛
+  \item auth requirement؛
+  \item permission؛
+  \item validation؛
+  \item success/error status؛
+  \item test؛
+  \item documentation.
+\end{itemize}

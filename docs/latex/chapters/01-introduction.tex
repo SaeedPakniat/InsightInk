@@ -1,0 +1,120 @@
+
+\chapter{معرفی محصول و مسئله}
+
+\section{InsightInk چیست؟}
+
+\eng{InsightInk} یک سامانه محتوایی است که ایده‌های مفید استخراج‌شده از کتاب، مقاله، فیلم/مستند و پادکست را در قالب یک Feed در اختیار کاربر قرار می‌دهد. ایده اصلی محصول این است که «اسکرول کردن» به‌جای مصرف محتوای صرفاً سرگرم‌کننده، به مواجهه با تجربه‌ها و ایده‌های قابل‌فکر و قابل‌عمل تبدیل شود.
+
+\begin{sourcebox}
+در PDS، محصول به‌عنوان فضایی برای مرور ایده‌های حاصل از تجربه خواندن کتاب و مقاله، دیدن فیلم و شنیدن پادکست معرفی شده است. کاربر می‌تواند از این محتوا الهام بگیرد، آن را ذخیره یا به اشتراک بگذارد و با سازندگان محتوا ارتباط بگیرد.
+\end{sourcebox}
+
+\section{هدف این پروژه دانشگاهی}
+
+هدف ما ساخت یک استارتاپ production در مقیاس میلیون‌ها کاربر نیست. هدف عبارت است از:
+
+\begin{itemize}
+  \item ساخت یک پروژه Full-Stack واقعی و قابل اجرا؛
+  \item یادگیری عمیق \eng{Python} و \eng{Django}؛
+  \item یادگیری Frontend از مبانی تا \eng{React + TypeScript}؛
+  \item طراحی درست دیتابیس رابطه‌ای؛
+  \item ساخت API، احراز هویت، Permission و تست؛
+  \item پیاده‌سازی سیستم پیشنهاددهی الگوریتمی قابل توضیح؛
+  \item پشتیبانی هم‌زمان از فارسی و انگلیسی؛
+  \item داشتن مستندات کامل برای ادامه کار بدون وابستگی به AI.
+\end{itemize}
+
+\begin{decisionbox}
+معماری باید برای یک نفر قابل نگهداری باشد. بنابراین \eng{microservice}، \eng{Kubernetes}، \eng{event bus}، \eng{vector database} و زیرساخت‌های سنگین وارد Baseline نمی‌شوند.
+\end{decisionbox}
+
+\section{Actorهای اصلی}
+
+\subsection{Reader / User}
+
+کاربر معمولی که می‌تواند:
+\begin{itemize}
+  \item ایده‌ها را بخواند؛
+  \item Spark بزند؛
+  \item ذخیره کند؛
+  \item نظر بدهد؛
+  \item Creator را Follow کند؛
+  \item ایده‌ها را جست‌وجو کند؛
+  \item کتابخانه شخصی داشته باشد؛
+  \item محتوای نامناسب را Report کند؛
+  \item در فاز پیام‌رسانی با Creator تماس بگیرد.
+\end{itemize}
+
+\subsection{Creator}
+
+Creator یک User جداگانه از نظر هویتی نیست؛ یک User است که \eng{CreatorProfile} و Permissionهای مربوط را دارد. او می‌تواند پروفایل سازنده داشته باشد، محتوای خودش را منتشر/مدیریت کند و با مخاطب تعامل داشته باشد.
+
+\subsection{Moderator}
+
+Moderator ناظر سیستم است و دسترسی‌های محدود اما قوی برای Trust \& Safety دارد:
+\begin{itemize}
+  \item مشاهده Reportها؛
+  \item بررسی محتوای گزارش‌شده؛
+  \item مخفی/حذف کردن Comment یا Content طبق سیاست؛
+  \item ثبت اقدام Moderation؛
+  \item اعمال محدودیت‌های مشخص روی User در صورت نیاز.
+\end{itemize}
+
+Moderator مدیر کل نیست و اجازه ایجاد Moderator یا Admin ندارد.
+
+\subsection{Admin}
+
+Admin مدیر کل سیستم است و بالاترین دسترسی را دارد. فقط Admin می‌تواند Moderatorها را تعیین یا حذف کند.
+
+\section{زبان‌های محصول}
+
+\begin{decisionbox}
+زبان اصلی محصول فارسی و زبان دوم انگلیسی است. از روز اول ساختار Frontend و مدل داده باید امکان \eng{RTL/LTR} و محتوای دو زبانه را در نظر بگیرد.
+\end{decisionbox}
+
+این یعنی:
+\begin{itemize}
+  \item UI فارسی راست‌به‌چپ؛
+  \item UI انگلیسی چپ‌به‌راست؛
+  \item زبان UI از زبان Content جداست؛
+  \item کاربر می‌تواند UI فارسی داشته باشد و محتوای انگلیسی ببیند.
+\end{itemize}
+
+\section{تعریف AI در این پروژه}
+
+\begin{warningbox}
+در منابع اولیه عباراتی مانند \eng{AI-Assisted Tool} و \eng{AI-Powered Idea Discovery} آمده است. در Scope نهایی این پروژه، هیچ LLM یا RAG یا Agent وجود ندارد.
+\end{warningbox}
+
+سیستم پیشنهاددهی ما کاملاً الگوریتمی است و با داده‌هایی مانند Interest، Save، Spark، Follow، تازگی محتوا و Popularity کار می‌کند.
+
+مواردی که صریحاً خارج از پروژه هستند:
+\begin{itemize}
+  \item \eng{OpenAI/Claude/Gemini API}
+  \item \eng{LLM}
+  \item \eng{RAG}
+  \item \eng{Embeddings}
+  \item \eng{Vector DB}
+  \item \eng{Prompt Engineering}
+  \item \eng{AI Agent}
+\end{itemize}
+
+\section{معیار موفقیت پروژه}
+
+در پایان، پروژه باید حداقل بتواند Flow زیر را واقعاً اجرا کند:
+
+\begin{enumerate}
+  \item کاربر Account بسازد و Login کند؛
+  \item زبان و علاقه‌مندی‌ها را انتخاب کند؛
+  \item Feed واقعی از PostgreSQL ببیند؛
+  \item Idea را باز کند؛
+  \item Source آن را ببیند؛
+  \item Spark/Save/Comment کند؛
+  \item Saved Ideaها را در Library ببیند؛
+  \item Creator را ببیند و Follow کند؛
+  \item Search/Explore داشته باشد؛
+  \item Recommendation الگوریتمی دریافت کند؛
+  \item UI فارسی و انگلیسی درست داشته باشد.
+\end{enumerate}
+
+Realtime، Messaging، Notification، TTS و Membership/eBook بعد از این Core Flow اضافه می‌شوند.

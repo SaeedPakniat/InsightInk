@@ -1,0 +1,296 @@
+
+\chapter{Technology Stack و دلیل انتخاب هر ابزار}
+
+\section{Backend}
+
+\subsection{Python 3.14.8}
+
+نسخه موجود روی سیستم توسعه \eng{Python 3.14.8} است و با Django نصب‌شده پروژه سازگار است.
+
+کاربرد:
+\begin{itemize}
+  \item زبان اصلی Backend؛
+  \item Recommendation logic؛
+  \item Tests؛
+  \item Scripts و data utilities.
+\end{itemize}
+
+\subsection{Django 5.2.18}
+
+Django Framework اصلی Backend است.
+
+چیزهایی که از Django استفاده می‌کنیم:
+\begin{itemize}
+  \item Project configuration؛
+  \item Models/ORM؛
+  \item Migrations؛
+  \item Authentication foundation؛
+  \item Groups/Permissions؛
+  \item Admin؛
+  \item Middleware؛
+  \item Tests؛
+  \item ASGI entry point برای Realtime later.
+\end{itemize}
+
+\begin{learningbox}
+Django را مثل Express با چند Library جانبی تصور نکن. Django یک Framework opinionated است و بخش زیادی از ساختار پروژه را خودش تعریف می‌کند. هدف این است که Conventionهای خود Django را یاد بگیریم، نه اینکه معماری Express را زورکی روی آن سوار کنیم.
+\end{learningbox}
+
+\subsection{Django REST Framework}
+
+\eng{DRF} لایه API است.
+
+کاربرد:
+\begin{itemize}
+  \item Serializer؛
+  \item Validation؛
+  \item APIView/Generic View/ViewSet؛
+  \item Permission؛
+  \item Pagination؛
+  \item Authentication integration؛
+  \item HTTP response convention.
+\end{itemize}
+
+DRF بعد از فهم Django پایه وارد پروژه می‌شود.
+
+\subsection{PostgreSQL}
+
+Database اصلی و production-like پروژه.
+
+چرا:
+\begin{itemize}
+  \item NFR-11 صریحاً SQL relational DB می‌خواهد؛
+  \item User/Idea/Topic/Save/Comment/Follow روابط واضح دارند؛
+  \item Constraint و Index قوی؛
+  \item Django integration عالی؛
+  \item قابلیت Full Text Search و \eng{pg\_trgm} برای Search future.
+\end{itemize}
+
+\subsection{Redis - فقط بعداً}
+
+Redis در Day 1 نصب نمی‌شود.
+
+وقتی Realtime شروع شد:
+\begin{itemize}
+  \item Channels layer؛
+  \item transient realtime state؛
+  \item احتمالاً cache محدود.
+\end{itemize}
+
+Persistent data در Redis نگهداری نمی‌شود.
+
+\subsection{Django Channels - فقط بعداً}
+
+برای:
+\begin{itemize}
+  \item cross-device sync events؛
+  \item direct messaging؛
+  \item realtime notification arrival.
+\end{itemize}
+
+\subsection{Celery - فعلاً خیر}
+
+در Baseline وجود ندارد.
+
+فقط اگر Feature واقعی مثل:
+\begin{itemize}
+  \item scheduled batching؛
+  \item generated TTS audio؛
+  \item heavy email jobs؛
+  \item long-running background processing
+\end{itemize}
+نیاز واقعی ایجاد کرد، دوباره ارزیابی می‌شود.
+
+\section{Frontend}
+
+\subsection{HTML}
+
+قبل از React باید Semantic HTML فهمیده شود:
+\begin{itemize}
+  \item heading؛
+  \item nav؛
+  \item main؛
+  \item article؛
+  \item section؛
+  \item form؛
+  \item label/input؛
+  \item button/link.
+\end{itemize}
+
+این موضوع برای Accessibility و Browser قدیمی حیاتی است.
+
+\subsection{CSS}
+
+موضوعات کلیدی:
+\begin{itemize}
+  \item Box Model؛
+  \item Cascade/Specificity؛
+  \item Flexbox؛
+  \item Grid؛
+  \item Responsive Design؛
+  \item CSS Variables؛
+  \item Logical Properties؛
+  \item RTL/LTR؛
+  \item Focus/hover/disabled states.
+\end{itemize}
+
+\subsection{JavaScript}
+
+حتی با سابقه Node.js، Browser JavaScript Concepts باید یاد گرفته شود:
+\begin{itemize}
+  \item DOM؛
+  \item Events؛
+  \item Fetch؛
+  \item Browser storage؛
+  \item History/navigation؛
+  \item async/await در Context شبکه.
+\end{itemize}
+
+\subsection{TypeScript}
+
+Production Frontend با TypeScript نوشته می‌شود.
+
+مزایا:
+\begin{itemize}
+  \item type safety؛
+  \item refactor امن‌تر؛
+  \item API data contract واضح‌تر؛
+  \item autocomplete بهتر؛
+  \item Skill رزومه‌ای مفید.
+\end{itemize}
+
+\subsection{React}
+
+React برای Component-based UI استفاده می‌شود.
+
+Conceptهای لازم:
+\begin{itemize}
+  \item Component؛
+  \item JSX؛
+  \item Props؛
+  \item State؛
+  \item Event handling؛
+  \item Conditional rendering؛
+  \item list/key؛
+  \item hooks؛
+  \item composition.
+\end{itemize}
+
+\subsection{Vite}
+
+Vite Framework UI نیست. ابزار Development Server و Build است.
+
+کاربرد:
+\begin{itemize}
+  \item dev server؛
+  \item bundling؛
+  \item environment variables frontend؛
+  \item production build.
+\end{itemize}
+
+\subsection{React Router}
+
+برای routeهایی مانند:
+\begin{latin}
+\begin{lstlisting}
+/login
+/onboarding
+/feed
+/ideas/:id
+/explore
+/library
+/creators/:id
+/profile
+\end{lstlisting}
+\end{latin}
+
+\subsection{TanStack Query}
+
+وقتی Frontend به API واقعی وصل شد، Server State با \eng{TanStack Query} مدیریت می‌شود:
+\begin{itemize}
+  \item query؛
+  \item cache؛
+  \item loading/error؛
+  \item mutation؛
+  \item invalidation؛
+  \item optimistic update؛
+  \item infinite pagination.
+\end{itemize}
+
+\begin{decisionbox}
+Redux و Zustand از ابتدا نصب نمی‌شوند. اگر بعداً Client State واقعی و پیچیده داشتیم، آن زمان ارزیابی می‌کنیم.
+\end{decisionbox}
+
+\subsection{i18next / react-i18next}
+
+برای ترجمه UI فارسی و انگلیسی.
+
+\section{Testing Stack}
+
+\subsection{Backend}
+
+\begin{itemize}
+  \item \eng{pytest}
+  \item \eng{pytest-django}
+\end{itemize}
+
+\subsection{Frontend}
+
+\begin{itemize}
+  \item \eng{Vitest}
+  \item \eng{React Testing Library}
+\end{itemize}
+
+\subsection{End-to-End}
+
+\eng{Playwright} بعد از Integration واقعی Front/Back.
+
+\subsection{Load Test}
+
+در فاز Performance، ابزارهایی مانند \eng{Locust} برای سنجش NFRها قابل استفاده‌اند.
+
+\section{Code Quality}
+
+Backend:
+\begin{itemize}
+  \item Ruff؛
+  \item type hints؛
+  \item formatter/linter policy.
+\end{itemize}
+
+Frontend:
+\begin{itemize}
+  \item ESLint؛
+  \item Prettier؛
+  \item TypeScript strictness در حد عملی.
+\end{itemize}
+
+\section{ابزارهایی که انتخاب نشده‌اند}
+
+\begin{longtable}{p{4cm}p{9cm}}
+\toprule
+\textbf{ابزار} & \textbf{دلیل عدم انتخاب در Baseline} \\
+\midrule
+Next.js & Server-side framework دوم کنار Django؛ نیاز فوری ندارد. \\
+Flutter & یادگیری Dart و مسیر جدا؛ از دانش JavaScript موجود استفاده نمی‌کند. \\
+Ionic/Capacitor & برای هدف Deviceهای قدیمی، محدودیت Native wrapper می‌تواند مشکل‌ساز شود؛ Web/PWA-first ساده‌تر است. \\
+GraphQL & REST برای این Domain کافی و آموزشی‌تر است. \\
+MongoDB & Domain رابطه‌ای است و NFR SQL می‌خواهد. \\
+Elasticsearch & Search اولیه با PostgreSQL کافی است. \\
+Vector DB & Embedding وجود ندارد. \\
+LLM SDK & LLM در Scope نیست. \\
+Microservices & Complexity غیرضروری. \\
+Kubernetes & خارج از نیاز پروژه کارشناسی. \\
+\bottomrule
+\end{longtable}
+
+\section{قاعده انتخاب Dependency}
+
+قبل از \eng{pip install} یا \eng{npm install} باید بتوانیم پاسخ دهیم:
+\begin{enumerate}
+  \item کدام Requirement به این Package نیاز دارد؟
+  \item آیا Standard Library یا Framework فعلی این کار را انجام نمی‌دهد؟
+  \item این Dependency چه Complexity جدیدی می‌آورد؟
+  \item چطور Test می‌شود؟
+  \item اگر حذف شود چه چیزی می‌شکند؟
+\end{enumerate}

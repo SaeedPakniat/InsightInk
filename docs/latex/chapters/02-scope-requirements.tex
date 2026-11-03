@@ -1,0 +1,172 @@
+
+\chapter{دامنه پروژه و نیازمندی‌ها}
+
+\section{منابع نیازمندی}
+
+مبنای این سند مجموعه فایل‌های پروژه است:
+\begin{itemize}
+  \item \eng{PDS.pdf}
+  \item بردهای \eng{Epic / Feature / User Story}
+  \item برد \eng{Non-Functional Requirements}
+  \item برد \eng{WSJF Prioritization}
+  \item پروتوتایپ \eng{InsightInk Investor Prototype}
+\end{itemize}
+
+پروتوتایپ به‌عنوان مرجع Flow، Design Language و Screenها استفاده می‌شود، نه Codebase production.
+
+\section{قابلیت‌های اصلی برگرفته از PDS}
+
+\begin{sourcebox}
+PDS قابلیت‌های زیر را مشخص می‌کند:
+\begin{itemize}
+  \item خواندن یا Share کردن تجربه مرتبط با کتاب، مقاله، فیلم یا پادکست؛
+  \item Save، Share و Comment روی Idea؛
+  \item Pagination؛
+  \item Estimated Reading Time؛
+  \item Text-To-Speech؛
+  \item Idea Suggesting و Idea Exploring Algorithm؛
+  \item Library، eBook و Membership؛
+  \item ارتباط مستقیم با Writer/Director/Podcast Maker؛
+  \item SQL relational database، CDN و real-time sync.
+\end{itemize}
+\end{sourcebox}
+
+\section{نه Epic اصلی}
+
+\begin{enumerate}
+  \item \eng{AI-Powered Idea Discovery}
+  \item \eng{Real-Time, Cross-Device Experience}
+  \item \eng{Creator Direct-Access Network}
+  \item \eng{Library Membership \& eBooks}
+  \item \eng{Core Idea Feed \& Multi-Format Content}
+  \item \eng{Onboarding \& Account Setup}
+  \item \eng{Engagement \& Social Signals}
+  \item \eng{Multimodal Access (Text-to-Speech)}
+  \item \eng{Notifications \& Activity Awareness}
+\end{enumerate}
+
+\section{تفکیک Scope نهایی}
+
+\subsection{Core MVP}
+
+Core MVP باید شامل این موارد باشد:
+\begin{itemize}
+  \item Register/Login؛
+  \item Profile؛
+  \item انتخاب Interest؛
+  \item Topic/Source/Idea/Creator data model؛
+  \item Feed با Pagination؛
+  \item Idea Detail؛
+  \item Search/Explore؛
+  \item Spark؛
+  \item Save/Library؛
+  \item Comment؛
+  \item Creator Profile؛
+  \item Follow؛
+  \item Report پایه؛
+  \item Recommendation الگوریتمی؛
+  \item فارسی/انگلیسی و RTL/LTR.
+\end{itemize}
+
+\subsection{فاز دوم}
+
+بعد از Core:
+\begin{itemize}
+  \item Realtime Sync؛
+  \item Direct Messaging؛
+  \item Notifications؛
+  \item TTS؛
+  \item Membership/eBooks؛
+  \item Offline behavior در حدی که واقعاً قابل انجام و قابل تست باشد.
+\end{itemize}
+
+\subsection{موارد خارج از Scope}
+
+\begin{itemize}
+  \item Generative AI؛
+  \item RAG؛
+  \item Embedding؛
+  \item Agent؛
+  \item Microservice؛
+  \item Native mobile codebase جدا؛
+  \item ذخیره اطلاعات کارت بانکی؛
+  \item ادعای SLA واقعی تجاری بدون داده.
+\end{itemize}
+
+\section{NFRهای منبع}
+
+\begin{longtable}{p{1.7cm}p{3.1cm}p{8.6cm}}
+\toprule
+\textbf{ID} & \textbf{دسته} & \textbf{نیازمندی منبع} \\
+\midrule
+\endhead
+NFR-01 & Performance & تمام تعاملات UI باید زیر 100ms پاسخ ادراکی داشته باشند. \\
+NFR-02 & Performance & صفحه بعد Feed در شرایط معمول شبکه زیر 300ms دریافت شود. \\
+NFR-03 & Scalability & Backend بتواند هزاران کاربر هم‌زمان برای scroll/save/message را پشتیبانی کند. \\
+NFR-04 & Scalability & زیرساخت قابلیت scale افقی/elastic داشته باشد. \\
+NFR-05 & Reliability & Save/Library change حداکثر ظرف 2 ثانیه بین Deviceها sync شود. \\
+NFR-06 & Reliability & هدف 99.9\% uptime. \\
+NFR-07 & Efficiency & مصرف CPU/RAM پس‌زمینه پایین باشد. \\
+NFR-08 & Efficiency & Media از CDN سریع سرو شود. \\
+NFR-09 & Compatibility & منبع: native iOS 14+ و Android 9+. \\
+NFR-10 & Compatibility & Web به‌صورت installable PWA. \\
+NFR-11 & Data & Core data در SQL relational DB. \\
+NFR-12 & Privacy & Reading history/saves/personalization قابلیت export/delete داشته باشد. \\
+NFR-13 & Security & Direct Message در transit رمزگذاری و فقط برای Participantها قابل دسترسی باشد. \\
+NFR-14 & Payment & Raw card data روی سرور ما ذخیره نشود. \\
+NFR-15 & Safety & Report/Block/Mute وجود داشته باشد. \\
+NFR-16 & Accessibility & WCAG 2.1 AA مستقل از TTS. \\
+NFR-17 & AI Quality & پیشنهادها زیر 2 ثانیه. \\
+NFR-18 & i18n & UI/Content/Creator discovery چندزبانه. \\
+\bottomrule
+\end{longtable}
+
+\section{تغییر تفسیر NFR-09}
+
+\begin{decisionbox}
+به دلیل اهمیت گوشی‌های قدیمی، Delivery اصلی Web/PWA-first است. بنابراین نیازمندی native iOS/Android به‌صورت مستقیم پیاده نمی‌شود. هدف این است که Core تجربه روی Browserهای قدیمی‌تر کار کند و Featureهای غیرضروری Graceful Degradation داشته باشند.
+\end{decisionbox}
+
+Target اولیه برای تست می‌تواند حوالی iOS 12+ و Android 7+ باشد، اما این یک Test Target است نه Claim نهایی. حداقل نسخه تنها بعد از تست واقعی ثبت می‌شود.
+
+\section{تغییر تفسیر NFR-17}
+
+\begin{decisionbox}
+«AI suggestion» در این پروژه یعنی Recommendation الگوریتمی. شرط زیر 2 ثانیه برای Endpoint یا محاسبه پیشنهاد سنجیده می‌شود، نه برای LLM.
+\end{decisionbox}
+
+\section{WSJF منبع}
+
+\begin{longtable}{p{6.5cm}r}
+\toprule
+\textbf{Epic} & \textbf{WSJF} \\
+\midrule
+Onboarding \& Account Setup & 8.00 \\
+Library Membership \& eBooks & 5.75 \\
+Real-Time, Cross-Device Experience & 4.60 \\
+Core Idea Feed \& Multi-Format Content & 3.83 \\
+Multimodal Access (Text-to-Speech) & 3.75 \\
+Creator Direct-Access Network & 3.40 \\
+Notifications \& Activity Awareness & 2.50 \\
+AI-Powered Idea Discovery & 2.28 \\
+Engagement \& Social Signals & 2.20 \\
+\bottomrule
+\end{longtable}
+
+WSJF ترتیب Product Priority را نشان می‌دهد؛ ترتیب Coding باید Dependency-driven باشد. مثلاً Library بدون مدل Idea و User قابل‌پیاده‌سازی معنادار نیست.
+
+\section{تعریف Done برای Core MVP}
+
+Core MVP زمانی Done است که Flow واقعی زیر با Database و API واقعی کار کند:
+\begin{enumerate}
+  \item Register/Login؛
+  \item Onboarding + Interest؛
+  \item Feed؛
+  \item Idea Detail + Source؛
+  \item Spark/Save/Comment؛
+  \item Library؛
+  \item Creator + Follow؛
+  \item Search/Explore؛
+  \item Recommendation؛
+  \item Persian/English.
+\end{enumerate}

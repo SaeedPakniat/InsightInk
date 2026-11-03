@@ -1,0 +1,189 @@
+
+\chapter{TTS، PWA و سازگاری با گوشی‌های قدیمی}
+
+\section{اصل سازگاری}
+
+بخش مهمی از کاربران فرضی ممکن است گوشی قدیمی داشته باشند. بنابراین Core experience نباید به APIهای جدید Browser وابسته باشد.
+
+\section{Tier بندی Featureها}
+
+\subsection{Tier 1: Core}
+
+باید تا حد ممکن روی Browserهای قدیمی کار کند:
+\begin{itemize}
+  \item login؛
+  \item feed؛
+  \item read idea؛
+  \item save؛
+  \item spark؛
+  \item comment؛
+  \item library؛
+  \item creator profile؛
+  \item search.
+\end{itemize}
+
+\subsection{Tier 2: Enhancement}
+
+ممکن است روی Device قدیمی محدود باشد:
+\begin{itemize}
+  \item PWA install؛
+  \item Web Push؛
+  \item advanced offline caching؛
+  \item TTS voice features؛
+  \item realtime polish.
+\end{itemize}
+
+\section{چرا Web/PWA-first؟}
+
+Native wrapperهای مدرن ممکن است حداقل iOS/Android جدیدتری بخواهند. Web app اجازه می‌دهد Core را روی Browserهای قدیمی‌تر نیز ارزیابی کنیم.
+
+\section{PWA چیست؟}
+
+PWA ترکیبی از:
+\begin{itemize}
+  \item Web App Manifest؛
+  \item Service Worker؛
+  \item installability در Browserهای پشتیبانی‌شده؛
+  \item caching/offline behavior محدود.
+\end{itemize}
+
+\begin{learningbox}
+PWA «تبدیل خودکار سایت به اپ Native کامل» نیست. قابلیت‌ها بسته به Browser/OS فرق می‌کنند.
+\end{learningbox}
+
+\section{PWA Implementation Order}
+
+\begin{enumerate}
+  \item responsive web app کامل؛
+  \item manifest؛
+  \item icons؛
+  \item service worker؛
+  \item cache static assets؛
+  \item offline fallback؛
+  \item فقط بعداً cache strategy برای API.
+\end{enumerate}
+
+\begin{warningbox}
+API responseهای شخصی را بدون طراحی دقیق cache نکن؛ ممکن است data stale یا privacy bug ایجاد شود.
+\end{warningbox}
+
+\section{TTS Requirement}
+
+Source storyها می‌خواهند:
+\begin{itemize}
+  \item Play؛
+  \item progress؛
+  \item scrub؛
+  \item voice selection.
+\end{itemize}
+
+\section{TTS گزینه A: Browser/Device Speech}
+
+مزایا:
+\begin{itemize}
+  \item بدون server audio generation؛
+  \item بدون storage cost؛
+  \item بدون AI/LLM؛
+  \item استفاده از Voiceهای Device.
+\end{itemize}
+
+محدودیت:
+\begin{itemize}
+  \item تفاوت شدید Voiceها؛
+  \item Persian support وابسته به Device؛
+  \item seek/scrub دقیق سخت؛
+  \item behavior متفاوت در iOS/Android.
+\end{itemize}
+
+\section{TTS گزینه B: Pre-generated Audio}
+
+مزایا:
+\begin{itemize}
+  \item فایل audio واقعی؛
+  \item progress و scrub ساده‌تر؛
+  \item behavior پایدارتر.
+\end{itemize}
+
+هزینه:
+\begin{itemize}
+  \item TTS provider یا engine؛
+  \item storage؛
+  \item background generation؛
+  \item media delivery؛
+  \item complexity بیشتر.
+\end{itemize}
+
+\section{تصمیم TTS}
+
+\begin{decisionbox}
+قبل از انتخاب Option A یا B، یک Prototype کوچک compatibility روی Deviceهای قدیمی ساخته می‌شود. ساده‌ترین راهی که Requirement قابل قبول را تأمین کند انتخاب می‌شود.
+\end{decisionbox}
+
+\section{Target اولیه Browser}
+
+هنوز Guarantee رسمی نداریم.
+
+Evaluation target:
+\begin{itemize}
+  \item iOS/Safari قدیمی در حدود iOS 12+ در صورت دسترسی؛
+  \item Android قدیمی در حدود Android 7+؛
+  \item Android فعلی؛
+  \item Chrome Desktop؛
+  \item Firefox Desktop.
+\end{itemize}
+
+نتیجه واقعی در Compatibility Matrix ثبت می‌شود.
+
+\section{Frontend Performance روی Device ضعیف}
+
+قواعد:
+\begin{itemize}
+  \item JS bundle کوچک؛
+  \item code splitting در صورت نیاز؛
+  \item تصاویر resize/compress؛
+  \item lazy load image؛
+  \item animation محدود؛
+  \item avoid expensive blur/shadow layers؛
+  \item pagination؛
+  \item avoid giant DOM؛
+  \item no autoplay.
+\end{itemize}
+
+\section{Legacy Build}
+
+وقتی Dependencyهای واقعی Frontend مشخص شدند:
+\begin{enumerate}
+  \item Browser target واقعی تست می‌شود؛
+  \item missing syntax/APIها شناسایی می‌شوند؛
+  \item build target/polyfill حداقلی اضافه می‌شود.
+\end{enumerate}
+
+\begin{warningbox}
+از روز اول انبوه polyfill نصب نمی‌کنیم. اول Evidence، بعد Compatibility layer.
+\end{warningbox}
+
+\section{Offline}
+
+Offline در سطح‌های متفاوت:
+\begin{itemize}
+  \item static shell؛
+  \item previously loaded idea؛
+  \item saved ideas snapshot؛
+  \item eBook download.
+\end{itemize}
+
+برای Core MVP فقط installable/offline fallback کافی است. eBook offline story later phase است.
+
+\section{Compatibility Matrix}
+
+\begin{longtable}{p{2.8cm}p{1.5cm}p{1.6cm}p{1.5cm}p{1.8cm}p{2.8cm}}
+\toprule
+Device & Core & Install & TTS & Realtime & Notes \\
+\midrule
+Old Android & TBD & TBD & TBD & TBD & تست واقعی \\
+Old iPhone & TBD & TBD & TBD & TBD & تست واقعی \\
+Current Android & TBD & TBD & TBD & TBD & \\
+Chrome Desktop & TBD & N/A & TBD & TBD & \\
+Firefox Desktop & TBD & N/A & TBD & TBD & \\
+\bottomrule
+\end{longtable}

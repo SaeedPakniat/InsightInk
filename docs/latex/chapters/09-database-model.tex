@@ -1,0 +1,366 @@
+
+\chapter{طراحی Database و مدل داده}
+
+\section{اصل طراحی}
+
+NFR-11 استفاده از Relational SQL را مشخص می‌کند. Domain نیز به‌شدت Relation-oriented است؛ بنابراین PostgreSQL انتخاب طبیعی است.
+
+\section{User}
+
+\begin{latin}
+\begin{lstlisting}
+User
+- id
+- email
+- password_hash (managed by Django)
+- display_name
+- preferred_ui_language
+- is_active
+- is_staff
+- date_joined
+- created_at / updated_at if needed
+\end{lstlisting}
+\end{latin}
+
+\begin{decisionbox}
+Custom User Model قبل از اولین Migration واقعی ساخته می‌شود.
+\end{decisionbox}
+
+\section{CreatorProfile}
+
+\begin{latin}
+\begin{lstlisting}
+CreatorProfile
+- id
+- user_id -> User (OneToOne)
+- bio_fa
+- bio_en
+- avatar
+- is_verified
+- created_at
+\end{lstlisting}
+\end{latin}
+
+\section{Topic}
+
+\begin{latin}
+\begin{lstlisting}
+Topic
+- id
+- slug
+- name_fa
+- name_en
+- is_active
+\end{lstlisting}
+\end{latin}
+
+Slug باید unique باشد.
+
+\section{UserInterest}
+
+\begin{latin}
+\begin{lstlisting}
+UserInterest
+- user_id
+- topic_id
+- created_at
+\end{lstlisting}
+\end{latin}
+
+Constraint:
+\begin{latin}
+\begin{lstlisting}
+UNIQUE(user_id, topic_id)
+\end{lstlisting}
+\end{latin}
+
+\section{Source}
+
+Source کار اصلی است که Idea از آن آمده:
+
+\begin{latin}
+\begin{lstlisting}
+Source
+- id
+- type: BOOK | ARTICLE | MOVIE | PODCAST
+- title
+- original_creator_text or structured relation if later needed
+- language
+- external_url (optional)
+- cover (optional)
+- metadata (limited)
+\end{lstlisting}
+\end{latin}
+
+\begin{warningbox}
+Source Creator با InsightInk Creator لزوماً یک چیز نیست. مثلاً یک کاربر InsightInk ممکن است درباره کتاب یک نویسنده خارجی Idea بنویسد.
+\end{warningbox}
+
+\section{Idea}
+
+\begin{latin}
+\begin{lstlisting}
+Idea
+- id
+- creator_id -> CreatorProfile
+- source_id -> Source
+- language
+- title
+- body
+- estimated_read_seconds
+- status: DRAFT | PUBLISHED | HIDDEN
+- published_at
+- created_at
+- updated_at
+\end{lstlisting}
+\end{latin}
+
+Relation:
+\[
+Idea \leftrightarrow Topic
+\]
+
+\section{Spark}
+
+\begin{latin}
+\begin{lstlisting}
+Spark
+- user_id
+- idea_id
+- created_at
+
+UNIQUE(user_id, idea_id)
+\end{lstlisting}
+\end{latin}
+
+\section{SavedIdea}
+
+\begin{latin}
+\begin{lstlisting}
+SavedIdea
+- user_id
+- idea_id
+- saved_at
+- last_opened_at (optional)
+
+UNIQUE(user_id, idea_id)
+\end{lstlisting}
+\end{latin}
+
+\section{Comment}
+
+\begin{latin}
+\begin{lstlisting}
+Comment
+- id
+- author_id -> User
+- idea_id -> Idea
+- body
+- status: VISIBLE | HIDDEN | DELETED
+- created_at
+- updated_at
+\end{lstlisting}
+\end{latin}
+
+Nested Comment در Source requirement ضروری نیست و فعلاً اضافه نمی‌شود.
+
+\section{CreatorFollow}
+
+\begin{latin}
+\begin{lstlisting}
+CreatorFollow
+- user_id
+- creator_id
+- created_at
+
+UNIQUE(user_id, creator_id)
+\end{lstlisting}
+\end{latin}
+
+\section{ReadingEvent}
+
+برای Story «چند Idea این ماه خواندم» باید اول تعریف Read را مشخص کنیم.
+
+Model احتمالی:
+\begin{latin}
+\begin{lstlisting}
+ReadingEvent
+- id
+- user_id
+- idea_id
+- occurred_at
+\end{lstlisting}
+\end{latin}
+
+\begin{warningbox}
+قبل از تعریف دقیق «read»، این Table را نساز. صرف باز شدن صفحه ممکن است معادل خواندن واقعی نباشد.
+\end{warningbox}
+
+\section{Report}
+
+\begin{latin}
+\begin{lstlisting}
+Report
+- id
+- reporter_id
+- target_type
+- target_id
+- reason
+- details
+- status
+- created_at
+- resolved_at
+\end{lstlisting}
+\end{latin}
+
+برای Generic target باید بین GenericForeignKey و Tableهای مشخص تصمیم بگیریم. برای پروژه آموزشی، سادگی و Queryability مهم‌تر از Generic abstraction است.
+
+\section{ModerationAction}
+
+\begin{latin}
+\begin{lstlisting}
+ModerationAction
+- id
+- moderator_id
+- report_id (optional)
+- action_type
+- target information
+- note
+- created_at
+\end{lstlisting}
+\end{latin}
+
+\section{Messaging - later}
+
+\begin{latin}
+\begin{lstlisting}
+Conversation
+- id
+- created_at
+
+ConversationParticipant
+- conversation_id
+- user_id
+
+Message
+- id
+- conversation_id
+- sender_id
+- body
+- created_at
+- read_at
+\end{lstlisting}
+\end{latin}
+
+برای Scope اولیه Conversation بین Reader و Creator است.
+
+\section{Notification - later}
+
+\begin{latin}
+\begin{lstlisting}
+Notification
+- id
+- recipient_id
+- type
+- payload
+- read_at
+- created_at
+
+NotificationPreference
+- user_id
+- notification_type
+- enabled
+\end{lstlisting}
+\end{latin}
+
+\section{Membership/eBook - later}
+
+\begin{latin}
+\begin{lstlisting}
+Ebook
+- id
+- source_id
+- title
+- language
+- file_metadata
+- access_level
+
+Membership
+- id
+- user_id
+- provider_reference
+- status
+- plan
+- period_start
+- period_end
+\end{lstlisting}
+\end{latin}
+
+Raw card data جایی در Schema ما ندارد.
+
+\section{ERD مفهومی}
+
+\begin{center}
+\begin{tikzpicture}[
+  node distance=1.2cm and 1.5cm,
+  entity/.style={draw=InkSoft, rounded corners=2pt, fill=CodeBg, minimum width=2.7cm, minimum height=0.8cm, align=center},
+  rel/.style={-{Latex[length=2mm]}, draw=Ash, thick}
+]
+\node[entity] (user) {User};
+\node[entity, right=of user] (creator) {CreatorProfile};
+\node[entity, below=of user] (interest) {UserInterest};
+\node[entity, right=of interest] (topic) {Topic};
+\node[entity, right=of topic] (idea) {Idea};
+\node[entity, right=of idea] (source) {Source};
+\node[entity, below=of idea] (spark) {Spark / SavedIdea};
+\node[entity, below=of creator] (follow) {CreatorFollow};
+\node[entity, below=of spark] (comment) {Comment};
+
+\draw[rel] (user) -- node[above]{1:0..1} (creator);
+\draw[rel] (user) -- (interest);
+\draw[rel] (interest) -- (topic);
+\draw[rel] (topic) -- node[above]{M:N} (idea);
+\draw[rel] (idea) -- (source);
+\draw[rel] (user) -- (spark);
+\draw[rel] (spark) -- (idea);
+\draw[rel] (user) -- (follow);
+\draw[rel] (follow) -- (creator);
+\draw[rel] (user) -- (comment);
+\draw[rel] (comment) -- (idea);
+\end{tikzpicture}
+\end{center}
+
+\section{Index Strategy}
+
+Index روی Fieldهایی که مرتب Filter/Sort می‌شوند:
+\begin{itemize}
+  \item Idea.status؛
+  \item Idea.published\_at؛
+  \item Idea.language؛
+  \item Topic.slug؛
+  \item Source.type؛
+  \item Notification recipient/read state later.
+\end{itemize}
+
+Many-to-many join tableها و Foreign Keyها معمولاً Index مناسب دارند، ولی باید Query plan را بعداً بررسی کنیم.
+
+\section{Normalization}
+
+اصل:
+\begin{itemize}
+  \item داده تکراری را بی‌دلیل Duplicate نکن؛
+  \item Relation واقعی را ForeignKey کن؛
+  \item JSONField فقط برای metadata واقعاً flexible؛
+  \item Denormalization فقط بعد از Evidence performance.
+\end{itemize}
+
+\section{Migration Rules}
+
+\begin{enumerate}
+  \item Model را تغییر بده؛
+  \item \tech{makemigrations}؛
+  \item فایل Migration را بخوان؛
+  \item \tech{migrate}؛
+  \item Test؛
+  \item Commit Model + Migration با هم.
+\end{enumerate}

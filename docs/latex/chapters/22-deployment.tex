@@ -1,0 +1,155 @@
+
+\chapter{Deployment و Production Readiness}
+
+\section{هدف}
+
+Deployment این پروژه باید ساده و قابل دفاع باشد، نه نمایش DevOps.
+
+\section{Componentهای Production}
+
+حداقل:
+\begin{itemize}
+  \item Frontend static build؛
+  \item Django API؛
+  \item PostgreSQL؛
+  \item HTTPS؛
+  \item media/static handling.
+\end{itemize}
+
+بعداً اگر Realtime:
+\begin{itemize}
+  \item ASGI server؛
+  \item Redis.
+\end{itemize}
+
+\section{Frontend Build}
+
+\begin{latin}
+\begin{lstlisting}
+npm run build
+\end{lstlisting}
+\end{latin}
+
+خروجی Static asset باید روی Host/CDN مناسب سرو شود.
+
+\section{Django Production Settings}
+
+\begin{itemize}
+  \item DEBUG=False؛
+  \item SECRET\_KEY از env؛
+  \item ALLOWED\_HOSTS؛
+  \item secure cookies؛
+  \item HTTPS settings؛
+  \item DB production config؛
+  \item static/media config؛
+  \item CORS/CSRF origin.
+\end{itemize}
+
+\section{WSGI vs ASGI}
+
+بدون realtime، Django می‌تواند با WSGI/ASGI مناسب اجرا شود.
+
+با Channels/WebSocket، ASGI لازم است.
+
+باید تفاوت را هنگام فاز Realtime یاد بگیری.
+
+\section{Static و Media}
+
+\begin{itemize}
+  \item Static = CSS/JS/build assets؛
+  \item Media = user/content uploaded files.
+\end{itemize}
+
+این دو را مخلوط نکن.
+
+\section{Database Migration Deployment}
+
+Flow:
+\begin{enumerate}
+  \item backup؛
+  \item deploy code؛
+  \item migrate؛
+  \item smoke test.
+\end{enumerate}
+
+Migration destructive باید قبل از production بررسی شود.
+
+\section{Backup}
+
+حداقل:
+\begin{itemize}
+  \item PostgreSQL dump strategy؛
+  \item media backup اگر مهم؛
+  \item restore test در صورت امکان.
+\end{itemize}
+
+Backup بدون تست Restore اطمینان کامل نمی‌دهد.
+
+\section{Logging}
+
+Production log:
+\begin{itemize}
+  \item request/server error؛
+  \item warning؛
+  \item moderation/audit where needed.
+\end{itemize}
+
+Sensitive content کمینه.
+
+\section{Monitoring}
+
+برای پروژه دانشگاهی:
+\begin{itemize}
+  \item application logs؛
+  \item basic uptime observation؛
+  \item database health؛
+  \item error tracking اگر سرویس ساده در دسترس بود.
+\end{itemize}
+
+نباید monitoring stack سنگین بسازیم.
+
+\section{CDN}
+
+NFR-08 CDN می‌خواهد.
+
+اگر Deployment واقعی امکان CDN داشت:
+\begin{itemize}
+  \item static/media CDN؛
+  \item cache headers؛
+  \item asset versioning.
+\end{itemize}
+
+اگر نداشت:
+\begin{warningbox}
+در گزارش نهایی صریحاً بنویس NFR-08 به‌طور کامل در محیط دانشگاهی Realize نشده است؛ به‌جای ادعای ساختگی.
+\end{warningbox}
+
+\section{Scaling Path}
+
+اگر روزی Load زیاد شد:
+\begin{itemize}
+  \item چند Django instance؛
+  \item reverse proxy/load balancer؛
+  \item DB tuning؛
+  \item cache؛
+  \item Redis؛
+  \item background jobs.
+\end{itemize}
+
+این‌ها Future path هستند.
+
+\section{Release Checklist}
+
+\begin{itemize}
+  \item tests pass؛
+  \item migrations applied؛
+  \item DEBUG off؛
+  \item secrets absent from repo؛
+  \item HTTPS؛
+  \item admin access secured؛
+  \item sample accounts removed؛
+  \item static/media reachable؛
+  \item bilingual smoke test؛
+  \item backup taken؛
+  \item critical flow E2E.
+\end{itemize}

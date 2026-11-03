@@ -1,0 +1,277 @@
+
+\chapter{طراحی Frontend و تبدیل Prototype به محصول واقعی}
+
+\section{Prototype چه چیزی به ما می‌دهد؟}
+
+پروتوتایپ موجود 11 Screen دارد و Design Language مشخصی ارائه می‌کند:
+\begin{itemize}
+  \item Splash/Brand؛
+  \item Interests؛
+  \item Home Feed؛
+  \item Idea Detail؛
+  \item AI/Idea exploration concept؛
+  \item Explore؛
+  \item Library؛
+  \item Creator Profile؛
+  \item Messaging؛
+  \item Notifications؛
+  \item Profile/Settings.
+\end{itemize}
+
+\begin{decisionbox}
+Prototype مرجع UI/UX است، نه Production code. Inline HTML/CSS/JavaScript آن به Component architecture واقعی تبدیل می‌شود.
+\end{decisionbox}
+
+\section{Design Tokenهای قابل انتقال}
+
+Prototype رنگ‌های اصلی را مشخص کرده:
+\begin{latin}
+\begin{lstlisting}
+--ink:        #12162B
+--ink-soft:   #1B2140
+--parchment:  #F5F1E6
+--spark:      #F2A93B
+--tide:       #3E8C8C
+--ember:      #E1573A
+--ash:        #9497A6
+\end{lstlisting}
+\end{latin}
+
+فونت‌های Prototype:
+\begin{itemize}
+  \item Fraunces؛
+  \item Manrope؛
+  \item IBM Plex Mono.
+\end{itemize}
+
+برای UI فارسی باید خوانایی Vazirmatn یا فونت فارسی مناسب را در Product frontend ارزیابی کنیم؛ لازم نیست فونت Prototype انگلیسی برای متن فارسی استفاده شود.
+
+\section{Theme Structure}
+
+\begin{latin}
+\begin{lstlisting}
+frontend/src/theme/
+├── tokens.css
+├── typography.css
+├── globals.css
+└── components.css   # only if useful
+\end{lstlisting}
+\end{latin}
+
+\section{Componentهای اصلی}
+
+\subsection{Primitive/Shared}
+
+\begin{itemize}
+  \item Button؛
+  \item IconButton؛
+  \item Badge؛
+  \item Avatar؛
+  \item LoadingState؛
+  \item ErrorState؛
+  \item EmptyState.
+\end{itemize}
+
+\subsection{Domain Components}
+
+\begin{itemize}
+  \item IdeaCard؛
+  \item FormatBadge؛
+  \item ReadingTime؛
+  \item SparkButton؛
+  \item SaveButton؛
+  \item CommentList؛
+  \item CreatorSummary؛
+  \item TopicChip؛
+  \item NotificationRow؛
+  \item MessageBubble later؛
+  \item AudioControls later.
+\end{itemize}
+
+\section{Feature-based folders}
+
+\begin{latin}
+\begin{lstlisting}
+src/
+├── app/
+├── api/
+├── components/
+├── features/
+│   ├── auth/
+│   ├── onboarding/
+│   ├── feed/
+│   ├── idea/
+│   ├── explore/
+│   ├── library/
+│   ├── creators/
+│   ├── recommendations/
+│   ├── messaging/
+│   ├── notifications/
+│   └── profile/
+├── i18n/
+├── theme/
+├── hooks/
+└── types/
+\end{lstlisting}
+\end{latin}
+
+\section{Page vs Component}
+
+Page معمولاً:
+\begin{itemize}
+  \item Route-level است؛
+  \item data fetching را orchestrate می‌کند؛
+  \item چند Component را کنار هم می‌چیند.
+\end{itemize}
+
+Component:
+\begin{itemize}
+  \item بخشی از UI؛
+  \item ترجیحاً مسئولیت محدود؛
+  \item reusable در صورت نیاز واقعی.
+\end{itemize}
+
+\section{Feed Design}
+
+Feed باید:
+\begin{itemize}
+  \item Pagination داشته باشد؛
+  \item loading next page واضح باشد؛
+  \item duplicate key نداشته باشد؛
+  \item scroll performance قابل قبول بماند؛
+  \item روی Device ضعیف Animation سنگین نداشته باشد.
+\end{itemize}
+
+در Frontend:
+\begin{itemize}
+  \item \eng{Infinite Query} در TanStack Query؛
+  \item prefetch نزدیک انتهای لیست در صورت نیاز؛
+  \item skeleton ساده، نه animation سنگین.
+\end{itemize}
+
+\section{IdeaCard Data Contract}
+
+نمونه Type مفهومی:
+\begin{latin}
+\begin{lstlisting}
+type IdeaCardData = {
+  id: number;
+  title: string;
+  excerpt: string;
+  language: "fa" | "en";
+  source: {
+    title: string;
+    type: "book" | "article" | "movie" | "podcast";
+  };
+  creator: {
+    id: number;
+    displayName: string;
+  };
+  estimatedReadSeconds: number;
+  sparkCount: number;
+  commentCount: number;
+  isSparked: boolean;
+  isSaved: boolean;
+};
+\end{lstlisting}
+\end{latin}
+
+این Type باید از API Contract واقعی derive شود، نه حدس مستقل Frontend.
+
+\section{Optimistic UI}
+
+برای Save/Spark:
+\begin{enumerate}
+  \item User کلیک می‌کند؛
+  \item UI فوراً state را تغییر می‌دهد؛
+  \item Request ارسال می‌شود؛
+  \item اگر success بود state تثبیت می‌شود؛
+  \item اگر failure بود rollback + error message.
+\end{enumerate}
+
+این کار به NFR-01 کمک می‌کند.
+
+\section{Forms}
+
+برای Login/Register/Comment:
+\begin{itemize}
+  \item label واقعی؛
+  \item validation message؛
+  \item disabled state هنگام submit؛
+  \item server error نمایش داده شود؛
+  \item keyboard/mobile-friendly input؛
+  \item فارسی/انگلیسی.
+\end{itemize}
+
+در ابتدا می‌توان با React state ساده Form را فهمید؛ بعد اگر Complexity بالا رفت \eng{React Hook Form} ارزیابی می‌شود. آن را از روز اول اجباری نمی‌کنیم.
+
+\section{API Client}
+
+یک wrapper کوچک برای:
+\begin{itemize}
+  \item base URL؛
+  \item JSON parsing؛
+  \item auth credentials/token؛
+  \item common error handling.
+\end{itemize}
+
+\begin{warningbox}
+یک API abstraction غول‌آسا که تمام Endpointها و State management را مخلوط کند نساز.
+\end{warningbox}
+
+\section{Responsive Strategy}
+
+Mobile-first:
+\begin{itemize}
+  \item small screen baseline؛
+  \item tablet enhancement؛
+  \item desktop layout enhancement.
+\end{itemize}
+
+نه اینکه Desktop را بسازیم و بعد با ده‌ها media query روی موبایل جمع کنیم.
+
+\section{Old Device UI Rules}
+
+\begin{itemize}
+  \item DOM ساده؛
+  \item shadow/blur/animation محدود؛
+  \item image size کنترل‌شده؛
+  \item lazy load media؛
+  \item avoid huge icon/UI libraries؛
+  \item JS bundle کوچک؛
+  \item no autoplay.
+\end{itemize}
+
+\section{Prototype Screen Mapping}
+
+\begin{longtable}{p{4cm}p{8.5cm}}
+\toprule
+\textbf{Prototype Screen} & \textbf{Production Feature} \\
+\midrule
+Splash & onboarding intro + auth entry \\
+Choose Interests & onboarding interests API + UI \\
+Home Feed & paginated personalized feed \\
+Idea Detail & idea/source/comments/actions \\
+AI Assistant & non-LLM related/recommended ideas panel \\
+Explore & search/topics/formats \\
+Library & saved ideas + stats \\
+Creator Profile & creator/follow/ideas \\
+Message Creator & later realtime messaging \\
+Notifications & later in-app notification center \\
+Profile & language/interests/settings/logout \\
+\bottomrule
+\end{longtable}
+
+\section{Frontend Definition of Done}
+
+هر Screen:
+\begin{itemize}
+  \item responsive؛
+  \item RTL/LTR؛
+  \item loading؛
+  \item empty؛
+  \item error؛
+  \item accessible name/focus؛
+  \item API contract؛
+  \item component test در صورت critical behavior.
+\end{itemize}

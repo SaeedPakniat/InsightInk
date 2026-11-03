@@ -1,0 +1,254 @@
+
+\chapter{طراحی Backend و ساختار Django}
+
+\section{ساختار پیشنهادی}
+
+\begin{latin}
+\begin{lstlisting}
+backend/
+├── manage.py
+├── config/
+│   ├── settings.py
+│   ├── urls.py
+│   ├── asgi.py
+│   └── wsgi.py
+├── apps/
+│   ├── accounts/
+│   ├── content/
+│   ├── creators/
+│   ├── engagement/
+│   ├── library/
+│   ├── recommendations/
+│   ├── moderation/
+│   ├── messaging/
+│   └── notifications/
+└── tests/
+\end{lstlisting}
+\end{latin}
+
+در عمل ممکن است Testهای هر App داخل همان App باشند. هدف این Diagram نشان دادن Domainهاست، نه اجبار به یک Layout خاص.
+
+\section{config}
+
+\filepath{config/} فقط Configuration پروژه است:
+\begin{itemize}
+  \item settings؛
+  \item root URLs؛
+  \item ASGI/WSGI؛
+  \item environment-specific configuration later.
+\end{itemize}
+
+Business Model داخل config قرار نمی‌گیرد.
+
+\section{accounts}
+
+Modelهای احتمالی:
+\begin{itemize}
+  \item User؛
+  \item UserInterest؛
+  \item UserPreference در صورت نیاز.
+\end{itemize}
+
+Serviceهای احتمالی:
+\begin{itemize}
+  \item update interests؛
+  \item account data export/delete later.
+\end{itemize}
+
+\section{content}
+
+هسته Domain:
+\begin{itemize}
+  \item Topic؛
+  \item Source؛
+  \item Idea؛
+  \item IdeaTopic در صورت نیاز به Through Model.
+\end{itemize}
+
+قواعد:
+\begin{itemize}
+  \item فقط Published Idea در Feed عمومی؛
+  \item Hidden content در Feed ظاهر نمی‌شود؛
+  \item هر Idea باید Creator و Source مشخص داشته باشد؛
+  \item Language باید مشخص باشد؛
+  \item estimated reading time یا محاسبه شود یا قبل از publish ثبت شود.
+\end{itemize}
+
+\section{creators}
+
+\begin{itemize}
+  \item CreatorProfile؛
+  \item CreatorFollow.
+\end{itemize}
+
+CreatorProfile با OneToOne به User وصل می‌شود.
+
+\section{engagement}
+
+\begin{itemize}
+  \item Spark؛
+  \item SavedIdea؛
+  \item Comment.
+\end{itemize}
+
+Spark و Save باید Unique Constraint روی \eng{(user, idea)} داشته باشند.
+
+\section{library}
+
+در فاز اولیه Library می‌تواند صرفاً Query روی SavedIdea باشد.
+
+\begin{decisionbox}
+Table جدا برای LibraryEntry فقط زمانی ساخته می‌شود که Requirementی وجود داشته باشد که Save و Library Item را از هم متمایز کند.
+\end{decisionbox}
+
+بعداً:
+\begin{itemize}
+  \item reading stats؛
+  \item eBooks؛
+  \item membership entitlements.
+\end{itemize}
+
+\section{recommendations}
+
+Recommendation Model اجباری نیست.
+
+در ابتدا:
+\begin{itemize}
+  \item Query candidateها؛
+  \item score در Service؛
+  \item response.
+\end{itemize}
+
+اگر بعداً caching لازم شد، derived data طراحی می‌شود.
+
+\section{moderation}
+
+\begin{itemize}
+  \item Report؛
+  \item ModerationAction.
+\end{itemize}
+
+این App باید Permission boundary واضح داشته باشد.
+
+\section{Business Logic کجا قرار بگیرد؟}
+
+قاعده ساده:
+
+\subsection{Model}
+
+قواعد محلی و data invariants نزدیک خود Entity.
+
+\subsection{Serializer}
+
+Input/output transformation و validation API-level.
+
+\subsection{View}
+
+HTTP orchestration: request، permission، call business logic، response.
+
+\subsection{Service}
+
+Business operation چندمرحله‌ای یا قابل‌استفاده مجدد.
+
+\subsection{Selector/Query helper}
+
+Queryهای پیچیده read-side.
+
+\section{Transaction}
+
+Operationهایی که چند write وابسته دارند باید Transaction داشته باشند.
+
+مثال future:
+\begin{itemize}
+  \item create moderation action + change target state؛
+  \item membership activation + entitlement.
+\end{itemize}
+
+\section{Signals}
+
+Django Signals جذاب‌اند اما باید محدود استفاده شوند.
+
+\begin{warningbox}
+Business Logic مهم را پشت Signalهای نامرئی پنهان نکن. اگر یک Action بخشی از Flow اصلی است، explicit service call معمولاً قابل‌فهم‌تر است.
+\end{warningbox}
+
+Signals برای side-effectهای محدود و کاملاً مستند مناسب‌اند.
+
+\section{Settings}
+
+ابتدا یک \filepath{settings.py} ساده کافی است. اگر بعداً Production/Development تفاوت زیاد شد می‌توان split کرد.
+
+اصل:
+\begin{itemize}
+  \item Secret از env؛
+  \item DEBUG در production false؛
+  \item Database config از env؛
+  \item Allowed hosts مشخص؛
+  \item CORS/CSRF بر اساس deployment واقعی.
+\end{itemize}
+
+\section{Logging}
+
+از \eng{print()} برای Debug موقت می‌توان استفاده کرد، اما Logging واقعی باید از Python logging/Django logging استفاده کند.
+
+سطوح:
+\begin{itemize}
+  \item DEBUG؛
+  \item INFO؛
+  \item WARNING؛
+  \item ERROR.
+\end{itemize}
+
+اطلاعات حساس نباید log شود.
+
+\section{Admin strategy}
+
+برای هر Model لازم نیست Admin بسیار پیچیده بسازیم.
+
+ولی برای:
+\begin{itemize}
+  \item Idea؛
+  \item Source؛
+  \item Topic؛
+  \item CreatorProfile؛
+  \item Report
+\end{itemize}
+List display، search و filters مفید هستند.
+
+\section{Seed data}
+
+برای توسعه، Dataset کوچک و deterministic می‌سازیم:
+\begin{itemize}
+  \item چند User؛
+  \item چند Creator؛
+  \item 10-20 Topic؛
+  \item چند Source از هر نوع؛
+  \item حداقل 30-50 Idea برای Feed/Recommendation test.
+\end{itemize}
+
+این داده‌ها باید یا Fixture/Management Command قابل تکرار باشند، نه ورود دستی غیرقابل بازسازی.
+
+\section{Management Command}
+
+یک Command مثل:
+\begin{latin}
+\begin{lstlisting}
+python manage.py seed_demo
+\end{lstlisting}
+\end{latin}
+می‌تواند Demo data بسازد.
+
+این بخش بعد از فهم basics اضافه می‌شود.
+
+\section{Backend Definition of Done}
+
+هر Backend feature:
+\begin{itemize}
+  \item Model/constraint درست؛
+  \item Migration؛
+  \item validation؛
+  \item permission؛
+  \item tests؛
+  \item API docs؛
+  \item admin/data setup در صورت لازم.
+\end{itemize}

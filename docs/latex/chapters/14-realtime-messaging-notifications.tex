@@ -1,0 +1,192 @@
+
+\chapter{Realtime Sync، Messaging و Notifications}
+
+\section{چرا این بخش بعداً می‌آید؟}
+
+تا وقتی Save، Library، User و Permission از طریق REST درست کار نکنند، WebSocket فقط Complexity اضافه می‌کند. بنابراین Realtime در Phase جدا وارد می‌شود.
+
+\section{Cross-Device Sync}
+
+نیازمندی:
+\begin{itemize}
+  \item Save روی Device A؛
+  \item ظاهر شدن تغییر روی Device B ظرف حداکثر حدود 2 ثانیه؛
+  \item نمایش pending/synced state.
+\end{itemize}
+
+\section{Flow صحیح Write}
+
+\begin{center}
+\begin{tikzpicture}[
+ node distance=1cm,
+ box/.style={draw=InkSoft,rounded corners,fill=CodeBg,minimum width=7cm,minimum height=0.9cm,align=center},
+ arr/.style={-{Latex[length=2.5mm]},thick}
+]
+\node[box] (a) {Device A: Save};
+\node[box,below=of a] (api) {Django REST API};
+\node[box,below=of api] (db) {PostgreSQL COMMIT};
+\node[box,below=of db] (evt) {Publish realtime event};
+\node[box,below=of evt] (b) {Device B updates/refetches};
+\draw[arr] (a)--(api);
+\draw[arr] (api)--(db);
+\draw[arr] (db)--(evt);
+\draw[arr] (evt)--(b);
+\end{tikzpicture}
+\end{center}
+
+اگر Event delivery fail شد، Save اصلی هنوز در DB موجود است.
+
+\section{Channels و Redis}
+
+در این فاز:
+\begin{itemize}
+  \item Django ASGI؛
+  \item Channels Consumer؛
+  \item Redis Channel Layer؛
+  \item authenticated WebSocket؛
+  \item reconnect handling.
+\end{itemize}
+
+\section{WebSocket Lifecycle}
+
+Frontend باید بداند:
+\begin{itemize}
+  \item connecting؛
+  \item connected؛
+  \item disconnected؛
+  \item reconnecting؛
+  \item auth failure.
+\end{itemize}
+
+\section{Sync Indicator}
+
+UI می‌تواند:
+\begin{itemize}
+  \item Saving...؛
+  \item Saved؛
+  \item Sync pending؛
+  \item Sync failed / Retry
+\end{itemize}
+نشان دهد.
+
+\section{Messaging Scope}
+
+\begin{decisionbox}
+Scope اولیه Messaging، Reader-to-Creator و Creator-to-Reader است؛ نه Messenger عمومی بین تمام کاربران.
+\end{decisionbox}
+
+\section{Message Flow}
+
+\begin{enumerate}
+  \item Client message submit؛
+  \item authentication/participant validation؛
+  \item save Message در PostgreSQL؛
+  \item realtime delivery به participant online؛
+  \item UI update؛
+  \item history همیشه از DB قابل بازیابی.
+\end{enumerate}
+
+\section{Conversation Authorization}
+
+هر Request برای Message باید بررسی کند:
+\begin{itemize}
+  \item User authenticated است؛
+  \item User participant همان Conversation است؛
+  \item Block policy اجازه ارسال می‌دهد؛
+  \item Conversation active است.
+\end{itemize}
+
+\section{Typing Indicator}
+
+اگر اضافه شد، Persistent data نیست و می‌تواند فقط realtime transient state باشد.
+
+برای MVP messaging ممکن است اصلاً اضافه نشود.
+
+\section{Read Receipt}
+
+Story منبع الزام صریحی به read receipt ندارد. بنابراین Optional است.
+
+\section{Block و Report}
+
+اگر User دیگری Block شود:
+\begin{itemize}
+  \item ارسال پیام جدید باید محدود شود؛
+  \item UI باید state را توضیح دهد؛
+  \item server-side rule اجباری است.
+\end{itemize}
+
+Report conversation/message باید به moderation workflow وصل شود.
+
+\section{Notifications}
+
+Notification types:
+\begin{itemize}
+  \item creator message؛
+  \item comment reply اگر later added؛
+  \item new ideas from followed creators؛
+  \item sync state در صورت نیاز؛
+  \item moderation outcome.
+\end{itemize}
+
+\section{In-App Notification اول}
+
+به دلیل old-device support:
+\begin{decisionbox}
+In-App Notification baseline است. Web Push فقط بعد از compatibility test اضافه می‌شود.
+\end{decisionbox}
+
+\section{Notification Preference}
+
+Model server-side:
+\begin{latin}
+\begin{lstlisting}
+NotificationPreference
+- user
+- type
+- enabled
+\end{lstlisting}
+\end{latin}
+
+بنابراین Device جدید همان preference را می‌بیند.
+
+\section{Batching}
+
+Source story می‌خواهد new ideas از followed creators batch شوند.
+
+راه ساده:
+\begin{itemize}
+  \item eventهای مرتبط در بازه منطقی گروه شوند؛
+  \item یک Notification summary ساخته شود.
+\end{itemize}
+
+اگر اجرای periodic job واقعاً لازم شد، آن زمان Task Queue بررسی می‌شود.
+
+\section{Realtime Test}
+
+Test دو session:
+\begin{enumerate}
+  \item login همان User در A و B؛
+  \item save در A؛
+  \item timestamp ثبت؛
+  \item دریافت/update در B؛
+  \item latency اندازه‌گیری؛
+  \item repeat چندین بار.
+\end{enumerate}
+
+\section{Failure Scenarios}
+
+باید تست شود:
+\begin{itemize}
+  \item Redis down؛
+  \item WebSocket disconnect؛
+  \item message duplicate attempt؛
+  \item reconnect؛
+  \item unauthorized conversation access؛
+  \item blocked user send attempt.
+\end{itemize}
+
+\section{تعریف Done Realtime}
+
+\begin{donebox}
+Realtime وقتی Done است که REST-only correctness حفظ شده باشد، reconnect درست کار کند، unauthorized event leakage وجود نداشته باشد و Sync latency چندبار اندازه‌گیری و ثبت شده باشد.
+\end{donebox}

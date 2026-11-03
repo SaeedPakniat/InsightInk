@@ -1,0 +1,243 @@
+
+\chapter{Testing، Quality و سنجش NFRها}
+
+\section{Test Pyramid}
+
+\begin{center}
+\begin{tikzpicture}
+\draw[fill=CodeBg,draw=InkSoft] (0,0) -- (8,0) -- (6.5,1.2) -- (1.5,1.2) -- cycle;
+\node at (4,0.6) {Unit Tests -- زیاد و سریع};
+\draw[fill=SourceBg,draw=InkSoft] (1.5,1.2) -- (6.5,1.2) -- (5.5,2.4) -- (2.5,2.4) -- cycle;
+\node at (4,1.8) {Integration/API};
+\draw[fill=DecisionBg,draw=InkSoft] (2.5,2.4) -- (5.5,2.4) -- (4.7,3.6) -- (3.3,3.6) -- cycle;
+\node at (4,3.0) {E2E};
+\end{tikzpicture}
+\end{center}
+
+\section{Backend Unit Test}
+
+برای:
+\begin{itemize}
+  \item scoring؛
+  \item similarity؛
+  \item helper؛
+  \item validation function؛
+  \item normalization.
+\end{itemize}
+
+مثال:
+\begin{latin}
+\begin{lstlisting}[language=Python]
+def test_science_interest_ranks_science_idea_higher():
+    ...
+\end{lstlisting}
+\end{latin}
+
+\section{Model/DB Test}
+
+\begin{itemize}
+  \item unique save؛
+  \item unique spark؛
+  \item CreatorProfile one-to-one؛
+  \item status constraints؛
+  \item cascade/protect behavior.
+\end{itemize}
+
+\section{API Test}
+
+سناریو:
+\begin{latin}
+\begin{lstlisting}
+anonymous save -> 401/403
+authenticated save -> success
+repeat save -> no duplicate
+other user deletes comment -> forbidden
+moderator hides comment -> success
+moderator grants moderator -> forbidden
+admin grants moderator -> success
+\end{lstlisting}
+\end{latin}
+
+\section{Frontend Test}
+
+React Testing Library:
+\begin{itemize}
+  \item rendered text؛
+  \item accessible role/name؛
+  \item interaction؛
+  \item loading/error؛
+  \item direction.
+\end{itemize}
+
+\section{E2E}
+
+Flow 1:
+\begin{latin}
+\begin{lstlisting}
+register
+-> choose language
+-> choose interests
+-> feed
+\end{lstlisting}
+\end{latin}
+
+Flow 2:
+\begin{latin}
+\begin{lstlisting}
+login
+-> open idea
+-> spark
+-> save
+-> comment
+-> library
+\end{lstlisting}
+\end{latin}
+
+Flow 3:
+\begin{latin}
+\begin{lstlisting}
+creator page
+-> follow
+-> verify state
+\end{lstlisting}
+\end{latin}
+
+Flow 4:
+\begin{latin}
+\begin{lstlisting}
+normal user cannot moderate
+moderator can review
+moderator cannot assign moderator
+admin can assign moderator
+\end{lstlisting}
+\end{latin}
+
+\section{NFR-01}
+
+UI perceived response زیر 100ms:
+\begin{itemize}
+  \item local state update؛
+  \item optimistic Save/Spark؛
+  \item avoid blocking main thread.
+\end{itemize}
+
+API latency جدا اندازه‌گیری می‌شود.
+
+\section{NFR-02}
+
+Next page Feed زیر 300ms تحت test condition تعریف‌شده.
+
+اندازه‌گیری:
+\begin{itemize}
+  \item server response time؛
+  \item payload size؛
+  \item network condition؛
+  \item render time.
+\end{itemize}
+
+\section{NFR-03}
+
+Source «هزاران concurrent user» می‌خواهد.
+
+برای پروژه دانشگاهی:
+\begin{itemize}
+  \item load test progressive؛
+  \item 50، 100، 500، ...؛
+  \item bottleneck report؛
+  \item ادعای فقط همان چیزی که تست شده.
+\end{itemize}
+
+\section{NFR-04}
+
+Horizontal scaling Design path مستند می‌شود. لازم نیست Kubernetes بسازیم.
+
+\section{NFR-05}
+
+Sync latency:
+\[
+t_{receive}-t_{commit} \le 2s
+\]
+
+چندین run و percentile بهتر از یک run موفق است.
+
+\section{NFR-06}
+
+99.9\% uptime در Project student قابل اثبات سالانه نیست.
+
+در گزارش:
+\begin{itemize}
+  \item design target؛
+  \item deployment assumption؛
+  \item measured availability اگر test period داشتیم.
+\end{itemize}
+
+\section{NFR-07}
+
+Idle resource:
+\begin{itemize}
+  \item browser devtools؛
+  \item system monitor؛
+  \item no polling بی‌دلیل؛
+  \item no background animation.
+\end{itemize}
+
+\section{NFR-08}
+
+اگر CDN در Deployment واقعی اجرا شد Test می‌شود؛ در غیر این صورت limitation صریح ثبت می‌شود.
+
+\section{NFR-16}
+
+Accessibility:
+\begin{itemize}
+  \item keyboard؛
+  \item screen-reader spot checks؛
+  \item automated audit؛
+  \item contrast.
+\end{itemize}
+
+\section{NFR-17}
+
+Recommendation latency زیر 2s. چون LLM نداریم، باید بسیار کمتر هم قابل دستیابی باشد.
+
+\section{Test Data}
+
+Deterministic seed:
+\begin{itemize}
+  \item User؛
+  \item Creator؛
+  \item Topic؛
+  \item Source؛
+  \item Idea؛
+  \item Save/Spark/Follow؛
+  \item Report.
+\end{itemize}
+
+\section{CI}
+
+وقتی Test واقعی داریم:
+\begin{itemize}
+  \item backend test؛
+  \item frontend test؛
+  \item lint؛
+  \item frontend build.
+\end{itemize}
+
+CI قبل از وجود Test meaningful ارزش زیادی ندارد.
+
+\section{Coverage}
+
+Coverage کمک‌کننده است، نه Goal.
+
+یک Permission مهم با 100\% coverage سطحی ممکن است هنوز Bug داشته باشد. Business scenario مهم‌تر است.
+
+\section{Quality Gate}
+
+قبل از Merge/Commit milestone:
+\begin{itemize}
+  \item tests green؛
+  \item lint reasonable؛
+  \item no secrets؛
+  \item migrations reviewed؛
+  \item docs updated؛
+  \item manual smoke test.
+\end{itemize}

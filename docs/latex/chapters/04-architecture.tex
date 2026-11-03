@@ -1,0 +1,214 @@
+
+\chapter{معماری کلان سیستم}
+
+\section{سبک معماری}
+
+\begin{decisionbox}
+معماری InsightInk یک \eng{Modular Monolith} است: یک Django application اصلی، یک PostgreSQL database و ماژول‌های دامنه‌ای جدا در داخل همان Backend.
+\end{decisionbox}
+
+این انتخاب بین دو افراط قرار می‌گیرد:
+\begin{itemize}
+  \item یک پروژه شلوغ که تمام منطق در چند فایل بزرگ مخلوط شده باشد؛
+  \item Microserviceهای زیاد که برای پروژه کارشناسی Complexity بی‌دلیل ایجاد کنند.
+\end{itemize}
+
+\section{نمودار Baseline}
+
+\begin{center}
+\begin{tikzpicture}[
+  node distance=1.25cm,
+  box/.style={draw=InkSoft, rounded corners=3pt, align=center, minimum width=9.2cm, minimum height=1.5cm, fill=CodeBg},
+  arrow/.style={-{Latex[length=3mm]}, thick, draw=InkSoft}
+]
+\node[box] (client) {\textbf{Frontend}\\ \eng{React + TypeScript + Vite}\\ Responsive Web App / PWA};
+\node[box, below=of client] (api) {\textbf{Backend}\\ \eng{Django 5.2 LTS + Django REST Framework}\\ Modular Monolith};
+\node[box, below=of api] (db) {\textbf{Database}\\ \eng{PostgreSQL}};
+\draw[arrow] (client) -- node[right]{\small \eng{HTTPS / JSON REST}} (api);
+\draw[arrow] (api) -- node[right]{\small \eng{Django ORM / SQL}} (db);
+\end{tikzpicture}
+\end{center}
+
+این ساختار برای Core MVP کافی است.
+
+\section{نمودار فاز Realtime}
+
+بعداً، فقط هنگام پیاده‌سازی Sync و Messaging:
+
+\begin{center}
+\begin{tikzpicture}[
+  node distance=1.0cm and 1.3cm,
+  box/.style={draw=InkSoft, rounded corners=3pt, align=center, minimum width=4.1cm, minimum height=1.2cm, fill=CodeBg},
+  arrow/.style={-{Latex[length=2.6mm]}, thick, draw=InkSoft}
+]
+\node[box] (client) {React/PWA};
+\node[box, below left=1.3cm and 0.8cm of client] (rest) {Django REST API};
+\node[box, below right=1.3cm and 0.8cm of client] (ws) {Django Channels};
+\node[box, below=of rest] (db) {PostgreSQL};
+\node[box, below=of ws] (redis) {Redis};
+\draw[arrow] (client) -- node[left]{\small REST} (rest);
+\draw[arrow] (client) -- node[right]{\small WebSocket} (ws);
+\draw[arrow] (rest) -- (db);
+\draw[arrow] (ws) -- (redis);
+\draw[arrow] (rest) -- (ws);
+\end{tikzpicture}
+\end{center}
+
+\begin{warningbox}
+WebSocket منبع حقیقت نیست. ابتدا تغییر باید در PostgreSQL Commit شود؛ سپس Event برای Device دیگر ارسال شود.
+\end{warningbox}
+
+\section{مرزهای Backend}
+
+ماژول‌های پیشنهادی:
+
+\begin{latin}
+\begin{lstlisting}
+backend/
+  config/
+  apps/
+    accounts/
+    content/
+    creators/
+    engagement/
+    library/
+    recommendations/
+    moderation/
+    messaging/       # later
+    notifications/   # later
+\end{lstlisting}
+\end{latin}
+
+\subsection{accounts}
+
+مسئول:
+\begin{itemize}
+  \item User؛
+  \item Profile settings؛
+  \item UI language؛
+  \item Interest selection؛
+  \item Authentication-related domain data.
+\end{itemize}
+
+\subsection{content}
+
+مسئول:
+\begin{itemize}
+  \item Idea؛
+  \item Source؛
+  \item Topic؛
+  \item Publication status؛
+  \item Reading time.
+\end{itemize}
+
+\subsection{creators}
+
+مسئول:
+\begin{itemize}
+  \item CreatorProfile؛
+  \item Follow؛
+  \item public creator data.
+\end{itemize}
+
+\subsection{engagement}
+
+مسئول:
+\begin{itemize}
+  \item Spark؛
+  \item Save؛
+  \item Comment.
+\end{itemize}
+
+\subsection{library}
+
+مسئول:
+\begin{itemize}
+  \item Saved ideas view؛
+  \item reading progress/statistics؛
+  \item eBook/membership-facing data در فاز بعد.
+\end{itemize}
+
+\subsection{recommendations}
+
+مسئول:
+\begin{itemize}
+  \item Candidate selection؛
+  \item scoring؛
+  \item related ideas؛
+  \item recommendation explanation.
+\end{itemize}
+
+\subsection{moderation}
+
+مسئول:
+\begin{itemize}
+  \item Report؛
+  \item ModerationAction؛
+  \item suspension/hide workflow.
+\end{itemize}
+
+\subsection{messaging و notifications}
+
+در Baseline ساخته نمی‌شوند. فقط وقتی فاز مربوط آغاز شد.
+
+\section{چرا Service Layer محدود استفاده می‌کنیم؟}
+
+قرار نیست تمام Viewها فقط Wrapper روی Serviceهای پیچیده باشند. Service Layer زمانی مفید است که یک Business Operation:
+\begin{itemize}
+  \item چند Model را درگیر کند؛
+  \item Transaction بخواهد؛
+  \item از چند Endpoint فراخوانی شود؛
+  \item Business Rule مستقل داشته باشد.
+\end{itemize}
+
+مثال خوب:
+\begin{itemize}
+  \item Recommendation scoring؛
+  \item moderation action؛
+  \item publish idea؛
+  \item create conversation/message.
+\end{itemize}
+
+مثال نامناسب:
+\begin{itemize}
+  \item یک \eng{Model.objects.get()} ساده را فقط برای «تمیز به نظر رسیدن» داخل Service ببریم.
+\end{itemize}
+
+\section{اصل Dependency Direction}
+
+ماژول‌ها باید تا حد ممکن از Domainهای پایدارتر به Domainهای سطح بالاتر وابسته باشند.
+
+مثلاً Recommendation می‌تواند از Content و Engagement داده بگیرد؛ ولی Content نباید برای ساخت Idea به Recommendation وابسته باشد.
+
+\section{Search}
+
+در ابتدا Search با PostgreSQL پیاده می‌شود:
+\begin{itemize}
+  \item title؛
+  \item body؛
+  \item creator؛
+  \item topic؛
+  \item source.
+\end{itemize}
+
+\begin{decisionbox}
+Elasticsearch/OpenSearch/Meilisearch در Baseline وجود ندارد. فقط اگر Search واقعی پروژه نشان دهد PostgreSQL ناکافی است، در آینده بررسی می‌شود.
+\end{decisionbox}
+
+\section{Media}
+
+Cover، avatar یا فایل eBook در صورت اضافه‌شدن نباید به‌صورت Blob داخل Modelهای اصلی ذخیره شوند. Django فقط metadata/path را نگه می‌دارد و File Storage جدا مدیریت می‌شود.
+
+در توسعه محلی می‌توان فایل‌های Media را با Storage محلی Django مدیریت کرد. CDN یا Object Storage فقط در Deployment نهایی و در صورت نیاز واقعی Scope اضافه می‌شود.
+
+\section{اصل Graceful Degradation}
+
+اگر Feature اختیاری مانند WebSocket، Push یا TTS در Browser قدیمی موجود نباشد:
+\begin{itemize}
+  \item Login باید کار کند؛
+  \item Feed باید کار کند؛
+  \item Read/Save/Spark/Comment باید کار کند؛
+  \item Library باید کار کند.
+\end{itemize}
+
+Core Product نباید قربانی Featureهای پیشرفته شود.

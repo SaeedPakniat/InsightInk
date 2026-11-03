@@ -1,0 +1,270 @@
+
+\chapter{Cheat Sheet، تصمیم‌های باز و راهنمای ادامه بدون AI}
+
+\section{Commandهای پایه Git}
+
+\begin{latin}
+\begin{lstlisting}
+git status
+git diff
+git add <file>
+git commit -m "feat(scope): message"
+git log --oneline --decorate --graph
+git branch
+\end{lstlisting}
+\end{latin}
+
+\section{Python/Virtualenv}
+
+\begin{latin}
+\begin{lstlisting}
+.venv/bin/python --version
+.venv/bin/python -m pip --version
+.venv/bin/python -m pip list
+\end{lstlisting}
+\end{latin}
+
+\section{Django}
+
+بعد از Scaffold:
+\begin{latin}
+\begin{lstlisting}
+cd backend
+
+../.venv/bin/python manage.py check
+../.venv/bin/python manage.py makemigrations
+../.venv/bin/python manage.py migrate
+../.venv/bin/python manage.py createsuperuser
+../.venv/bin/python manage.py runserver
+../.venv/bin/python manage.py shell
+../.venv/bin/python manage.py test
+\end{lstlisting}
+\end{latin}
+
+وقتی pytest اضافه شد:
+\begin{latin}
+\begin{lstlisting}
+../.venv/bin/python -m pytest
+\end{lstlisting}
+\end{latin}
+
+\section{Frontend}
+
+بعد از Scaffold:
+\begin{latin}
+\begin{lstlisting}
+cd frontend
+
+npm install
+npm run dev
+npm run build
+npm run test
+\end{lstlisting}
+\end{latin}
+
+Scriptهای واقعی از \filepath{package.json} خوانده شوند.
+
+\section{PostgreSQL Conceptual Checklist}
+
+باید بتوانی:
+\begin{itemize}
+  \item database list؛
+  \item database create؛
+  \item user/role concept؛
+  \item connect؛
+  \item basic SELECT؛
+  \item inspect table؛
+  \item backup/restore concept.
+\end{itemize}
+
+Commandها بسته به setup سیستم در Phase 0 ثبت می‌شوند.
+
+\section{HTTP Quick Reference}
+
+\begin{longtable}{p{2cm}p{4cm}p{6cm}}
+\toprule
+Code & Meaning & Example \\
+\midrule
+200 & OK & GET success \\
+201 & Created & resource created \\
+204 & No Content & delete/toggle response \\
+400 & Bad Request & validation \\
+401 & Unauthorized & not authenticated \\
+403 & Forbidden & authenticated but not allowed \\
+404 & Not Found & resource missing/not visible \\
+409 & Conflict & state conflict if used \\
+500 & Server Error & unhandled backend failure \\
+\bottomrule
+\end{longtable}
+
+\section{Debugging Checklist Backend}
+
+\begin{enumerate}
+  \item full traceback؛
+  \item first project file in traceback؛
+  \item input data؛
+  \item DB state؛
+  \item serializer errors؛
+  \item permission؛
+  \item query count؛
+  \item reproduce in test/shell.
+\end{enumerate}
+
+\section{Debugging Checklist Frontend}
+
+\begin{enumerate}
+  \item browser console؛
+  \item network tab؛
+  \item request URL/method/body؛
+  \item response status/body؛
+  \item component props؛
+  \item state/query cache؛
+  \item RTL/CSS computed style؛
+  \item reproduce minimal.
+\end{enumerate}
+
+\section{Open Decision: Repository Name}
+
+Current folder:
+\begin{latin}
+\begin{lstlisting}
+InkSight
+\end{lstlisting}
+\end{latin}
+
+Product:
+\begin{latin}
+\begin{lstlisting}
+InsightInk
+\end{lstlisting}
+\end{latin}
+
+قبل از شروع جدی بهتر است تصمیم rename گرفته شود.
+
+\section{Open Decision: Git Branch}
+
+Current:
+\begin{latin}
+\begin{lstlisting}
+master -> origin/master
+\end{lstlisting}
+\end{latin}
+
+می‌توان نگه داشت یا به main تغییر داد. فقط آگاهانه.
+
+\section{Open Decision: Python Dependency Management}
+
+انتخاب نهایی:
+\begin{itemize}
+  \item ساده: requirements.txt؛
+  \item مدرن: pyproject.toml + tool.
+\end{itemize}
+
+برای پروژه آموزشی، هر کدام که انتخاب شد باید تا پایان consistent بماند.
+
+\section{Open Decision: Social Login}
+
+Source درخواست email یا social sign-in دارد.
+
+گزینه:
+\begin{itemize}
+  \item email core + social deferred؛
+  \item یک provider social برای تکمیل Story.
+\end{itemize}
+
+\section{Open Decision: Read Definition}
+
+برای Reading stats باید دقیقاً تعریف شود:
+\begin{itemize}
+  \item open = read؟
+  \item dwell time؟
+  \item explicit complete؟
+  \item TTS completion؟
+\end{itemize}
+
+\section{Open Decision: TTS}
+
+بعد از compatibility prototype.
+
+\section{Open Decision: Payment/eBooks}
+
+آیا Final bachelor submission payment واقعی می‌خواهد یا Demo membership کافی است؟
+
+\section{Open Decision: Web Push}
+
+بعد از old-device test.
+
+\section{وقتی AI در دسترس نیست}
+
+ترتیب پیدا کردن جواب:
+\begin{enumerate}
+  \item همین سند؛
+  \item code/tests موجود؛
+  \item official Django/DRF/React/Vite/PostgreSQL docs؛
+  \item error/traceback؛
+  \item minimal reproduction؛
+  \item search issue فقط بعد از فهم error.
+\end{enumerate}
+
+\section{قاعده مطالعه Documentation}
+
+وقتی Official Docs می‌خوانی:
+\begin{itemize}
+  \item version همان dependency را چک کن؛
+  \item tutorial و reference را تفکیک کن؛
+  \item example را کورکورانه copy نکن؛
+  \item با project context تطبیق بده.
+\end{itemize}
+
+\section{چک‌لیست شروع هر Feature}
+
+\begin{enumerate}
+  \item Story/NFR چیست؟
+  \item Data model چه می‌خواهد؟
+  \item Backend endpoint چیست؟
+  \item Permission چیست؟
+  \item Frontend state چیست؟
+  \item فارسی/انگلیسی چه می‌شود؟
+  \item old-device fallback چیست؟
+  \item test چیست؟
+  \item Done criteria چیست؟
+\end{enumerate}
+
+\section{چک‌لیست پایان هر Session}
+
+\begin{enumerate}
+  \item tests run؛
+  \item git status؛
+  \item git diff؛
+  \item no secret؛
+  \item docs update؛
+  \item meaningful commit؛
+  \item next task note.
+\end{enumerate}
+
+\section{Final Project Deliverables}
+
+در پایان باید داشته باشیم:
+\begin{itemize}
+  \item source code؛
+  \item setup guide؛
+  \item database ERD؛
+  \item API docs؛
+  \item architecture diagram؛
+  \item requirement traceability؛
+  \item tests؛
+  \item compatibility matrix؛
+  \item performance/NFR results؛
+  \item screenshots/demo؛
+  \item final LaTeX report/PDF؛
+  \item presentation.
+\end{itemize}
+
+\section{آخرین اصل}
+
+\begin{center}
+\Large
+\textbf{هیچ بخش مهم پروژه نباید فقط به این دلیل وجود داشته باشد که AI آن را پیشنهاد داده است.}\\[0.6em]
+\normalsize
+هر تصمیم باید Requirement، دلیل فنی و مسیر Test داشته باشد.
+\end{center}

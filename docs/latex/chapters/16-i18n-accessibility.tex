@@ -1,0 +1,193 @@
+
+\chapter{بین‌المللی‌سازی، RTL/LTR و Accessibility}
+
+\section{زبان‌ها}
+
+\begin{decisionbox}
+فارسی زبان اصلی و انگلیسی زبان دوم است. هر دو از ابتدای Frontend در معماری حضور دارند.
+\end{decisionbox}
+
+\section{UI Language vs Content Language}
+
+دو مفهوم مستقل:
+\begin{itemize}
+  \item \eng{preferred\_ui\_language}
+  \item content language preferences.
+\end{itemize}
+
+مثال:
+\begin{itemize}
+  \item UI = فارسی؛
+  \item content = فارسی + انگلیسی.
+\end{itemize}
+
+\section{Translation Files}
+
+\begin{latin}
+\begin{lstlisting}
+src/i18n/
+├── fa/
+│   ├── common.json
+│   ├── auth.json
+│   ├── feed.json
+│   └── profile.json
+└── en/
+    ├── common.json
+    ├── auth.json
+    ├── feed.json
+    └── profile.json
+\end{lstlisting}
+\end{latin}
+
+\section{Hard-coded text}
+
+بعد از راه‌اندازی i18n:
+\begin{latin}
+\begin{lstlisting}
+<button>{t("idea.save")}</button>
+\end{lstlisting}
+\end{latin}
+
+بهتر از:
+\begin{latin}
+\begin{lstlisting}
+<button>Save</button>
+\end{lstlisting}
+\end{latin}
+
+\section{Direction}
+
+در Root document:
+\begin{latin}
+\begin{lstlisting}
+<html lang="fa" dir="rtl">
+\end{lstlisting}
+\end{latin}
+
+برای English:
+\begin{latin}
+\begin{lstlisting}
+<html lang="en" dir="ltr">
+\end{lstlisting}
+\end{latin}
+
+\section{CSS Logical Properties}
+
+ترجیح:
+\begin{latin}
+\begin{lstlisting}
+margin-inline-start: 1rem;
+padding-inline-end: 0.5rem;
+text-align: start;
+border-inline-start: 2px solid;
+\end{lstlisting}
+\end{latin}
+
+به جای left/rightهای زیاد.
+
+\section{Persian Text Normalization}
+
+Search فارسی باید به تفاوت‌های:
+\begin{itemize}
+  \item ی/ي؛
+  \item ک/ك؛
+  \item نیم‌فاصله؛
+  \item فاصله‌های اضافی؛
+  \item punctuation
+\end{itemize}
+توجه کند.
+
+\begin{warningbox}
+Original content را برای Search به‌صورت destructive تغییر نده. Normalization را برای Query/indexed representation انجام بده.
+\end{warningbox}
+
+\section{Accessibility Target}
+
+منبع WCAG 2.1 AA را می‌خواهد.
+
+Project:
+\begin{itemize}
+  \item WCAG 2.1 AA minimum target؛
+  \item استفاده از Improvementهای WCAG 2.2 در صورت ساده بودن؛
+  \item عدم ادعای Compliance کامل بدون Audit واقعی.
+\end{itemize}
+
+\section{Semantic HTML}
+
+قاعده:
+\begin{itemize}
+  \item Button واقعی برای Action؛
+  \item Link واقعی برای Navigation؛
+  \item Form label؛
+  \item heading order؛
+  \item main/nav/section/article؛
+  \item table برای data table.
+\end{itemize}
+
+\section{Keyboard}
+
+تمام Interactionهای مهم:
+\begin{itemize}
+  \item Tab reachable؛
+  \item focus visible؛
+  \item Enter/Space behavior استاندارد؛
+  \item modal focus trapping اگر modal وجود دارد؛
+  \item no hover-only action.
+\end{itemize}
+
+\section{Screen Reader}
+
+Elementها باید accessible name داشته باشند.
+
+Icon-only button:
+\begin{latin}
+\begin{lstlisting}
+<button aria-label={t("idea.save")}>
+  ...
+</button>
+\end{lstlisting}
+\end{latin}
+
+ARIA فقط وقتی Semantic HTML کافی نیست.
+
+\section{Color/Contrast}
+
+Design prototype dark theme دارد. باید Contrast واقعی:
+\begin{itemize}
+  \item متن اصلی؛
+  \item متن secondary؛
+  \item button؛
+  \item focus؛
+  \item error
+\end{itemize}
+تست شود.
+
+\section{Touch Targets}
+
+روی موبایل Buttonهای کوچک icon-only باید target لمس کافی داشته باشند، حتی اگر icon visual کوچک باشد.
+
+\section{TTS مستقل از Accessibility}
+
+TTS Feature مصرف محتواست، جای Screen Reader و Accessibility semantic را نمی‌گیرد.
+
+\section{Testing}
+
+\begin{itemize}
+  \item keyboard manual؛
+  \item browser accessibility tree؛
+  \item automated axe-style checks later؛
+  \item Playwright critical flows؛
+  \item RTL visual inspection.
+\end{itemize}
+
+\section{Bilingual Definition of Done}
+
+هر Screen:
+\begin{itemize}
+  \item fa translation؛
+  \item en translation؛
+  \item RTL/LTR؛
+  \item long text overflow؛
+  \item number/date format اگر مرتبط؛
+  \item accessible labels.
+\end{itemize}

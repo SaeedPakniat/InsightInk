@@ -1,0 +1,91 @@
+
+\documentclass[12pt,twoside]{book}
+\input{preamble}
+
+\begin{document}
+
+\frontmatter
+\begin{titlepage}
+\centering
+\vspace*{3cm}
+{\Huge\bfseries \eng{InsightInk}\par}
+\vspace{0.7cm}
+{\Large\bfseries راهنمای جامع معماری، یادگیری و توسعه\par}
+\vspace{0.4cm}
+{\large \eng{Developer Bible}\par}
+\vfill
+{\large پروژه کارشناسی\par}
+\vspace{0.5cm}
+{\large نسخه برنامه‌ریزی اولیه -- آبان ۱۴۰۵ / اکتبر ۲۰۲۶\par}
+\vspace*{2cm}
+\end{titlepage}
+
+\begin{tcolorbox}[colback=Parchment,colframe=InkSoft,title={وضعیت سند},fonttitle=\bfseries]
+این سند نقشه اصلی توسعه پروژه \eng{InsightInk} است. هدف آن این است که توسعه‌دهنده بتواند حتی بدون دسترسی به ابزارهای هوش مصنوعی، مسیر پروژه را از مرحله آماده‌سازی محیط تا پیاده‌سازی، تست، استقرار و مستندسازی دانشگاهی ادامه دهد.
+
+نسخه‌های محلی تأییدشده هنگام نگارش:
+\begin{itemize}
+  \item \eng{Python 3.14.8}
+  \item \eng{Django 5.2.18}
+  \item سیستم توسعه: \eng{Linux / PyCharm / Git}
+\end{itemize}
+
+این سند بین سه نوع اطلاعات تفکیک می‌کند:
+\begin{enumerate}
+  \item نیازمندی‌های مستقیم استخراج‌شده از \eng{PDS}، بردهای \eng{Epic/User Story/NFR/WSJF} و پروتوتایپ؛
+  \item تصمیم‌های معماری و محدودسازی دامنه که بعداً برای پروژه کارشناسی گرفته شده‌اند؛
+  \item پیشنهادهای فنی و آموزشی که برای اجرای قابل‌فهم و قابل‌دفاع پروژه اضافه شده‌اند.
+\end{enumerate}
+\end{tcolorbox}
+
+\tableofcontents
+\clearpage
+
+\chapter*{چگونه از این سند استفاده کنیم}
+\addcontentsline{toc}{chapter}{چگونه از این سند استفاده کنیم}
+
+این سند قرار نیست فقط خوانده شود. در طول توسعه باید نقش چک‌لیست و مرجع روزمره را داشته باشد.
+
+چرخه پیشنهادی هر مرحله:
+\[
+\text{یادگیری} \rightarrow \text{فهم} \rightarrow \text{پیاده‌سازی} \rightarrow \text{تست} \rightarrow \text{مستندسازی} \rightarrow \text{Commit}
+\]
+
+اگر در هر مرحله نتوانی توضیح بدهی یک ابزار چه مشکلی را حل می‌کند، چرا به پروژه اضافه شده، چه داده‌ای می‌گیرد و چه خروجی‌ای می‌دهد، هنوز زمان عبور از آن مرحله نیست.
+
+\mainmatter
+
+\include{chapters/01-introduction}
+\include{chapters/02-scope-requirements}
+\include{chapters/03-development-philosophy}
+\include{chapters/04-architecture}
+\include{chapters/05-tech-stack}
+\include{chapters/06-repository-environment}
+\include{chapters/07-python-django-learning}
+\include{chapters/08-backend-design}
+\include{chapters/09-database-model}
+\include{chapters/10-api-auth-roles}
+\include{chapters/11-frontend-learning}
+\include{chapters/12-frontend-design}
+\include{chapters/13-recommendation}
+\include{chapters/14-realtime-messaging-notifications}
+\include{chapters/15-tts-pwa-compatibility}
+\include{chapters/16-i18n-accessibility}
+\include{chapters/17-security-privacy-moderation}
+\include{chapters/18-testing-quality}
+\include{chapters/19-git-workflow}
+\include{chapters/20-roadmap}
+\include{chapters/21-feature-playbooks}
+\include{chapters/22-deployment}
+\include{chapters/23-source-traceability}
+\include{chapters/24-cheatsheet}
+
+\backmatter
+\chapter*{جمع‌بندی}
+\addcontentsline{toc}{chapter}{جمع‌بندی}
+
+معماری این پروژه عمداً طوری طراحی شده که برای یک پروژه کارشناسی واقعی، قابل‌اتمام و قابل‌فهم باشد. هسته سیستم یک \eng{Django modular monolith} با پایگاه داده \eng{PostgreSQL} و یک رابط \eng{React + TypeScript + Vite} است. قابلیت‌های سنگین‌تر مانند \eng{WebSocket/Redis} فقط در زمانی وارد می‌شوند که Story مربوط به همگام‌سازی یا پیام‌رسانی پیاده‌سازی شود.
+
+مهم‌ترین اصل پروژه این است که هیچ فناوری صرفاً برای «مدرن به نظر رسیدن» اضافه نشود. هر ابزار باید یک نیاز مشخص را حل کند و توسعه‌دهنده بتواند آن را توضیح دهد.
+
+\end{document}

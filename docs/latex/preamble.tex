@@ -1,0 +1,138 @@
+
+\usepackage[a4paper,top=2.2cm,bottom=2.3cm,left=2.2cm,right=2.2cm]{geometry}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{tabularx}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage{fancyhdr}
+\usepackage{hyperref}
+\usepackage{bookmark}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,shapes.geometric,fit,calc}
+\usepackage[most]{tcolorbox}
+\usepackage{setspace}
+\usepackage{multicol}
+\usepackage{amssymb}
+\usepackage{amsmath}
+\usepackage{xepersian}
+
+\settextfont[AutoFakeSlant=0.18]{Vazirmatn}
+\setlength{\emergencystretch}{1.5em}
+\setlatintextfont{DejaVu Sans}
+\setmonofont{DejaVu Sans Mono}
+\setdigitfont{Vazirmatn}
+
+\definecolor{Ink}{HTML}{12162B}
+\definecolor{InkSoft}{HTML}{1B2140}
+\definecolor{Parchment}{HTML}{F5F1E6}
+\definecolor{Spark}{HTML}{F2A93B}
+\definecolor{Tide}{HTML}{3E8C8C}
+\definecolor{Ember}{HTML}{E1573A}
+\definecolor{Ash}{HTML}{666A78}
+\definecolor{CodeBg}{HTML}{F4F5F7}
+\definecolor{DecisionBg}{HTML}{FFF7E8}
+\definecolor{SourceBg}{HTML}{EEF7F7}
+\definecolor{WarningBg}{HTML}{FFF0ED}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=InkSoft,
+  urlcolor=Tide,
+  citecolor=InkSoft,
+  pdftitle={InsightInk Developer Bible},
+  pdfauthor={InsightInk Project}
+}
+
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0.55em}
+\setlist[itemize]{topsep=0.25em,itemsep=0.2em,parsep=0em}
+\setlist[enumerate]{topsep=0.25em,itemsep=0.2em,parsep=0em}
+\renewcommand{\arraystretch}{1.35}
+\onehalfspacing
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[LE,RO]{\small راهنمای جامع توسعه InsightInk}
+\fancyhead[RE,LO]{\small \leftmark}
+\fancyfoot[C]{\thepage}
+\setlength{\headheight}{15pt}
+
+\newcommand{\tech}[1]{\lr{\texttt{\detokenize{#1}}}}
+\newcommand{\eng}[1]{\lr{#1}}
+\newcommand{\filepath}[1]{\lr{\texttt{\detokenize{#1}}}}
+\newcommand{\http}[1]{\lr{\texttt{\detokenize{#1}}}}
+\newcommand{\term}[1]{\textbf{#1}}
+
+\newtcolorbox{decisionbox}[1][]{
+  colback=DecisionBg,
+  colframe=Spark!75!black,
+  title={تصمیم پروژه},
+  fonttitle=\bfseries,
+  breakable,
+  #1
+}
+
+\newtcolorbox{sourcebox}[1][]{
+  colback=SourceBg,
+  colframe=Tide!80!black,
+  title={برگرفته از نیازمندی‌های منبع},
+  fonttitle=\bfseries,
+  breakable,
+  #1
+}
+
+\newtcolorbox{learningbox}[1][]{
+  colback=CodeBg,
+  colframe=InkSoft!70,
+  title={چیزی که باید یاد بگیری},
+  fonttitle=\bfseries,
+  breakable,
+  #1
+}
+
+\newtcolorbox{warningbox}[1][]{
+  colback=WarningBg,
+  colframe=Ember!80!black,
+  title={هشدار / دام رایج},
+  fonttitle=\bfseries,
+  breakable,
+  #1
+}
+
+\newtcolorbox{donebox}[1][]{
+  colback=green!4,
+  colframe=green!45!black,
+  title={معیار پایان این مرحله},
+  fonttitle=\bfseries,
+  breakable,
+  #1
+}
+
+\lstdefinestyle{code}{
+  backgroundcolor=\color{CodeBg},
+  basicstyle=\ttfamily\small,
+  frame=single,
+  rulecolor=\color{Ash!30},
+  breaklines=true,
+  showstringspaces=false,
+  tabsize=2,
+  numbers=left,
+  numberstyle=\tiny\color{Ash},
+  xleftmargin=1.5em,
+  framexleftmargin=1em
+}
+\lstset{style=code}
+
+\newcommand{\codeblock}[1]{%
+\begin{latin}
+\begin{lstlisting}
+#1
+\end{lstlisting}
+\end{latin}
+}
+
+\newcommand{\phase}[1]{\subsection*{فاز #1}}

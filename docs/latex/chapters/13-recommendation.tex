@@ -1,0 +1,278 @@
+
+\chapter{سیستم پیشنهاددهی الگوریتمی}
+
+\section{هدف}
+
+Recommendation باید بدون LLM بتواند:
+\begin{itemize}
+  \item Feed اولیه را بر اساس Interest بسازد؛
+  \item با رفتار Save/Spark تطبیق پیدا کند؛
+  \item Creator follow را لحاظ کند؛
+  \item محتواهای مشابه را پیدا کند؛
+  \item Cross-format discovery بدهد؛
+  \item دلیل پیشنهاد را شفاف کند.
+\end{itemize}
+
+\section{Cold Start}
+
+User جدید Behavior ندارد. پس Signal اول:
+\[
+\text{Declared Interests}
+\]
+
+مثال:
+\begin{latin}
+\begin{lstlisting}
+User:
+  Science
+  Business
+  History
+\end{lstlisting}
+\end{latin}
+
+Ideaهای Science/Business/History Score اولیه بالاتر می‌گیرند.
+
+\section{Signalهای اصلی}
+
+\begin{itemize}
+  \item explicit interest match؛
+  \item saved-topic affinity؛
+  \item sparked-topic affinity؛
+  \item followed creator؛
+  \item popularity؛
+  \item freshness؛
+  \item content-language preference؛
+  \item already-seen penalty.
+\end{itemize}
+
+\section{فرمول پایه}
+
+\[
+Score(i,u) =
+w_1 I +
+w_2 S +
+w_3 K +
+w_4 F +
+w_5 P +
+w_6 R +
+w_7 L -
+w_8 V
+\]
+
+که در آن:
+\begin{itemize}
+  \item \(I\): Interest match؛
+  \item \(S\): Save affinity؛
+  \item \(K\): Spark affinity؛
+  \item \(F\): Followed creator signal؛
+  \item \(P\): Popularity؛
+  \item \(R\): Recency/Freshness؛
+  \item \(L\): Language fit؛
+  \item \(V\): Viewed/consumed penalty.
+\end{itemize}
+
+وزن اولیه پیشنهادی:
+\begin{longtable}{p{6.8cm}r}
+\toprule
+Signal & Weight فرضی \\
+\midrule
+Explicit interest & +5 \\
+Saved topic affinity & +4 \\
+Sparked topic affinity & +3 \\
+Followed creator & +3 \\
+Preferred content language & +2 \\
+Popularity & 0 تا +1 \\
+Freshness & 0 تا +1 \\
+Already consumed & penalty \\
+\bottomrule
+\end{longtable}
+
+\begin{warningbox}
+این Weightها Requirement منبع نیستند. Hypothesis فنی هستند و باید با داده آزمایشی Tune شوند.
+\end{warningbox}
+
+\section{جلوگیری از رشد بی‌نهایت Affinity}
+
+اگر User صدها Save روی یک Topic داشت، Score نباید خطی بی‌نهایت رشد کند.
+
+مثال ساده:
+\[
+Affinity = \min(count, cap)
+\]
+
+یا Normalization به بازه مشخص.
+
+\section{Jaccard Similarity}
+
+برای Related Ideas:
+\[
+J(A,B)=\frac{|A\cap B|}{|A\cup B|}
+\]
+
+مثال:
+\begin{align*}
+A &= \{Productivity, Focus, Psychology\}\\
+B &= \{Productivity, Focus, Habits\}\\
+J(A,B) &= \frac{2}{4}=0.5
+\end{align*}
+
+مزیت:
+\begin{itemize}
+  \item deterministic؛
+  \item قابل توضیح؛
+  \item بدون Model/Embedding؛
+  \item مناسب دفاع دانشگاهی.
+\end{itemize}
+
+\section{Cross-format Diversity}
+
+اگر User Idea کتابی درباره Focus می‌بیند، Related list می‌تواند Podcast با Topic مشابه را Boost کند.
+
+مفهوم:
+\[
+FinalRelatedScore = TopicSimilarity + DiversityBonus
+\]
+
+Format متفاوت نباید خودکار بهتر باشد؛ فقط Bonus کوچک برای جلوگیری از monotony.
+
+\section{Popularity}
+
+Popularity نباید صرفاً total sparks باشد چون محتوای قدیمی همیشه برنده می‌شود.
+
+می‌توانیم از Normalized popularity استفاده کنیم:
+\begin{itemize}
+  \item sparks در بازه اخیر؛
+  \item comments؛
+  \item save ratio؛
+  \item capped score.
+\end{itemize}
+
+برای MVP ساده نگه می‌داریم.
+
+\section{Freshness}
+
+Freshness می‌تواند تابعی از age باشد:
+\[
+Freshness = \max(0, 1 - \frac{AgeDays}{Window})
+\]
+
+مثلاً Window = 30 روز برای یک Bonus کوچک.
+
+\section{Recommendation Explanation}
+
+از Signal واقعی Reason می‌سازیم:
+\begin{itemize}
+  \item «چون Science را انتخاب کرده‌ای.»
+  \item «چون چند Idea درباره Focus ذخیره کرده‌ای.»
+  \item «چون این Creator را دنبال می‌کنی.»
+  \item «موضوع مشابه، اما این بار از یک Podcast.»
+\end{itemize}
+
+Reason باید با Score واقعی سازگار باشد.
+
+\section{Feed Ranking و Related Idea جدا هستند}
+
+\subsection{Feed}
+
+User-specific.
+
+\subsection{Related}
+
+Idea-specific و کمتر وابسته به User.
+
+این دو Service جدا طراحی می‌شوند.
+
+\section{ساختار کد پیشنهادی}
+
+\begin{latin}
+\begin{lstlisting}
+apps/recommendations/
+├── scoring.py
+├── selectors.py
+├── explanations.py
+├── services.py
+└── tests/
+\end{lstlisting}
+\end{latin}
+
+\section{Pure Function}
+
+مثال مفهومی:
+\begin{latin}
+\begin{lstlisting}[language=Python]
+def weighted_score(
+    interest_match: float,
+    saved_affinity: float,
+    sparked_affinity: float,
+    followed_creator: bool,
+    popularity: float,
+    freshness: float,
+) -> float:
+    score = 0.0
+    score += 5 * interest_match
+    score += 4 * saved_affinity
+    score += 3 * sparked_affinity
+    score += 3 if followed_creator else 0
+    score += popularity
+    score += freshness
+    return score
+\end{lstlisting}
+\end{latin}
+
+در Implementation واقعی Inputها دقیق‌تر تعریف می‌شوند.
+
+\section{Performance}
+
+اشتباه:
+\begin{latin}
+\begin{lstlisting}[language=Python]
+ideas = Idea.objects.all()
+# calculate every idea in Python for every request
+\end{lstlisting}
+\end{latin}
+
+بهتر:
+\begin{enumerate}
+  \item Candidateها را با DB محدود کن؛
+  \item language/status/topic filter؛
+  \item exclude hidden/blocked؛
+  \item candidate window؛
+  \item سپس Score.
+\end{enumerate}
+
+\section{Evaluation}
+
+Testهای لازم:
+\begin{itemize}
+  \item cold start؛
+  \item interest ranking؛
+  \item save/spark adaptation؛
+  \item follow boost؛
+  \item language filter؛
+  \item seen penalty؛
+  \item cross-format diversity؛
+  \item deterministic result؛
+  \item latency زیر Target.
+\end{itemize}
+
+\section{TF-IDF به‌عنوان Stretch}
+
+اگر Topic-only similarity ساده بود:
+\begin{itemize}
+  \item TF-IDF روی Title/Body؛
+  \item Cosine Similarity؛
+  \item scikit-learn.
+\end{itemize}
+
+این قابلیت Optional است و بدون آن Project کامل محسوب می‌شود.
+
+\section{Conflict با Summarize in 30s}
+
+Story منبع Quick Chip مثال \eng{Summarize in 30s} دارد. چون Generative AI حذف شده:
+\begin{itemize}
+  \item آن Story یا Deferred می‌شود؛
+  \item یا به «Ideaهای کوتاه‌تر» تغییر می‌کند؛
+  \item یا Short Excerpt دستی از قبل ذخیره می‌شود.
+\end{itemize}
+
+این تغییر Scope باید در گزارش نهایی صریح ذکر شود.

@@ -1,0 +1,307 @@
+
+\chapter{مسیر یادگیری Python و Django}
+
+\section{هدف این فصل}
+
+چون Backend قبلی توسعه‌دهنده \eng{Node.js/Express} بوده، این فصل ترتیب یادگیری را طوری می‌چیند که دانش قبلی حفظ شود و تفاوت‌های Python/Django به‌صورت مرحله‌ای فهمیده شوند.
+
+\section{Python: چیزهایی که واقعاً لازم داریم}
+
+\subsection{مرحله P1: Syntax و Data Types}
+
+باید بتوانی این موارد را بدون کمک توضیح بدهی و بنویسی:
+\begin{itemize}
+  \item variable؛
+  \item \eng{str/int/float/bool/None}؛
+  \item list؛
+  \item tuple؛
+  \item dict؛
+  \item set؛
+  \item if/elif/else؛
+  \item for/while.
+\end{itemize}
+
+مثال:
+\begin{latin}
+\begin{lstlisting}[language=Python]
+topics = ["science", "history", "business"]
+
+for topic in topics:
+    print(topic)
+\end{lstlisting}
+\end{latin}
+
+\subsection{مرحله P2: Function}
+
+\begin{latin}
+\begin{lstlisting}[language=Python]
+def calculate_reading_minutes(word_count: int) -> int:
+    words_per_minute = 220
+    return max(1, round(word_count / words_per_minute))
+\end{lstlisting}
+\end{latin}
+
+مفاهیم:
+\begin{itemize}
+  \item parameter؛
+  \item argument؛
+  \item return؛
+  \item default parameter؛
+  \item type hint؛
+  \item scope.
+\end{itemize}
+
+\subsection{مرحله P3: Module و Package}
+
+در Node.js با import/export آشنا هستی. در Python نیز Code را به Moduleها تقسیم می‌کنیم.
+
+\begin{latin}
+\begin{lstlisting}[language=Python]
+from recommendations.scoring import calculate_score
+\end{lstlisting}
+\end{latin}
+
+باید تفاوت این‌ها را بفهمی:
+\begin{itemize}
+  \item file/module؛
+  \item package؛
+  \item import path؛
+  \item \filepath{__init__.py}.
+\end{itemize}
+
+\subsection{مرحله P4: Class و Object}
+
+Django Modelها Class هستند؛ بنابراین قبل از Model باید OOP پایه را بفهمی.
+
+\begin{latin}
+\begin{lstlisting}[language=Python]
+class IdeaSummary:
+    def __init__(self, title: str, score: float):
+        self.title = title
+        self.score = score
+
+    def is_recommended(self) -> bool:
+        return self.score >= 5
+\end{lstlisting}
+\end{latin}
+
+مفاهیم:
+\begin{itemize}
+  \item class؛
+  \item instance؛
+  \item attribute؛
+  \item method؛
+  \item constructor؛
+  \item inheritance؛
+  \item composition.
+\end{itemize}
+
+\subsection{مرحله P5: Exception}
+
+\begin{latin}
+\begin{lstlisting}[language=Python]
+try:
+    score = calculate_score(user, idea)
+except ValueError as exc:
+    logger.warning("Invalid recommendation input: %s", exc)
+\end{lstlisting}
+\end{latin}
+
+نباید هر Exception را با \tech{except Exception} پنهان کنیم.
+
+\subsection{مرحله P6: Comprehension و Iterator}
+
+در حد عملی:
+\begin{latin}
+\begin{lstlisting}[language=Python]
+topic_ids = [topic.id for topic in idea.topics.all()]
+\end{lstlisting}
+\end{latin}
+
+هدف فهم خوانایی و Lazy behavior است، نه استفاده نمایشی از Syntax پیچیده.
+
+\section{Django از چه اجزایی تشکیل شده؟}
+
+\subsection{Project}
+
+\eng{Django Project} تنظیمات کل Application است.
+
+فایل‌های اصلی:
+\begin{itemize}
+  \item \filepath{settings.py}
+  \item \filepath{urls.py}
+  \item \filepath{asgi.py}
+  \item \filepath{wsgi.py}
+\end{itemize}
+
+\subsection{App}
+
+Django App یک Domain/Capability قابل تفکیک است.
+
+مثلاً:
+\begin{latin}
+\begin{lstlisting}
+accounts
+content
+engagement
+recommendations
+\end{lstlisting}
+\end{latin}
+
+\begin{warningbox}
+برای هر Table یک App نساز. App باید Business Responsibility داشته باشد.
+\end{warningbox}
+
+\section{URL Routing}
+
+Express:
+\begin{latin}
+\begin{lstlisting}
+app.get("/ideas/:id", handler)
+\end{lstlisting}
+\end{latin}
+
+Django:
+\begin{latin}
+\begin{lstlisting}[language=Python]
+path("ideas/<int:pk>/", views.idea_detail)
+\end{lstlisting}
+\end{latin}
+
+DRF در مراحل بعد abstractionهای بیشتری می‌دهد، اما ابتدا باید این مسیر ساده فهمیده شود.
+
+\section{Request و Response}
+
+باید بفهمی:
+\begin{itemize}
+  \item Browser request می‌فرستد؛
+  \item Django URL را Resolve می‌کند؛
+  \item View اجرا می‌شود؛
+  \item DB query در صورت نیاز انجام می‌شود؛
+  \item Response برمی‌گردد.
+\end{itemize}
+
+\section{Model و ORM}
+
+مثال آموزشی:
+\begin{latin}
+\begin{lstlisting}[language=Python]
+from django.db import models
+
+class Topic(models.Model):
+    slug = models.SlugField(unique=True)
+    name_fa = models.CharField(max_length=100)
+    name_en = models.CharField(max_length=100)
+\end{lstlisting}
+\end{latin}
+
+این Class به Table در Database نگاشت می‌شود.
+
+باید این عملیات ORM را بلد باشی:
+\begin{latin}
+\begin{lstlisting}[language=Python]
+Topic.objects.all()
+Topic.objects.get(slug="science")
+Topic.objects.filter(is_active=True)
+Topic.objects.create(...)
+\end{lstlisting}
+\end{latin}
+
+\section{Migration}
+
+Migration تاریخچه تغییر Schema است.
+
+Flow:
+\begin{latin}
+\begin{lstlisting}
+change models.py
+    ↓
+python manage.py makemigrations
+    ↓
+inspect migration
+    ↓
+python manage.py migrate
+\end{lstlisting}
+\end{latin}
+
+\begin{warningbox}
+Migration را فایل Generated بی‌ارزش تصور نکن. بخشی از تاریخچه Schema پروژه است و باید Commit شود.
+\end{warningbox}
+
+\section{Django Admin}
+
+Admin برای پروژه ما بسیار ارزشمند است چون قبل از ساخت Creator CMS می‌توانیم:
+\begin{itemize}
+  \item Topic بسازیم؛
+  \item Creator ایجاد کنیم؛
+  \item Source وارد کنیم؛
+  \item Idea publish کنیم؛
+  \item Reportها را بررسی کنیم.
+\end{itemize}
+
+بنابراین Data واقعی خیلی زود وارد Backend می‌شود.
+
+\section{Custom User از روز اول}
+
+\begin{warningbox}
+تغییر \eng{AUTH\_USER\_MODEL} بعد از Migrationهای متعدد دردسر زیادی ایجاد می‌کند. بنابراین قبل از اولین Migration واقعی، Custom User را می‌سازیم.
+\end{warningbox}
+
+حتی اگر Custom User اولیه ساده باشد، انعطاف آینده را حفظ می‌کند.
+
+\section{Django Authentication}
+
+باید مفاهیم زیر را بفهمی:
+\begin{itemize}
+  \item password hashing؛
+  \item authenticate؛
+  \item login/logout؛
+  \item session؛
+  \item authenticated user؛
+  \item group؛
+  \item permission؛
+  \item superuser.
+\end{itemize}
+
+\section{DRF بعد از Django پایه}
+
+بعد از اینکه Model/View/URL را فهمیدی، می‌رویم سراغ:
+\begin{itemize}
+  \item Serializer؛
+  \item validation؛
+  \item APIView؛
+  \item generic views؛
+  \item ViewSet؛
+  \item Router؛
+  \item Permission؛
+  \item Pagination.
+\end{itemize}
+
+\section{ترتیب تمرین‌های Backend}
+
+\begin{enumerate}
+  \item یک endpoint ساده health check؛
+  \item Topic model + admin؛
+  \item Source model؛
+  \item Idea model؛
+  \item query با shell؛
+  \item Topic API read-only؛
+  \item Idea API read-only؛
+  \item create/update validation؛
+  \item auth؛
+  \item permissions؛
+  \item engagement endpoints.
+\end{enumerate}
+
+\section{معیار فهم}
+
+قبل از رفتن به مرحله بعد باید بتوانی پاسخ بدهی:
+\begin{itemize}
+  \item Model چه فرقی با Serializer دارد؟
+  \item Migration دقیقاً چه چیزی را تغییر می‌دهد؟
+  \item QuerySet چیست؟
+  \item چرا \eng{ForeignKey} با IntegerField متفاوت است؟
+  \item URLConf چه نقشی دارد؟
+  \item Request چطور به View می‌رسد؟
+  \item Permission کجا اعمال می‌شود؟
+\end{itemize}

@@ -1,0 +1,237 @@
+
+\chapter{ساختار Repository و آماده‌سازی محیط}
+
+\section{وضعیت فعلی سیستم}
+
+مسیر فعلی Repository:
+\begin{latin}
+\begin{lstlisting}
+/home/Pandatron/PycharmProjects/InkSight
+\end{lstlisting}
+\end{latin}
+
+نام Product:
+\begin{center}
+\textbf{\eng{InsightInk}}
+\end{center}
+
+نسخه‌های تأییدشده:
+\begin{latin}
+\begin{lstlisting}
+Python 3.14.8
+Django 5.2.18
+\end{lstlisting}
+\end{latin}
+
+Repository در حال حاضر Git دارد و \eng{.venv} نیز در Root موجود است.
+
+\section{ساختار نهایی Monorepo}
+
+\begin{latin}
+\begin{lstlisting}
+InkSight/
+├── backend/
+│   ├── config/
+│   ├── apps/
+│   ├── manage.py
+│   └── ...
+├── frontend/
+│   ├── src/
+│   ├── public/
+│   ├── package.json
+│   └── ...
+├── docs/
+│   ├── latex/
+│   └── ...
+├── .gitignore
+├── README.md
+└── ...
+\end{lstlisting}
+\end{latin}
+
+Root فقط Container کل پروژه است. نه Django Project است و نه Vite Project.
+
+\section{Virtual Environment}
+
+\eng{.venv} در Root برای یک پروژه تک‌توسعه‌دهنده قابل قبول است.
+
+وظیفه Virtual Environment:
+\begin{itemize}
+  \item جدا کردن Packageهای پروژه از Python سیستم؛
+  \item reproducibility؛
+  \item جلوگیری از conflict نسخه‌ها.
+\end{itemize}
+
+بررسی:
+\begin{latin}
+\begin{lstlisting}
+.venv/bin/python --version
+.venv/bin/python -m django --version
+\end{lstlisting}
+\end{latin}
+
+\section{Git Cleanup قبل از کدنویسی}
+
+وضعیت فعلی:
+\begin{itemize}
+  \item \filepath{.idea/} در commit اولیه Track شده؛
+  \item \filepath{main.py} یک PyCharm starter است؛
+  \item \filepath{.venv/} خوشبختانه Track نشده؛
+  \item Branch فعلی هنگام بررسی \eng{master} بوده است.
+\end{itemize}
+
+در Phase 0 باید آگاهانه تصمیم بگیریم:
+\begin{enumerate}
+  \item آیا Repository را از \eng{InkSight} به \eng{InsightInk} rename کنیم؟
+  \item آیا Branch را به \eng{main} تغییر دهیم؟
+  \item \filepath{.idea/} را از Git خارج کنیم؟
+  \item \filepath{main.py} را حذف کنیم؟
+\end{enumerate}
+
+\section{Gitignore پیشنهادی}
+
+\begin{latin}
+\begin{lstlisting}
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+
+# Secrets
+.env
+.env.*
+!.env.example
+
+# Django/runtime
+*.sqlite3
+media/
+staticfiles/
+
+# Frontend
+node_modules/
+dist/
+coverage/
+
+# IDE
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+\end{lstlisting}
+\end{latin}
+
+فقط مواردی را Ignore می‌کنیم که واقعاً Generated/Private هستند.
+
+\section{ساخت Backend}
+
+وقتی Phase 1 شروع شد:
+
+\begin{latin}
+\begin{lstlisting}
+mkdir backend
+cd backend
+../.venv/bin/django-admin startproject config .
+\end{lstlisting}
+\end{latin}
+
+نقطه آخر یعنی Project را داخل Current Directory بساز، نه اینکه یک Folder nested اضافی تولید شود.
+
+خروجی تقریبی:
+\begin{latin}
+\begin{lstlisting}
+backend/
+├── config/
+│   ├── __init__.py
+│   ├── asgi.py
+│   ├── settings.py
+│   ├── urls.py
+│   └── wsgi.py
+└── manage.py
+\end{lstlisting}
+\end{latin}
+
+\section{ساخت Frontend}
+
+در Phase مربوط:
+
+\begin{latin}
+\begin{lstlisting}
+mkdir frontend
+cd frontend
+npm create vite@latest . -- --template react-ts
+\end{lstlisting}
+\end{latin}
+
+نسخه و Command دقیق در زمان اجرا دوباره بررسی می‌شود.
+
+\section{PostgreSQL}
+
+قبل از Modelهای واقعی باید:
+\begin{enumerate}
+  \item PostgreSQL نصب/فعال باشد؛
+  \item Database پروژه ساخته شود؛
+  \item User/Password محلی مشخص شود؛
+  \item Django connection تست شود.
+\end{enumerate}
+
+\begin{warningbox}
+برای پروژه واقعی، SQLite را به‌عنوان Database نهایی نگه نمی‌داریم. اگر برای یک تمرین آموزشی کوتاه استفاده شد، خیلی زود به PostgreSQL مهاجرت می‌کنیم.
+\end{warningbox}
+
+\section{Environment Variables}
+
+بعداً حداقل:
+\begin{latin}
+\begin{lstlisting}
+DJANGO_SECRET_KEY=
+DJANGO_DEBUG=
+DATABASE_NAME=
+DATABASE_USER=
+DATABASE_PASSWORD=
+DATABASE_HOST=
+DATABASE_PORT=
+\end{lstlisting}
+\end{latin}
+
+فایل \filepath{.env} Commit نمی‌شود؛ \filepath{.env.example} بدون Secret می‌تواند Commit شود.
+
+\section{Dependency Files}
+
+برای Python باید یک روش reproducible انتخاب شود. گزینه‌ها:
+\begin{itemize}
+  \item \filepath{requirements.txt} ساده؛
+  \item یا \filepath{pyproject.toml} با ابزار مدرن.
+\end{itemize}
+
+برای پروژه آموزشی، سادگی مهم است. تصمیم نهایی در Phase 0 گرفته می‌شود و بعد ثابت می‌ماند.
+
+Frontend dependencies در \filepath{package.json} و lockfile مدیریت می‌شوند.
+
+\section{روال روزانه توسعه}
+
+\begin{enumerate}
+  \item \tech{git status}
+  \item خواندن Task همان Phase
+  \item یادگیری Concept
+  \item تغییر کوچک
+  \item اجرای Test
+  \item \tech{git diff}
+  \item Update Documentation در صورت تغییر Contract
+  \item Commit
+\end{enumerate}
+
+\section{Definition of Done برای Phase 0}
+
+\begin{donebox}
+Phase 0 وقتی تمام است که:
+\begin{itemize}
+  \item Root structure تمیز باشد؛
+  \item Gitignore درست باشد؛
+  \item IDE/generated files مدیریت شده باشند؛
+  \item نسخه Python/Django ثبت شده باشد؛
+  \item PostgreSQL آماده باشد؛
+  \item Strategy dependency مشخص باشد؛
+  \item اولین Commit مستندات ثبت شده باشد.
+\end{itemize}
+\end{donebox}

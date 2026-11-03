@@ -1,0 +1,225 @@
+
+\chapter{امنیت، حریم خصوصی و Moderation}
+
+\section{اصل کلی}
+
+Security فقط Production setting نیست؛ از Model و Permission شروع می‌شود.
+
+\section{Password}
+
+Django password hashing استفاده می‌شود.
+
+ممنوع:
+\begin{itemize}
+  \item plaintext password؛
+  \item custom crypto؛
+  \item password log؛
+  \item password در query string.
+\end{itemize}
+
+\section{Authentication vs Authorization}
+
+\begin{itemize}
+  \item Authentication: چه کسی؟
+  \item Authorization: چه اجازه‌ای؟
+\end{itemize}
+
+هر Endpoint modifying هر دو را بررسی می‌کند.
+
+\section{Object Ownership}
+
+مثال‌ها:
+\begin{itemize}
+  \item User فقط own profile؛
+  \item Creator فقط own idea؛
+  \item User فقط own comment delete؛
+  \item participant فقط own conversation؛
+  \item Moderator طبق permission؛
+  \item Admin unrestricted.
+\end{itemize}
+
+\section{CSRF}
+
+اگر Cookie/Session auth استفاده شود، CSRF protection باید درست نگه داشته شود.
+
+\begin{warningbox}
+برای راحت شدن development، CSRF را globally disable نکن.
+\end{warningbox}
+
+\section{CORS}
+
+CORS فقط Originهای لازم را Allow می‌کند. \eng{*} در Production برای authenticated API انتخاب مناسبی نیست.
+
+\section{XSS}
+
+User content مانند Comment نباید به‌عنوان raw HTML اجرا شود.
+
+در React به‌صورت پیش‌فرض string escaping کمک می‌کند؛ از \eng{dangerouslySetInnerHTML} بدون sanitization پرهیز شود.
+
+\section{File Upload}
+
+اگر Avatar/Cover/eBook upload شد:
+\begin{itemize}
+  \item type validation؛
+  \item size limit؛
+  \item safe filename/storage؛
+  \item authorization؛
+  \item عدم اعتماد به extension.
+\end{itemize}
+
+\section{Privacy Data}
+
+NFR-12 شامل:
+\begin{itemize}
+  \item reading history؛
+  \item saved ideas؛
+  \item personalization.
+\end{itemize}
+
+Design باید امکان:
+\begin{itemize}
+  \item export؛
+  \item delete/anonymize؛
+  \item data minimization
+\end{itemize}
+را بدهد.
+
+\section{Delete Account}
+
+قبل از Implementation باید Policy تعیین شود:
+\begin{itemize}
+  \item Commentها delete یا anonymize؟
+  \item Creator content چه می‌شود؟
+  \item Messages چطور حفظ/حذف می‌شوند؟
+  \item Audit/moderation data چه می‌شود؟
+\end{itemize}
+
+این Policy باید در گزارش نهایی ثبت شود.
+
+\section{Direct Message Privacy}
+
+\begin{itemize}
+  \item HTTPS/WSS؛
+  \item participant-only access؛
+  \item query filtering؛
+  \item permission test؛
+  \item no casual moderator browsing.
+\end{itemize}
+
+End-to-End Encryption در Scope نیست.
+
+\section{Payment}
+
+اگر Membership payment اجرا شد:
+\begin{itemize}
+  \item external provider؛
+  \item no raw PAN/CVV؛
+  \item provider reference؛
+  \item webhook verification؛
+  \item payment status state machine.
+\end{itemize}
+
+\section{Report}
+
+Report reasonهای مشخص:
+\begin{itemize}
+  \item harassment؛
+  \item spam؛
+  \item inappropriate content؛
+  \item misinformation category فقط اگر product policy مشخص شود؛
+  \item other.
+\end{itemize}
+
+نباید از ابتدا سیاست‌های پیچیده و دسته‌بندی‌های زیاد بسازیم. دسته‌های نهایی Report در فاز Moderation مشخص می‌شوند.
+
+\section{Moderation Workflow}
+
+\begin{center}
+\begin{tikzpicture}[
+ node distance=1.2cm and 1.4cm,
+ st/.style={draw=InkSoft,rounded corners,fill=CodeBg,minimum width=2.9cm,minimum height=0.8cm,align=center},
+ arr/.style={-{Latex[length=2mm]},thick}
+]
+\node[st] (open) {OPEN};
+\node[st,right=of open] (review) {REVIEWING};
+\node[st,above right=0.8cm and 1.4cm of review] (resolved) {RESOLVED};
+\node[st,below right=0.8cm and 1.4cm of review] (rejected) {REJECTED};
+\draw[arr] (open)--(review);
+\draw[arr] (review)--(resolved);
+\draw[arr] (review)--(rejected);
+\end{tikzpicture}
+\end{center}
+
+\section{ModerationAction Audit}
+
+ثبت:
+\begin{itemize}
+  \item actor؛
+  \item target؛
+  \item action type؛
+  \item reason/note؛
+  \item timestamp.
+\end{itemize}
+
+\section{Moderator Assignment}
+
+\begin{decisionbox}
+فقط Admin حق assign/remove کردن Moderator را دارد. این Rule باید Server-side Permission test داشته باشد.
+\end{decisionbox}
+
+\section{Block}
+
+Block باید حداقل Messaging interaction را محدود کند.
+
+\section{Mute}
+
+Mute می‌تواند Notification/visibility را کاهش دهد بدون Block کامل.
+
+Semantics نهایی هنگام Feature implementation نوشته می‌شود.
+
+\section{Rate Limiting}
+
+Candidate:
+\begin{itemize}
+  \item login؛
+  \item register؛
+  \item comment؛
+  \item report؛
+  \item message؛
+  \item search.
+\end{itemize}
+
+ساده‌ترین راه کافی انتخاب می‌شود.
+
+\section{Secrets}
+
+\filepath{.env} هرگز Commit نمی‌شود.
+
+Secretها:
+\begin{itemize}
+  \item Django secret key؛
+  \item DB password؛
+  \item mail/payment credentials later.
+\end{itemize}
+
+\section{Logging}
+
+Log نکن:
+\begin{itemize}
+  \item password؛
+  \item auth token؛
+  \item payment sensitive data؛
+  \item private message body بی‌دلیل.
+\end{itemize}
+
+\section{Security Checklist Feature}
+
+قبل از Done:
+\begin{itemize}
+  \item anonymous request test؛
+  \item wrong user test؛
+  \item wrong role test؛
+  \item invalid data test؛
+  \item ownership test؛
+  \item error leakage check.
+\end{itemize}
