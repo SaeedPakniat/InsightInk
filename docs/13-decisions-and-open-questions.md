@@ -130,6 +130,32 @@ Do not add Redux/Zustand without demonstrated need.
 
 Status: Accepted.
 
+### D-014 — Authentication transport and account identity
+
+**Decision:** Use Django session/cookie authentication through DRF's
+`SessionAuthentication`, with a preferred same-origin frontend and API deployment.
+Production session cookies are secure and HttpOnly, and CSRF protection remains
+enabled.
+
+The canonical account identity is a required, unique email address. The custom User
+continues to extend `AbstractUser`, removes `username`, and sets
+`USERNAME_FIELD = "email"`.
+
+Canonical authentication routes:
+
+```text
+POST /api/v1/auth/register/
+POST /api/v1/auth/login/
+POST /api/v1/auth/logout/
+GET  /api/v1/me/
+```
+
+JWT, DRF token authentication, custom bearer/refresh tokens, and OAuth/social
+authentication are excluded unless a future demonstrated need results in a new
+decision.
+
+Status: Accepted and locked.
+
 ## Open questions
 
 ### Q-001 — Repository/product naming
@@ -152,15 +178,6 @@ Candidate evaluation target:
 - older Android around Android 7+.
 
 These are not yet guaranteed.
-
-### Q-003 — Authentication transport strategy
-
-Need to choose exact production approach after deployment topology is known:
-
-- same-origin session/cookie approach;
-- API token approach suitable for separated origins.
-
-Do not prematurely build custom JWT logic.
 
 ### Q-004 — Social sign-in
 

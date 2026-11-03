@@ -15,7 +15,7 @@ from .models import Idea, Source, Topic
 class ContentModelTestCase(TestCase):
     def setUp(self):
         self.user = get_user_model().objects.create_user(
-            username="content-creator",
+            email="content-creator@example.com",
             password="test-password",
         )
         self.creator = CreatorProfile.objects.create(user=self.user)
@@ -323,7 +323,6 @@ class IdeaAPITests(TestCase):
     def setUp(self):
         self.client = APIClient()
         self.user = get_user_model().objects.create_user(
-            username="idea-creator",
             email="creator@example.com",
             password="test-password",
             display_name="Public Creator",
@@ -541,7 +540,7 @@ class IdeaAPITests(TestCase):
 
     def test_list_nested_serialization_uses_two_queries(self):
         second_user = get_user_model().objects.create_user(
-            username="second-creator",
+            email="second-creator@example.com",
             display_name="Second Creator",
         )
         second_creator = CreatorProfile.objects.create(user=second_user)

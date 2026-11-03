@@ -9,7 +9,7 @@ from .models import CreatorProfile
 class CreatorProfileModelTests(TestCase):
     def setUp(self):
         self.user = get_user_model().objects.create_user(
-            username="creator",
+            email="creator@example.com",
             password="test-password",
         )
 

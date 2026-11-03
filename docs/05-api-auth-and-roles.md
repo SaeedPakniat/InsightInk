@@ -39,7 +39,8 @@ GET    /api/v1/me/interests/
 PUT    /api/v1/me/interests/
 ```
 
-Exact auth endpoint shapes depend on the selected Django auth implementation.
+These are the canonical auth/account routes. Their HTTP behavior is implemented in
+the authentication API milestone.
 
 ### Feed and ideas
 
@@ -116,7 +117,18 @@ Authentication must support:
 - optional social login if retained in final scope;
 - authenticated API access.
 
-The exact token/session mechanism is intentionally not locked before frontend/backend scaffolding. It should be selected after comparing same-origin PWA deployment versus separated frontend/API deployment.
+The locked authentication foundation is:
+
+- Django session/cookie authentication through DRF `SessionAuthentication`;
+- preferred same-origin frontend and API deployment;
+- secure HttpOnly session cookies in production;
+- CSRF protection remains enabled;
+- required, unique email as the canonical login identity;
+- `AbstractUser` retained with its `username` field removed.
+
+JWT, DRF token authentication, custom bearer/refresh tokens, and OAuth/social
+authentication are not part of the locked foundation. Password reset and any future
+social authentication remain separate, later work.
 
 ## 5. Authorization model
 
