@@ -180,6 +180,144 @@ class SourceModelTests(ContentModelTestCase):
             source.full_clean()
 
 
+class SourceAPITests(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+        self.source = Source.objects.create(
+            type=Source.SourceType.BOOK,
+            title="The Book",
+            original_creator_text="The Author",
+            language="en",
+            external_url="https://example.com/book",
+            cover="https://example.com/cover.jpg",
+            metadata={"isbn": "not-public"},
+        )
+        self.list_url = reverse("api:source-list")
+
+    def test_anonymous_list_returns_only_public_fields(self):
+        response = APIClient().get(self.list_url)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.json(),
+            [
+                {
+                    "id": self.source.id,
+                    "type": "book",
+                    "title": "The Book",
+                    "original_creator_text": "The Author",
+                    "language": "en",
+                    "external_url": "https://example.com/book",
+                    "cover": "https://example.com/cover.jpg",
+                }
+            ],
+        )
+        self.assertNotIn("metadata", response.json()[0])
+
+    def test_list_is_ordered_by_id(self):
+        second_source = Source.objects.create(
+            type=Source.SourceType.ARTICLE,
+            title="The Article",
+            language="fa",
+        )
+
+        response = self.client.get(self.list_url)
+
+        self.assertEqual(
+            [source["id"] for source in response.json()],
+            [self.source.id, second_source.id],
+        )
+
+    def test_detail_returns_public_contract(self):
+        url = reverse("api:source-detail", args=[self.source.id])
+
+        response = APIClient().get(url)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            set(response.json()),
+            {
+                "id",
+                "type",
+                "title",
+                "original_creator_text",
+                "language",
+                "external_url",
+                "cover",
+            },
+        )
+        self.assertNotIn("metadata", response.json())
+
+    def test_missing_detail_returns_404(self):
+        url = reverse("api:source-detail", args=[self.source.id + 1000])
+
+        response = self.client.get(url)
+
+        self.assertEqual(response.status_code, 404)
+
+    def test_source_type_values_are_returned_unchanged(self):
+        expected_types = list(Source.SourceType.values)
+        for source_type in expected_types[1:]:
+            Source.objects.create(
+                type=source_type,
+                title=f"A {source_type}",
+                language="en",
+            )
+
+        response = self.client.get(self.list_url)
+
+        self.assertEqual(
+            [source["type"] for source in response.json()],
+            expected_types,
+        )
+
+    def test_optional_fields_may_be_blank(self):
+        source = Source.objects.create(
+            type=Source.SourceType.PODCAST,
+            title="A Podcast",
+            language="fa",
+        )
+        url = reverse("api:source-detail", args=[source.id])
+
+        response = self.client.get(url)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["original_creator_text"], "")
+        self.assertEqual(response.json()["external_url"], "")
+        self.assertEqual(response.json()["cover"], "")
+
+    def test_post_is_rejected(self):
+        response = self.client.post(
+            self.list_url,
+            data={"type": "book", "title": "New", "language": "en"},
+        )
+
+        self.assertEqual(response.status_code, 405)
+
+    def test_detail_write_methods_are_rejected(self):
+        url = reverse("api:source-detail", args=[self.source.id])
+
+        for method in ("put", "patch", "delete"):
+            with self.subTest(method=method):
+                response = getattr(self.client, method)(url, data={})
+
+                self.assertEqual(response.status_code, 405)
+
+    def test_existing_topic_and_health_apis_still_work(self):
+        Topic.objects.create(
+            slug="technology",
+            name_fa="فناوری",
+            name_en="Technology",
+        )
+
+        topic_response = self.client.get(reverse("api:topic-list"))
+        health_response = self.client.get(reverse("api:health"))
+
+        self.assertEqual(topic_response.status_code, 200)
+        self.assertEqual(health_response.status_code, 200)
+        self.assertEqual(health_response.json(), {"status": "ok"})
+
+
 class IdeaModelTests(ContentModelTestCase):
     def test_draft_idea_has_documented_defaults_and_relationships(self):
         idea = self.create_idea()
