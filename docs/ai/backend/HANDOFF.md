@@ -1,16 +1,17 @@
 # Backend Handoff
 
-- Task ID: BE-011
-- Exact base SHA: `d6ceefb1f1880cd97987d43fe8cc2030b4fad717`
-- Result: Complete. Aligned the existing `accounts.User` schema and admin with the locked email identity while retaining `AbstractUser`; no HTTP authentication behavior was implemented.
-- Q-003: locked to Django/DRF session-cookie authentication, preferred same-origin frontend/API deployment, secure HttpOnly production session cookie, and CSRF protection retained. JWT, DRF token authentication, custom bearer/refresh tokens, and OAuth/social authentication are excluded absent a future demonstrated need and decision.
-- Identity contract: required unique `email`, no `username` model field, `USERNAME_FIELD = "email"`, and `REQUIRED_FIELDS = []`. Existing `display_name` and `preferred_ui_language` remain unchanged.
-- Manager: `accounts.managers.UserManager` normalizes required email addresses, hashes passwords through `set_password`, keeps ordinary users non-staff/non-superuser, and validates `is_staff=True` plus `is_superuser=True` for superusers.
-- Admin: dedicated creation/change forms target the custom User. UserAdmin fieldsets, add form, list display, search, and ordering use email and never reference the removed username field.
-- Data safety: immediately before migration, PostgreSQL contained 0 Users, 0 blank/null emails, 0 duplicate-email groups, and 0 CreatorProfiles. No users were deleted, reset, or assigned manufactured identities.
-- Migration: `accounts.0002_alter_user_managers_remove_user_username_and_more` changes the manager state, removes `username`, and makes `email` required/unique. It applied successfully to the existing PostgreSQL development database. CreatorProfile and content schema were not changed.
-- Tests/checks: all 63 backend tests pass, including manager, password hashing, uniqueness, normalization, superuser validation, project fields, admin compatibility, CreatorProfile relationships, and anonymous public API regressions. `manage.py check`, migration drift, `showmigrations accounts`, `pip check`, and runtime model assertions pass.
-- Deferred routes for BE-012: `POST /api/v1/auth/register/`, `POST /api/v1/auth/login/`, `POST /api/v1/auth/logout/`, and `GET /api/v1/me/`. BE-011 adds none of them and does not configure SessionAuthentication.
-- Files changed: `backend/accounts/models.py`; `backend/accounts/managers.py`; `backend/accounts/forms.py`; `backend/accounts/admin.py`; `backend/accounts/tests.py`; `backend/accounts/migrations/0002_alter_user_managers_remove_user_username_and_more.py`; `backend/creators/tests.py`; `backend/content/tests.py`; `docs/05-api-auth-and-roles.md`; `docs/13-decisions-and-open-questions.md`; `docs/latex/chapters/10-api-auth-roles.tex`; `docs/ai/backend/STATE.md`; `docs/ai/backend/HANDOFF.md`.
+- Task ID: BE-012
+- Exact base SHA: `3c53e16b09fc1c7d5c2a8fb78cfd8ccdc3d6538c`
+- Result: Complete. Implemented the initial Django/DRF session-authentication API without model changes, migrations, token authentication, CORS, or authorization work.
+- Auth configuration: DRF's sole global authentication class is `SessionAuthentication`; no global permission class was added. `SESSION_COOKIE_HTTPONLY` is explicitly true, local development retains the default non-secure cookie setting, and Django's default SameSite protection remains intact.
+- API contract: `GET /api/v1/auth/csrf/` returns `{ "csrfToken": "<token>" }`; registration returns 201 plus the safe user representation; login returns 200 plus the same representation; authenticated logout returns 204; authenticated `/api/v1/me/` returns exactly `id`, `email`, `display_name`, and `preferred_ui_language`.
+- CSRF behavior: the bootstrap response supplies both a usable masked token and CSRF cookie. Django's real `CsrfViewMiddleware` explicitly protects registration, login, and logout. Missing-CSRF registration/login/logout requests are proven to return 403; CSRF is not disabled or exempted.
+- Registration behavior: email/password are required; existing optional display name and preferred-language semantics are preserved; Django password validators run before persistence; duplicate email is a normal validation error; the custom User manager hashes the password and creates no username; successful registration logs in the new user.
+- Login behavior: Django's configured authentication backend receives normalized email plus password. Wrong-password and nonexistent-email attempts return the same generic response. Successful login creates an authenticated session and rotates an existing anonymous session identifier.
+- Logout/session lifecycle: Django logout deletes the server-side session and expires the session cookie; a subsequent `/api/v1/me/` request is rejected.
+- Public API regression: anonymous health, Topic list/detail, Source list/detail, and published-Idea list/detail behavior remains passing under explicit `AllowAny` permissions.
+- Tests/checks: 31 focused account tests and all 81 backend tests pass against PostgreSQL. `manage.py check`, `manage.py makemigrations --check --dry-run` (`No changes detected`), `python -m pip check`, and `git diff --check` pass.
+- Files changed: `backend/accounts/serializers.py`; `backend/accounts/views.py`; `backend/accounts/urls.py`; `backend/accounts/tests.py`; `backend/api/urls.py`; `backend/config/settings.py`; `docs/ai/backend/STATE.md`; `docs/ai/backend/HANDOFF.md`.
+- Database/migrations: no model change, no generated migration, and no schema migration applied. Normal use of Django's existing session table is expected.
 - Known issues: none.
-- Next logical task: BE-012 Session Authentication API only; do not pull role/ownership authorization or later account-security features into it.
+- Next logical task: BE-013 authorization foundation only; do not add role/ownership permissions as part of BE-012.

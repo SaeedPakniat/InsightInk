@@ -1,4 +1,4 @@
-from django.urls import path
+from django.urls import include, path
 from rest_framework.routers import DefaultRouter
 
 from content.views import IdeaViewSet, SourceViewSet, TopicViewSet
@@ -13,5 +13,6 @@ router.register("sources", SourceViewSet, basename="source")
 router.register("ideas", IdeaViewSet, basename="idea")
 
 urlpatterns = [
+    path("", include("accounts.urls")),
     path("health/", health, name="health"),
 ] + router.urls
