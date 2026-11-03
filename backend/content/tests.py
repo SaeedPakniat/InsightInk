@@ -3,6 +3,8 @@ from django.core.exceptions import ValidationError
 from django.db import IntegrityError, transaction
 from django.db.models.deletion import ProtectedError
 from django.test import TestCase
+from django.urls import reverse
+from rest_framework.test import APIClient
 
 from creators.models import CreatorProfile
 
@@ -55,6 +57,101 @@ class TopicModelTests(ContentModelTestCase):
                 name_fa="فناوری دوم",
                 name_en="Technology Two",
             )
+
+
+class TopicAPITests(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+        self.active_topic = Topic.objects.create(
+            slug="technology",
+            name_fa="فناوری",
+            name_en="Technology",
+        )
+        self.inactive_topic = Topic.objects.create(
+            slug="inactive-topic",
+            name_fa="غیرفعال",
+            name_en="Inactive",
+            is_active=False,
+        )
+        self.list_url = reverse("api:topic-list")
+
+    def test_anonymous_list_returns_active_topics_with_public_fields(self):
+        response = APIClient().get(self.list_url)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.json(),
+            [
+                {
+                    "id": self.active_topic.id,
+                    "slug": "technology",
+                    "name_fa": "فناوری",
+                    "name_en": "Technology",
+                }
+            ],
+        )
+        self.assertNotIn("is_active", response.json()[0])
+
+    def test_list_is_ordered_by_id(self):
+        second_active_topic = Topic.objects.create(
+            slug="science",
+            name_fa="علم",
+            name_en="Science",
+        )
+
+        response = self.client.get(self.list_url)
+
+        self.assertEqual(
+            [topic["id"] for topic in response.json()],
+            [self.active_topic.id, second_active_topic.id],
+        )
+
+    def test_active_topic_detail_returns_public_contract(self):
+        url = reverse("api:topic-detail", args=[self.active_topic.id])
+
+        response = APIClient().get(url)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.json(),
+            {
+                "id": self.active_topic.id,
+                "slug": "technology",
+                "name_fa": "فناوری",
+                "name_en": "Technology",
+            },
+        )
+
+    def test_inactive_topic_detail_returns_404(self):
+        url = reverse("api:topic-detail", args=[self.inactive_topic.id])
+
+        response = self.client.get(url)
+
+        self.assertEqual(response.status_code, 404)
+
+    def test_missing_topic_detail_returns_404(self):
+        url = reverse("api:topic-detail", args=[self.inactive_topic.id + 1000])
+
+        response = self.client.get(url)
+
+        self.assertEqual(response.status_code, 404)
+
+    def test_post_is_rejected(self):
+        response = self.client.post(
+            self.list_url,
+            data={"slug": "new", "name_fa": "جدید", "name_en": "New"},
+        )
+
+        self.assertEqual(response.status_code, 405)
+
+    def test_detail_write_methods_are_rejected(self):
+        url = reverse("api:topic-detail", args=[self.active_topic.id])
+
+        for method in ("put", "patch", "delete"):
+            with self.subTest(method=method):
+                response = getattr(self.client, method)(url, data={})
+
+                self.assertEqual(response.status_code, 405)
 
 
 class SourceModelTests(ContentModelTestCase):
