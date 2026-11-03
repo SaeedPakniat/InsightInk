@@ -1,0 +1,79 @@
+from django.db import models
+
+from creators.models import CreatorProfile
+
+
+class Topic(models.Model):
+    slug = models.SlugField(max_length=80, unique=True)
+    name_fa = models.CharField(max_length=160)
+    name_en = models.CharField(max_length=160)
+    is_active = models.BooleanField(default=True)
+
+    def __str__(self):
+        return self.name_en
+
+
+class Source(models.Model):
+    class SourceType(models.TextChoices):
+        BOOK = "book", "Book"
+        ARTICLE = "article", "Article"
+        MOVIE = "movie", "Movie"
+        PODCAST = "podcast", "Podcast"
+
+    type = models.CharField(
+        max_length=20,
+        choices=SourceType.choices,
+        db_index=True,
+    )
+    title = models.CharField(max_length=255)
+    original_creator_text = models.CharField(max_length=255, blank=True)
+    language = models.CharField(max_length=16)
+    external_url = models.URLField(max_length=500, blank=True)
+    cover = models.URLField(max_length=500, blank=True)
+    metadata = models.JSONField(default=dict, blank=True)
+
+    def __str__(self):
+        return self.title
+
+
+class Idea(models.Model):
+    class IdeaStatus(models.TextChoices):
+        DRAFT = "draft", "Draft"
+        PUBLISHED = "published", "Published"
+        HIDDEN = "hidden", "Hidden"
+
+    creator = models.ForeignKey(
+        CreatorProfile,
+        on_delete=models.PROTECT,
+        related_name="ideas",
+    )
+    source = models.ForeignKey(
+        Source,
+        on_delete=models.PROTECT,
+        related_name="ideas",
+    )
+    language = models.CharField(max_length=16, db_index=True)
+    title = models.CharField(max_length=255)
+    body = models.TextField()
+    estimated_read_seconds = models.PositiveIntegerField()
+    status = models.CharField(
+        max_length=20,
+        choices=IdeaStatus.choices,
+        default=IdeaStatus.DRAFT,
+        db_index=True,
+    )
+    published_at = models.DateTimeField(null=True, blank=True, db_index=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    topics = models.ManyToManyField(Topic, related_name="ideas", blank=True)
+
+    class Meta:
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(estimated_read_seconds__gt=0),
+                name="content_idea_estimated_read_seconds_gt_0",
+            ),
+        ]
+
+    def __str__(self):
+        return self.title
