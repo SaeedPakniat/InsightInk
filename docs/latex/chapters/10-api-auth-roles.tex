@@ -157,12 +157,17 @@ Social Login در Source آمده اما هنوز Scope نهایی آن Open Que
 
 \section{Session یا Token؟}
 
-این تصمیم را قبل از دانستن Deployment topology قفل نمی‌کنیم.
+تصمیم قفل‌شده پروژه استفاده از Django Session/Cookie authentication با
+\eng{DRF SessionAuthentication} و topology ترجیحی same-origin برای Frontend و API است.
+در Production، Session cookie باید Secure و HttpOnly باشد و CSRF protection فعال بماند.
 
-اگر Frontend/API same-origin باشند، Cookie/Session approach بسیار طبیعی است. اگر Origins جدا یا نیازهای PWA خاص داشته باشیم، Token strategy بررسی می‌شود.
+هویت canonical حساب، Email اجباری و Unique است. Custom User همچنان از
+\eng{AbstractUser} ارث می‌برد، فیلد Username حذف می‌شود و
+\eng{USERNAME\_FIELD = "email"} خواهد بود.
 
 \begin{warningbox}
-فقط چون JWT معروف است، Custom JWT system نمی‌سازیم. ابتدا Threat model و Deployment را می‌فهمیم.
+JWT، DRF TokenAuthentication، Bearer/Refresh token سفارشی و OAuth/Social auth بدون
+نیاز اثبات‌شده و تصمیم معماری جدید اضافه نمی‌شوند.
 \end{warningbox}
 
 \section{Authorization}
