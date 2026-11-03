@@ -1,21 +1,24 @@
 # Backend State
 
-- BE-009 status: Complete.
-- BE-009 starting SHA: `34181c7dcbd95b7d6dae75e6a3b5ea8e4a4305db` (`master`, accepted and pushed BE-008).
+- BE-010 status: Complete.
+- BE-010 starting SHA: `b3f51ef1b78ebc1456a0a65fb53f8aa75d7943cb` (`master`, accepted and pushed BE-009).
 - Django project: `backend/` with configuration package `backend/config/`.
 - REST API framework: Django REST framework `3.18.3`, registered as `rest_framework`.
 - API namespace: `/api/v1/`, organized by the non-domain `backend/api/` routing package.
 - Health endpoint: unauthenticated read-only `GET /api/v1/health/` returns HTTP 200 JSON `{"status": "ok"}`; mutation methods return HTTP 405.
 - Topic API: anonymous read-only `GET /api/v1/topics/` and `GET /api/v1/topics/<pk>/`; responses expose only `id`, `slug`, `name_fa`, and `name_en`, use numeric primary-key lookup, return active Topics only, and order lists by `id`. POST, PUT, PATCH, and DELETE are unavailable.
-- Source API: anonymous read-only `GET /api/v1/sources/` and `GET /api/v1/sources/<pk>/`; responses expose only `id`, `type`, `title`, `original_creator_text`, `language`, `external_url`, and `cover`, use numeric primary-key lookup, include all documented Source types, and order lists by `id`. Flexible `metadata` is intentionally not public. POST, PUT, PATCH, and DELETE are unavailable; no filtering, searching, pagination, or Idea data is exposed.
+- Source API: anonymous read-only `GET /api/v1/sources/` and `GET /api/v1/sources/<pk>/`; responses expose only `id`, `type`, `title`, `original_creator_text`, `language`, `external_url`, and `cover`, use numeric primary-key lookup, include all documented Source types, and order lists by `id`. Flexible `metadata` is intentionally not public. POST, PUT, PATCH, and DELETE are unavailable.
+- Idea API: anonymous read-only `GET /api/v1/ideas/` and `GET /api/v1/ideas/<pk>/`; responses expose only `id`, `language`, `title`, `body`, `estimated_read_seconds`, `published_at`, `creator`, `source`, and `topics`, use numeric primary-key lookup, and order lists by descending `id`. Only `published` Ideas are visible; draft, hidden, and missing details return HTTP 404. POST, PUT, PATCH, and DELETE are unavailable.
+- Nested Idea contract: `creator` exposes only `id`, `display_name`, `avatar`, and `is_verified`, with `display_name` sourced from the related User. `source` reuses the public `SourceSerializer`, so metadata remains private. `topics` reuses the public `TopicSerializer` and includes only active attached Topics; an empty list is valid.
+- Idea query optimization: the published-only queryset uses `select_related("creator", "creator__user", "source")` plus an ordered active-Topic `Prefetch` stored as `active_topics`. Focused regression coverage confirms list serialization remains two queries for multiple Ideas with distinct creators and sources.
 - Custom User: `accounts.User`; CreatorProfile remains the creator-specific one-to-one capability model.
 - Content domain: `backend/content/`, registered as one Django app containing `Topic`, `Source`, and `Idea`.
 - Topic: unique 80-character slug, required Persian and English names, and active-by-default state.
 - Source: bounded book/article/movie/podcast type, required title and free language tag, optional creator text and URL-based cover/external link, and limited JSON metadata.
 - Idea: required protected relationships to `creators.CreatorProfile` and `content.Source`; required language, title, body, and positive estimated read time; draft/published/hidden status; nullable publication time; automatic timestamps; optional many-to-many Topics.
 - Constraints and lifecycle: `content_idea_estimated_read_seconds_gt_0` enforces a strictly positive read time; CreatorProfile and Source deletion is protected while referenced by an Idea.
-- Migration: `content.0001_initial` generated, inspected, and applied to local PostgreSQL.
-- Validation: nine focused Source API tests cover anonymous access, exact public fields, omitted metadata, deterministic ordering, numeric detail/missing 404 behavior, stored type values, blank optional fields, rejected mutation methods, and Topic/health regression coverage. The existing Topic and health endpoint suites remain covered. The project `.venv` passes all 38 backend tests, Django checks, PostgreSQL-backed migration drift, dependency health, and Git whitespace validation.
-- Deferred: all User, CreatorProfile, and Idea serializers/endpoints; Source mutation/filtering/search; Topic mutation and slug-based nested Idea routes; authentication, permissions/RBAC, pagination, publishing lifecycle, feeds, engagement, library, recommendations, moderation workflows, messaging, notifications, TTS, membership/eBooks, and frontend work.
-- Known environment note: PostgreSQL connectivity has previously been intermittent and was unavailable inside the restricted sandbox, but final BE-009 database-backed verification passed against the configured local PostgreSQL service. No BE-009 model or schema change exists.
-- Next logical task: define and review a narrowly scoped read-only Idea API milestone without implementing authentication, mutations, or adjacent domain APIs unless explicitly requested.
+- Migration: `content.0001_initial` is applied to local PostgreSQL; BE-010 changes no model or migration.
+- Validation: 13 focused Idea API tests cover anonymous access, published-only visibility, descending-id ordering, exact public fields, safe Creator and Source summaries, active-only/empty Topics, detail 404 behavior, rejected mutations, Topic/Source/health regressions, and stable two-query nested list serialization. The project `.venv` passes all 51 backend tests, Django checks, PostgreSQL-backed migration drift, dependency health, and Git whitespace validation.
+- Deferred: feed pagination/ranking, recommendations, all Idea writes and publication workflow, Creator/account endpoints, authentication and permissions/RBAC, owner preview and moderator bypass, engagement, search, library, moderation workflows, messaging, notifications, TTS, membership/eBooks, and frontend work.
+- Known environment note: the restricted sandbox cannot reach local PostgreSQL, but final BE-010 focused, full-suite, and migration-history verification passed against the configured local PostgreSQL service.
+- Next logical task: define and review a narrowly scoped public read-only Creator API milestone without implementing authentication, mutations, follows, metrics, or adjacent domain APIs unless explicitly requested.

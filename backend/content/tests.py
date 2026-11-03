@@ -4,6 +4,7 @@ from django.db import IntegrityError, transaction
 from django.db.models.deletion import ProtectedError
 from django.test import TestCase
 from django.urls import reverse
+from django.utils import timezone
 from rest_framework.test import APIClient
 
 from creators.models import CreatorProfile
@@ -316,6 +317,251 @@ class SourceAPITests(TestCase):
         self.assertEqual(topic_response.status_code, 200)
         self.assertEqual(health_response.status_code, 200)
         self.assertEqual(health_response.json(), {"status": "ok"})
+
+
+class IdeaAPITests(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+        self.user = get_user_model().objects.create_user(
+            username="idea-creator",
+            email="creator@example.com",
+            password="test-password",
+            display_name="Public Creator",
+            preferred_ui_language="en",
+            is_staff=True,
+        )
+        self.creator = CreatorProfile.objects.create(
+            user=self.user,
+            avatar="creator_avatars/public.png",
+            is_verified=True,
+            bio_en="Private biography",
+        )
+        self.source = Source.objects.create(
+            type=Source.SourceType.BOOK,
+            title="The Public Source",
+            original_creator_text="Source Author",
+            language="en",
+            external_url="https://example.com/source",
+            cover="https://example.com/cover.jpg",
+            metadata={"isbn": "private-metadata"},
+        )
+        self.active_topic = Topic.objects.create(
+            slug="active-topic",
+            name_fa="موضوع فعال",
+            name_en="Active Topic",
+        )
+        self.inactive_topic = Topic.objects.create(
+            slug="inactive-topic",
+            name_fa="موضوع غیرفعال",
+            name_en="Inactive Topic",
+            is_active=False,
+        )
+        self.published_idea = self.create_idea(
+            title="Published Idea",
+            status=Idea.IdeaStatus.PUBLISHED,
+            published_at=timezone.now(),
+        )
+        self.published_idea.topics.add(self.active_topic, self.inactive_topic)
+        self.draft_idea = self.create_idea(
+            title="Draft Idea",
+            status=Idea.IdeaStatus.DRAFT,
+        )
+        self.hidden_idea = self.create_idea(
+            title="Hidden Idea",
+            status=Idea.IdeaStatus.HIDDEN,
+        )
+        self.list_url = reverse("api:idea-list")
+
+    def create_idea(self, **overrides):
+        values = {
+            "creator": self.creator,
+            "source": self.source,
+            "language": "en",
+            "title": "An Idea",
+            "body": "The public idea body.",
+            "estimated_read_seconds": 90,
+        }
+        values.update(overrides)
+        return Idea.objects.create(**values)
+
+    def test_anonymous_list_returns_only_published_ideas_in_descending_id_order(self):
+        newer_published_idea = self.create_idea(
+            title="Newer Published Idea",
+            status=Idea.IdeaStatus.PUBLISHED,
+        )
+
+        response = APIClient().get(self.list_url)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            [idea["id"] for idea in response.json()],
+            [newer_published_idea.id, self.published_idea.id],
+        )
+        self.assertNotIn(self.draft_idea.id, [idea["id"] for idea in response.json()])
+        self.assertNotIn(self.hidden_idea.id, [idea["id"] for idea in response.json()])
+
+    def test_list_exposes_exact_public_fields(self):
+        response = self.client.get(self.list_url)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            set(response.json()[0]),
+            {
+                "id",
+                "language",
+                "title",
+                "body",
+                "estimated_read_seconds",
+                "published_at",
+                "creator",
+                "source",
+                "topics",
+            },
+        )
+        self.assertTrue(
+            {"status", "created_at", "updated_at"}.isdisjoint(response.json()[0])
+        )
+
+    def test_creator_summary_is_safe_and_minimal(self):
+        creator = self.client.get(self.list_url).json()[0]["creator"]
+
+        self.assertEqual(
+            set(creator), {"id", "display_name", "avatar", "is_verified"}
+        )
+        self.assertEqual(creator["id"], self.creator.id)
+        self.assertEqual(creator["display_name"], "Public Creator")
+        self.assertTrue(creator["avatar"].endswith("/creator_avatars/public.png"))
+        self.assertTrue(creator["is_verified"])
+        self.assertTrue(
+            {
+                "username",
+                "email",
+                "password",
+                "preferred_ui_language",
+                "is_staff",
+                "is_superuser",
+                "bio_fa",
+                "bio_en",
+                "created_at",
+            }.isdisjoint(creator)
+        )
+
+    def test_source_uses_existing_public_contract_without_metadata(self):
+        source = self.client.get(self.list_url).json()[0]["source"]
+
+        self.assertEqual(
+            set(source),
+            {
+                "id",
+                "type",
+                "title",
+                "original_creator_text",
+                "language",
+                "external_url",
+                "cover",
+            },
+        )
+        self.assertNotIn("metadata", source)
+
+    def test_only_active_topics_are_nested(self):
+        topics = self.client.get(self.list_url).json()[0]["topics"]
+
+        self.assertEqual(
+            topics,
+            [
+                {
+                    "id": self.active_topic.id,
+                    "slug": "active-topic",
+                    "name_fa": "موضوع فعال",
+                    "name_en": "Active Topic",
+                }
+            ],
+        )
+
+    def test_idea_may_have_an_empty_topic_list(self):
+        idea = self.create_idea(
+            title="No Topics",
+            status=Idea.IdeaStatus.PUBLISHED,
+        )
+
+        response = self.client.get(reverse("api:idea-detail", args=[idea.id]))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["topics"], [])
+
+    def test_published_detail_returns_public_contract(self):
+        response = APIClient().get(
+            reverse("api:idea-detail", args=[self.published_idea.id])
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["id"], self.published_idea.id)
+        self.assertEqual(response.json()["title"], "Published Idea")
+
+    def test_missing_detail_returns_404(self):
+        response = self.client.get(
+            reverse("api:idea-detail", args=[self.hidden_idea.id + 1000])
+        )
+
+        self.assertEqual(response.status_code, 404)
+
+    def test_draft_detail_returns_404(self):
+        response = self.client.get(
+            reverse("api:idea-detail", args=[self.draft_idea.id])
+        )
+
+        self.assertEqual(response.status_code, 404)
+
+    def test_hidden_detail_returns_404(self):
+        response = self.client.get(
+            reverse("api:idea-detail", args=[self.hidden_idea.id])
+        )
+
+        self.assertEqual(response.status_code, 404)
+
+    def test_write_methods_are_rejected(self):
+        detail_url = reverse("api:idea-detail", args=[self.published_idea.id])
+
+        self.assertEqual(self.client.post(self.list_url, data={}).status_code, 405)
+        for method in ("put", "patch", "delete"):
+            with self.subTest(method=method):
+                response = getattr(self.client, method)(detail_url, data={})
+
+                self.assertEqual(response.status_code, 405)
+
+    def test_existing_topic_source_and_health_apis_still_work(self):
+        topic_response = self.client.get(reverse("api:topic-list"))
+        source_response = self.client.get(reverse("api:source-list"))
+        health_response = self.client.get(reverse("api:health"))
+
+        self.assertEqual(topic_response.status_code, 200)
+        self.assertEqual(source_response.status_code, 200)
+        self.assertEqual(health_response.status_code, 200)
+        self.assertEqual(health_response.json(), {"status": "ok"})
+
+    def test_list_nested_serialization_uses_two_queries(self):
+        second_user = get_user_model().objects.create_user(
+            username="second-creator",
+            display_name="Second Creator",
+        )
+        second_creator = CreatorProfile.objects.create(user=second_user)
+        second_source = Source.objects.create(
+            type=Source.SourceType.PODCAST,
+            title="Second Source",
+            language="fa",
+        )
+        second_idea = self.create_idea(
+            creator=second_creator,
+            source=second_source,
+            title="Second Published Idea",
+            status=Idea.IdeaStatus.PUBLISHED,
+        )
+        second_idea.topics.add(self.active_topic)
+
+        with self.assertNumQueries(2):
+            response = self.client.get(self.list_url)
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(len(response.json()), 2)
 
 
 class IdeaModelTests(ContentModelTestCase):
