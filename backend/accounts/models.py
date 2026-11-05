@@ -22,3 +22,25 @@ class User(AbstractUser):
     REQUIRED_FIELDS = []
 
     objects = UserManager()
+
+
+class UserInterest(models.Model):
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name="interests",
+    )
+    topic = models.ForeignKey(
+        "content.Topic",
+        on_delete=models.CASCADE,
+        related_name="interested_users",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=("user", "topic"),
+                name="accounts_userinterest_user_topic_unique",
+            ),
+        ]

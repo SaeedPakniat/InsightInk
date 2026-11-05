@@ -1,21 +1,22 @@
 # Backend Handoff
 
-- Task ID: BE-018
-- Exact base SHA: `dcaac3de8bce349449c3bbbeeb91bf592ca9933c`
-- Result: Complete and accepted for checkpoint. Added bilingual PostgreSQL/Django Explore/Search plus active-Topic browsing without schema changes or external search infrastructure.
-- New domain: `backend/explore/` contains normalization, query-parameter serializer, selectors, views, URLs, and focused tests. The app has no persistent model because search state is derived from existing relational content.
-- Search contract: `GET /api/v1/search/` is anonymous/read-only and cursor-paginated. Optional params: `q` (max 200), `language` (`fa|en`), `type` (book/article/movie/podcast), `topic` (slug). Filters may be used with or without `q`; no params returns the baseline public Explore listing.
-- Query scope: text query searches Idea title/body, Source title/original_creator_text, Creator User display_name, and Persian/English Topic names. All results originate from `content.selectors.public_idea_queryset()`, so only PUBLISHED Ideas and active serialized Topics are exposed.
-- Persian/English support: `explore.normalization.normalize_search_text()` normalizes NFKC, Arabic/Persian Yeh/Kaf variants, ZWNJ, repeated whitespace, trim, and casefold on the user query. `normalized_search_expression()` mirrors the required stored-field substitutions in PostgreSQL using Django expressions + `REGEXP_REPLACE`. This makes Persian/Arabic keyboard variants and ZWNJ/space forms match without destructively changing stored text. English search remains case-insensitive.
-- Topic browsing contract: `GET /api/v1/topics/<slug>/ideas/` is anonymous/read-only, cursor-paginated, active-Topic-only, and PUBLISHED-Idea-only. Inactive/missing Topic returns 404.
-- Filter semantics: language is content language, not UI language; source type is relational Source.type; Topic filter requires an active matching Topic relationship. Invalid language/type values return 400 rather than silently broadening the query.
-- Pagination/ranking: search/topic browse reuse the existing 10-item `FeedCursorPagination` and `-id` baseline ordering. No recommendation score or search relevance ranking is introduced yet.
-- Stored-data rule: BE-018 never rewrites Idea/Source/Creator/Topic original text. Search normalization exists only as Python/query expressions.
-- Infrastructure boundary: no Elasticsearch, Postgres extension dependency, vector search, embeddings, RAG, LLM, or search microservice. This follows the architecture rule to prove PostgreSQL search insufficient before adding infrastructure.
-- Trending boundary: roadmap mentions a simple trending definition but provides no locked metric/window; BE-018 leaves it deferred instead of inventing product policy.
-- Database/migrations: no model/schema change; no migration; migration drift is clean.
-- Tests/checks: focused Explore suite 24 tests passed; full backend suite 197 tests passed; Django check, migration drift check, pip check, and git diff check pass.
-- Files changed/new: `backend/config/settings.py`; `backend/api/urls.py`; new `backend/explore/__init__.py`; `apps.py`; `admin.py`; `models.py`; `migrations/__init__.py`; `normalization.py`; `serializers.py`; `selectors.py`; `views.py`; `urls.py`; `tests.py`; `docs/ai/backend/STATE.md`; `docs/ai/backend/HANDOFF.md`.
-- Known issues: no BE-018 defect identified. This is deliberate basic multilingual substring search, not stemming/fuzzy/semantic search.
-- Next logical task: BE-019 deterministic recommendations + UserInterest cold-start foundation.
-- Delivery: ready for one bounded BE-018 checkpoint commit/push.
+- Task ID: BE-019
+- Exact base SHA: `c347442b3ea3c71e761bba95ca8088f5e51461d9`
+- Result: Complete and accepted for checkpoint. Added explicit User interests, deterministic personalized recommendations, bilingual explanations, and Jaccard-based Related Ideas.
+- UserInterest model: added under accounts because interests are user preference/account-domain data. Fields are user FK, Topic FK, created_at; unique `(user, topic)` constraint. No explicit_weight column was added because that field is optional in the conceptual model and no locked API/product behavior uses manual per-topic weighting.
+- Interest endpoints: `GET /api/v1/me/interests/` and `PUT /api/v1/me/interests/`. Both require authentication; PUT also receives normal SessionAuthentication CSRF enforcement. PUT uses atomic replacement semantics and only accepts active Topic IDs. Empty list clears; duplicate/inactive/unknown IDs return 400.
+- Recommendation endpoint: `GET /api/v1/recommendations/` requires authentication and returns up to 20 objects shaped as `{idea, score, reason}`. The Idea is serialized with the existing safe public representation.
+- Candidate selection: at most 200 PUBLISHED Ideas from the shared public selector are scored. User signals are read from UserInterest, SavedIdea Topic counts, Spark Topic counts, and CreatorFollow.
+- Scoring constants: interest +5; save affinity max +4; spark affinity max +3; followed creator +3; popularity 0..1; freshness 0..1. Save/Spark affinity is normalized with cap=3; popularity uses cap=10 Sparks; freshness decays linearly over a 30-day window.
+- Language/seen boundaries: `preferred_ui_language` localizes recommendation reasons only. It is not treated as content preference, honoring the i18n rule separating UI language from content language. Already-seen penalty is deliberately zero because no ReadingEvent/read definition exists yet.
+- Explanations: deterministic, signal-consistent Persian/English reasons are generated without an LLM. The highest weighted active signal chooses the reason.
+- Related Ideas: public `GET /api/v1/ideas/<id>/related/` operates only when the source Idea is PUBLISHED. Candidates must share at least one active Topic. Jaccard similarity is primary; different Source format adds 0.10; popularity and freshness each add at most 0.05 as tie-breakers. Results are capped at 10 and return `{idea, score, similarity, reason}`.
+- Related candidate strategy: at most 100 topic-overlap PUBLISHED candidates are considered. Draft/Hidden/unrelated Ideas are excluded.
+- Architecture: `recommendations/scoring.py` is pure math; `selectors.py` fetches candidate/signal data; `explanations.py` creates deterministic user-facing reasons; `services.py` orchestrates ranking; views are thin.
+- Migration: `accounts.0004_userinterest` generated, inspected, and applied to PostgreSQL. It contains only UserInterest plus its unique constraint. No recommendation model/migration exists.
+- Tests/checks: accounts+recommendations focused suite 81 tests passed; full backend suite 230 tests passed; Django check, migration-drift check, pip check, and git diff check pass.
+- Files changed/new: accounts model/serializer/view/url/tests plus `accounts/migrations/0004_userinterest.py`; config settings; API root URLs; new recommendations app files including scoring/selectors/explanations/services/serializers/views/urls/tests; backend STATE/HANDOFF.
+- Desktop teaching notes: living study file maintained separately at `/home/Pandatron/Desktop/InsightInk_Backend_Teaching_Notes.md`.
+- Known issues: no BE-019 defect identified. Numeric ranking constants are documented baseline hypotheses for testing and academic explanation, not source-mandated values.
+- Next logical task: BE-020 Moderation + hardening baseline, unless the project chooses to switch to frontend integration now that the first defensible backend MVP capabilities are largely present.
+- Delivery: ready for one bounded BE-019 checkpoint commit/push.

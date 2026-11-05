@@ -13,7 +13,9 @@ from rest_framework.test import APIClient
 
 from .admin import CustomUserAdmin
 from .forms import CustomUserChangeForm, CustomUserCreationForm
-from .models import User
+from content.models import Topic
+
+from .models import User, UserInterest
 from .permissions import (
     MODERATOR_GROUP_NAME,
     IsAdmin,
@@ -594,3 +596,165 @@ class ModeratorAssignmentServiceTests(TestCase):
                 codename__in=prohibited_codenames,
             ).exists()
         )
+
+
+class UserInterestModelTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(email="interest-model@example.com")
+        self.topic = Topic.objects.create(
+            slug="interest-model",
+            name_fa="علاقه",
+            name_en="Interest",
+        )
+
+    def test_user_topic_pair_is_unique(self):
+        UserInterest.objects.create(user=self.user, topic=self.topic)
+
+        with self.assertRaises(IntegrityError), transaction.atomic():
+            UserInterest.objects.create(user=self.user, topic=self.topic)
+
+
+class UserInterestsAPITests(TestCase):
+    def setUp(self):
+        self.client = APIClient(enforce_csrf_checks=True)
+        self.user = User.objects.create_user(email="interests-api@example.com")
+        self.other_user = User.objects.create_user(email="other-interests@example.com")
+        self.first = Topic.objects.create(
+            slug="science-interest",
+            name_fa="علم",
+            name_en="Science",
+        )
+        self.second = Topic.objects.create(
+            slug="history-interest",
+            name_fa="تاریخ",
+            name_en="History",
+        )
+        self.inactive = Topic.objects.create(
+            slug="inactive-interest",
+            name_fa="غیرفعال",
+            name_en="Inactive",
+            is_active=False,
+        )
+        self.url = reverse("api:accounts:me-interests")
+        self.csrf_url = reverse("api:accounts:csrf")
+
+    def csrf_token(self):
+        response = self.client.get(self.csrf_url)
+        self.assertEqual(response.status_code, 200)
+        return response.json()["csrfToken"]
+
+    def test_interests_require_authentication(self):
+        self.assertEqual(self.client.get(self.url).status_code, 403)
+
+    def test_get_returns_only_current_users_active_interests(self):
+        UserInterest.objects.create(user=self.user, topic=self.first)
+        UserInterest.objects.create(user=self.user, topic=self.inactive)
+        UserInterest.objects.create(user=self.other_user, topic=self.second)
+        self.client.force_login(self.user)
+
+        response = self.client.get(self.url)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            [topic["id"] for topic in response.json()["topics"]],
+            [self.first.id],
+        )
+
+    def test_put_replaces_complete_interest_set(self):
+        UserInterest.objects.create(user=self.user, topic=self.first)
+        self.client.force_login(self.user)
+        token = self.csrf_token()
+
+        response = self.client.put(
+            self.url,
+            data={"topics": [self.second.id]},
+            format="json",
+            HTTP_X_CSRFTOKEN=token,
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["topics"][0]["id"], self.second.id)
+        self.assertQuerySetEqual(
+            UserInterest.objects.filter(user=self.user).values_list(
+                "topic_id", flat=True
+            ),
+            [self.second.id],
+        )
+
+    def test_put_is_idempotent(self):
+        self.client.force_login(self.user)
+        token = self.csrf_token()
+
+        for _ in range(2):
+            response = self.client.put(
+                self.url,
+                data={"topics": [self.first.id, self.second.id]},
+                format="json",
+                HTTP_X_CSRFTOKEN=token,
+            )
+            self.assertEqual(response.status_code, 200)
+
+        self.assertEqual(UserInterest.objects.filter(user=self.user).count(), 2)
+
+    def test_put_empty_list_clears_interests(self):
+        UserInterest.objects.create(user=self.user, topic=self.first)
+        self.client.force_login(self.user)
+        token = self.csrf_token()
+
+        response = self.client.put(
+            self.url,
+            data={"topics": []},
+            format="json",
+            HTTP_X_CSRFTOKEN=token,
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["topics"], [])
+        self.assertFalse(UserInterest.objects.filter(user=self.user).exists())
+
+    def test_inactive_or_unknown_topic_is_rejected_without_replacing_existing(self):
+        UserInterest.objects.create(user=self.user, topic=self.first)
+        self.client.force_login(self.user)
+        token = self.csrf_token()
+
+        for topic_id in (self.inactive.id, self.inactive.id + 9999):
+            with self.subTest(topic_id=topic_id):
+                response = self.client.put(
+                    self.url,
+                    data={"topics": [topic_id]},
+                    format="json",
+                    HTTP_X_CSRFTOKEN=token,
+                )
+                self.assertEqual(response.status_code, 400)
+                self.assertTrue(
+                    UserInterest.objects.filter(
+                        user=self.user,
+                        topic=self.first,
+                    ).exists()
+                )
+
+    def test_duplicate_topic_ids_are_rejected(self):
+        self.client.force_login(self.user)
+        token = self.csrf_token()
+
+        response = self.client.put(
+            self.url,
+            data={"topics": [self.first.id, self.first.id]},
+            format="json",
+            HTTP_X_CSRFTOKEN=token,
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("topics", response.json())
+
+    def test_put_requires_csrf(self):
+        self.client.force_login(self.user)
+
+        response = self.client.put(
+            self.url,
+            data={"topics": [self.first.id]},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 403)
+        self.assertFalse(UserInterest.objects.filter(user=self.user).exists())

@@ -5,6 +5,11 @@ from django.db import IntegrityError, transaction
 from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
 
+from content.models import Topic
+from content.serializers import TopicSerializer
+
+from .models import UserInterest
+
 
 User = get_user_model()
 
@@ -67,3 +72,21 @@ class LoginSerializer(serializers.Serializer):
 
     def validate_email(self, value):
         return User.objects.normalize_email(value)
+
+
+class InterestSelectionSerializer(serializers.Serializer):
+    topics = serializers.PrimaryKeyRelatedField(
+        queryset=Topic.objects.filter(is_active=True),
+        many=True,
+        allow_empty=True,
+    )
+
+    def validate_topics(self, topics):
+        topic_ids = [topic.id for topic in topics]
+        if len(topic_ids) != len(set(topic_ids)):
+            raise serializers.ValidationError("Duplicate topics are not allowed.")
+        return topics
+
+
+class CurrentInterestsSerializer(serializers.Serializer):
+    topics = TopicSerializer(many=True, read_only=True)
