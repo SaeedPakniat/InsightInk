@@ -669,3 +669,320 @@ class IdeaCreatorOwnershipPermissionTests(ContentModelTestCase):
         self.assertFalse(
             self.permission.has_object_permission(request, None, self.idea)
         )
+
+
+class CreatorIdeaWorkspaceAPITests(TestCase):
+    def setUp(self):
+        self.client = APIClient(enforce_csrf_checks=True)
+        self.creator_user = get_user_model().objects.create_user(
+            email="workspace-creator@example.com"
+        )
+        self.creator = CreatorProfile.objects.create(user=self.creator_user)
+        self.other_user = get_user_model().objects.create_user(
+            email="workspace-other-creator@example.com"
+        )
+        self.other_creator = CreatorProfile.objects.create(user=self.other_user)
+        self.reader = get_user_model().objects.create_user(
+            email="workspace-reader@example.com"
+        )
+        self.source = Source.objects.create(
+            type=Source.SourceType.BOOK,
+            title="Workspace Source",
+            language="en",
+        )
+        self.active_topic = Topic.objects.create(
+            slug="workspace-active",
+            name_fa="فعال",
+            name_en="Active",
+        )
+        self.inactive_topic = Topic.objects.create(
+            slug="workspace-inactive",
+            name_fa="غیرفعال",
+            name_en="Inactive",
+            is_active=False,
+        )
+        self.list_url = reverse("api:creator-idea-list")
+        self.csrf_url = reverse("api:accounts:csrf")
+
+    def create_idea(self, *, creator=None, status=Idea.IdeaStatus.DRAFT, **overrides):
+        values = {
+            "creator": creator or self.creator,
+            "source": self.source,
+            "language": "en",
+            "title": "Workspace Idea",
+            "body": "Workspace body",
+            "estimated_read_seconds": 75,
+            "status": status,
+        }
+        values.update(overrides)
+        return Idea.objects.create(**values)
+
+    def csrf_token(self):
+        response = self.client.get(self.csrf_url)
+        self.assertEqual(response.status_code, 200)
+        return response.json()["csrfToken"]
+
+    def request_with_csrf(self, method, url, data=None):
+        token = self.csrf_token()
+        return getattr(self.client, method)(
+            url,
+            data=data or {},
+            format="json",
+            HTTP_X_CSRFTOKEN=token,
+        )
+
+    def valid_payload(self, **overrides):
+        values = {
+            "language": "en",
+            "title": "Draft title",
+            "body": "Draft body",
+            "estimated_read_seconds": 90,
+            "source": self.source.id,
+            "topics": [self.active_topic.id],
+        }
+        values.update(overrides)
+        return values
+
+    def test_reader_without_creator_profile_cannot_create_idea(self):
+        self.client.force_login(self.reader)
+
+        response = self.request_with_csrf("post", self.list_url, self.valid_payload())
+
+        self.assertEqual(response.status_code, 403)
+        self.assertFalse(Idea.objects.filter(creator__user=self.reader).exists())
+
+    def test_creator_creates_draft_with_server_controlled_lifecycle_and_owner(self):
+        self.client.force_login(self.creator_user)
+
+        response = self.request_with_csrf(
+            "post",
+            self.list_url,
+            self.valid_payload(
+                creator=self.other_creator.id,
+                status=Idea.IdeaStatus.PUBLISHED,
+                published_at=timezone.now().isoformat(),
+            ),
+        )
+
+        self.assertEqual(response.status_code, 201)
+        idea = Idea.objects.get(pk=response.json()["id"])
+        self.assertEqual(idea.creator, self.creator)
+        self.assertEqual(idea.status, Idea.IdeaStatus.DRAFT)
+        self.assertIsNone(idea.published_at)
+        self.assertQuerySetEqual(idea.topics.all(), [self.active_topic])
+        self.assertEqual(response.json()["status"], Idea.IdeaStatus.DRAFT)
+        self.assertIsNone(response.json()["published_at"])
+
+    def test_create_rejects_inactive_topic(self):
+        self.client.force_login(self.creator_user)
+
+        response = self.request_with_csrf(
+            "post",
+            self.list_url,
+            self.valid_payload(topics=[self.inactive_topic.id]),
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("topics", response.json())
+
+    def test_create_rejects_missing_source(self):
+        self.client.force_login(self.creator_user)
+
+        response = self.request_with_csrf(
+            "post",
+            self.list_url,
+            self.valid_payload(source=self.source.id + 9999),
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("source", response.json())
+
+    def test_create_rejects_non_positive_estimated_read_seconds(self):
+        self.client.force_login(self.creator_user)
+
+        response = self.request_with_csrf(
+            "post",
+            self.list_url,
+            self.valid_payload(estimated_read_seconds=0),
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("estimated_read_seconds", response.json())
+
+    def test_private_list_contains_all_own_statuses_and_not_other_creator(self):
+        draft = self.create_idea(title="Draft")
+        published = self.create_idea(
+            status=Idea.IdeaStatus.PUBLISHED,
+            title="Published",
+        )
+        hidden = self.create_idea(
+            status=Idea.IdeaStatus.HIDDEN,
+            title="Hidden",
+        )
+        self.create_idea(
+            creator=self.other_creator,
+            title="Other creator",
+        )
+        self.client.force_login(self.creator_user)
+
+        response = self.client.get(self.list_url)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            [item["id"] for item in response.json()],
+            [hidden.id, published.id, draft.id],
+        )
+        self.assertEqual(
+            {item["status"] for item in response.json()},
+            {
+                Idea.IdeaStatus.DRAFT,
+                Idea.IdeaStatus.PUBLISHED,
+                Idea.IdeaStatus.HIDDEN,
+            },
+        )
+        self.assertEqual(
+            set(response.json()[0]),
+            {
+                "id",
+                "language",
+                "title",
+                "body",
+                "estimated_read_seconds",
+                "status",
+                "published_at",
+                "created_at",
+                "updated_at",
+                "source",
+                "topics",
+            },
+        )
+
+    def test_private_detail_cannot_retrieve_another_creators_idea(self):
+        other_idea = self.create_idea(creator=self.other_creator)
+        self.client.force_login(self.creator_user)
+
+        response = self.client.get(
+            reverse("api:creator-idea-detail", args=[other_idea.id])
+        )
+
+        self.assertEqual(response.status_code, 404)
+
+    def test_owner_can_patch_draft_but_cannot_change_lifecycle_or_owner(self):
+        idea = self.create_idea()
+        self.client.force_login(self.creator_user)
+        url = reverse("api:creator-idea-detail", args=[idea.id])
+
+        response = self.request_with_csrf(
+            "patch",
+            url,
+            {
+                "title": "Updated title",
+                "creator": self.other_creator.id,
+                "status": Idea.IdeaStatus.PUBLISHED,
+                "published_at": timezone.now().isoformat(),
+                "topics": [self.active_topic.id],
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        idea.refresh_from_db()
+        self.assertEqual(idea.title, "Updated title")
+        self.assertEqual(idea.creator, self.creator)
+        self.assertEqual(idea.status, Idea.IdeaStatus.DRAFT)
+        self.assertIsNone(idea.published_at)
+        self.assertQuerySetEqual(idea.topics.all(), [self.active_topic])
+
+    def test_another_creator_cannot_patch_owned_draft(self):
+        idea = self.create_idea()
+        self.client.force_login(self.other_user)
+
+        response = self.request_with_csrf(
+            "patch",
+            reverse("api:creator-idea-detail", args=[idea.id]),
+            {"title": "Stolen edit"},
+        )
+
+        self.assertEqual(response.status_code, 404)
+        idea.refresh_from_db()
+        self.assertNotEqual(idea.title, "Stolen edit")
+
+    def test_reader_cannot_patch_creator_idea(self):
+        idea = self.create_idea()
+        self.client.force_login(self.reader)
+
+        response = self.request_with_csrf(
+            "patch",
+            reverse("api:creator-idea-detail", args=[idea.id]),
+            {"title": "Reader edit"},
+        )
+
+        self.assertEqual(response.status_code, 403)
+
+    def test_published_and_hidden_ideas_cannot_be_patched(self):
+        self.client.force_login(self.creator_user)
+        for state in (Idea.IdeaStatus.PUBLISHED, Idea.IdeaStatus.HIDDEN):
+            with self.subTest(state=state):
+                idea = self.create_idea(status=state, title=f"{state} idea")
+                response = self.request_with_csrf(
+                    "patch",
+                    reverse("api:creator-idea-detail", args=[idea.id]),
+                    {"title": "Not allowed"},
+                )
+                self.assertEqual(response.status_code, 400)
+
+    def test_owner_can_delete_own_draft(self):
+        idea = self.create_idea()
+        self.client.force_login(self.creator_user)
+
+        response = self.request_with_csrf(
+            "delete",
+            reverse("api:creator-idea-detail", args=[idea.id]),
+        )
+
+        self.assertEqual(response.status_code, 204)
+        self.assertFalse(Idea.objects.filter(pk=idea.id).exists())
+
+    def test_another_creator_cannot_delete_owned_draft(self):
+        idea = self.create_idea()
+        self.client.force_login(self.other_user)
+
+        response = self.request_with_csrf(
+            "delete",
+            reverse("api:creator-idea-detail", args=[idea.id]),
+        )
+
+        self.assertEqual(response.status_code, 404)
+        self.assertTrue(Idea.objects.filter(pk=idea.id).exists())
+
+    def test_published_and_hidden_ideas_cannot_be_deleted(self):
+        self.client.force_login(self.creator_user)
+        for state in (Idea.IdeaStatus.PUBLISHED, Idea.IdeaStatus.HIDDEN):
+            with self.subTest(state=state):
+                idea = self.create_idea(status=state, title=f"{state} idea")
+                response = self.request_with_csrf(
+                    "delete",
+                    reverse("api:creator-idea-detail", args=[idea.id]),
+                )
+                self.assertEqual(response.status_code, 400)
+                self.assertTrue(Idea.objects.filter(pk=idea.id).exists())
+
+    def test_authenticated_workspace_write_requires_csrf(self):
+        self.client.force_login(self.creator_user)
+
+        response = self.client.post(
+            self.list_url,
+            data=self.valid_payload(),
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 403)
+        self.assertFalse(Idea.objects.filter(creator=self.creator).exists())
+
+    def test_public_idea_api_remains_published_only_and_anonymous(self):
+        published = self.create_idea(status=Idea.IdeaStatus.PUBLISHED)
+        self.create_idea(status=Idea.IdeaStatus.DRAFT, title="Private draft")
+
+        response = APIClient().get(reverse("api:idea-list"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual([item["id"] for item in response.json()], [published.id])

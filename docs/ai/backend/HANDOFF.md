@@ -1,20 +1,19 @@
 # Backend Handoff
 
-- Task ID: BE-013
-- Exact base SHA: `0a5422bf8dd316fee980d18c419ff463c6aacfc1`
-- Result: Complete and uncommitted for Backend Lead review. Implemented the reusable authorization/role foundation without adding content write or moderator-management endpoints.
-- Documented model: Reader/User is an authenticated `accounts.User`; Creator is a User with a `CreatorProfile`; Moderator is bounded Django `Group`/`Permission`/staff capability; Admin is system/superuser authority. No duplicate `role`, `account_type`, `user_type`, creator, or moderator field was added.
-- Creator capability: `creators.permissions.is_creator` and `IsCreator` require an authenticated user whose `CreatorProfile` exists. Staff, moderator membership, and superuser status are irrelevant to normal creator capability.
-- Ownership: `creators.permissions.IsCreatorOwner` requires creator capability and exact ownership through `obj.creator.user_id == request.user.id`. This matches `Idea.creator -> CreatorProfile -> User`. A moderator gets no implicit creator-edit bypass. Admin remains separate and may be explicitly composed by a future endpoint where unrestricted authority is intended.
-- Moderator implementation: `accounts.permissions.MODERATOR_GROUP_NAME` is exactly `Moderator`. Moderator recognition requires both group membership and `is_staff`, so neither group-only nor arbitrary staff status is sufficient. No custom moderation permissions were created because the documentation names future actions but no implemented action models or permission codenames.
-- Admin semantics: `accounts.permissions.is_admin` and `IsAdmin` use authenticated `is_superuser` authority. A Moderator is not Admin.
-- Assignment boundary: `accounts.services.set_moderator` permits only Admin actors. Enabling adds the bounded group and sets `is_staff=True`; disabling removes only the Moderator group. It preserves unrelated groups/direct permissions and never grants user/group administration permissions.
-- Staff lifecycle: removal intentionally retains `is_staff` because existing Django state cannot distinguish moderator-established staff status from a separate legitimate staff reason. This is safe because Moderator recognition still requires the removed group. No extra provenance field or parallel role state was invented.
-- Migration: `accounts.0003_create_moderator_group` is a data-only, idempotent migration that creates the empty `Moderator` group. It was applied successfully to PostgreSQL. `showmigrations` marks it applied; a direct ORM check reported `permissions=0` and `members=0`. No model/schema migration was generated.
-- Tests: added focused Creator, Idea ownership, Moderator, Admin, role-assignment, authorization-preservation, no-broad-permission, and no-role-field coverage. All 107 backend tests pass against PostgreSQL, including existing session-authentication and public API regressions.
-- Checks: `manage.py check` passes; `manage.py makemigrations --check --dry-run` reports `No changes detected`; `python -m pip check` reports no broken requirements; `git diff --check` passes.
-- Public/API regression: no view, URL, serializer, or settings contract changed. `/api/v1/health/`, `/api/v1/topics/`, `/api/v1/sources/`, and `/api/v1/ideas/` remain anonymous/read-only, and all BE-012 auth routes retain their contracts.
-- Files changed: `backend/accounts/permissions.py`; `backend/accounts/services.py`; `backend/accounts/migrations/0003_create_moderator_group.py`; `backend/accounts/tests.py`; `backend/creators/permissions.py`; `backend/creators/tests.py`; `backend/content/tests.py`; `docs/ai/backend/STATE.md`; `docs/ai/backend/HANDOFF.md`.
-- Known issues: none. The shell displayed non-project cache write warnings in sandboxed checks, but every requested project check passed; PostgreSQL-dependent checks were rerun with local database access.
-- Next logical task: use these primitives in a separately scoped creator-write or moderation feature milestone. Do not implement that next task in BE-013.
-- Delivery: no commit and no push, per instruction.
+- Task ID: BE-014
+- Exact base SHA: `0741c75433b7b1ca84ff028575c69c8064e29234`
+- Result: Complete and uncommitted for Backend Lead review. Implemented Creator self-service and private Draft Idea authoring without changing the public Idea contract or adding publication transitions.
+- Documentation interpretation: existing project docs allow CreatorProfile capability and own-content management; no creator-approval requirement was found. Q-005 still concerns the eventual creator publishing UI/CMS depth, not an approval gate.
+- Creator workspace: `GET/POST/PATCH /api/v1/me/creator/`. GET/PATCH require an existing profile; POST creates exactly one profile for the authenticated user. The self serializer exposes `id`, `user_id`, bilingual bios, avatar, verification state, and creation time while making identity/verification/system fields read-only.
+- Private Idea workspace: `GET/POST /api/v1/me/ideas/` and `GET/PATCH/DELETE /api/v1/me/ideas/<pk>/`. It requires BE-013 Creator capability and ownership permission and filters the queryset to the authenticated CreatorProfile.
+- Creation contract: writable inputs are language, title, body, estimated read seconds, Source PK, and active Topic PKs. The server derives creator, forces `status=DRAFT`, and forces `published_at=None`.
+- Update/delete contract: only owned DRAFT Ideas may be modified or deleted. PUBLISHED/HIDDEN own Ideas remain readable in the private workspace but return validation errors for draft-workflow PATCH/DELETE. Cross-creator objects are not exposed through the owner-scoped queryset.
+- Serializer/transaction behavior: private Idea writes use explicit fields and atomic create/update handling for the Idea plus Topic M2M assignment. Source creation and Topic creation are not implicit.
+- CSRF/auth: workspace uses the locked BE-012 Django session authentication. Unsafe authenticated operations are protected by SessionAuthentication/CSRF; no csrf_exempt, token auth, JWT, or second auth mechanism was added.
+- Public regression: `/api/v1/ideas/` and detail remain anonymous, read-only, and PUBLISHED-only. Existing Topic, Source, health, register/login/logout/me behavior remains covered by the full suite.
+- Database/migrations: no schema change and no migration. `makemigrations --check --dry-run` reports `No changes detected`.
+- Tests/checks: focused creators+content suites: 76 tests passed; full backend suite: 129 tests passed; Django system check passed; pip check passed; git diff check passed.
+- Files changed: `backend/api/urls.py`; `backend/creators/serializers.py`; `backend/creators/views.py`; `backend/creators/urls.py`; `backend/creators/tests.py`; `backend/content/serializers.py`; `backend/content/views.py`; `backend/content/tests.py`; `docs/ai/backend/STATE.md`; `docs/ai/backend/HANDOFF.md`.
+- Known issues: no BE-014 implementation defect found. The pre-existing Python 3.14 venv-prefix warning remains harmless. Untracked `.openidea/` is unrelated and untouched.
+- Next logical task: after Backend Lead review, checkpoint BE-014 and select the next larger vertical milestone; publication transition remains explicitly deferred from BE-014.
+- Delivery: no BE-014 commit and no BE-014 push.

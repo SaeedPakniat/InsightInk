@@ -1,17 +1,17 @@
 # Backend State
 
-- BE-013 status: Complete; awaiting Backend Lead review. No commit or push was made.
-- BE-013 starting SHA: `0a5422bf8dd316fee980d18c419ff463c6aacfc1` (`master`, equal to `origin/master`, accepted/pushed BE-012 checkpoint; clean starting worktree).
-- Locked roles: Reader/User remains an ordinary authenticated `accounts.User`; Creator is derived only from the existence of `user.creator_profile`; Moderator requires both `is_staff` and membership in the `Moderator` Django group; Admin is Django superuser authority.
-- Creator capability: reusable `IsCreator`/`is_creator` checks require authentication and an existing `CreatorProfile`. Creator capability does not require staff, group membership, or superuser status.
-- Creator ownership: reusable `IsCreatorOwner` checks the concrete relation `resource.creator.user_id == request.user.id`. For `Idea`, Creator A may satisfy ownership for Creator A's Idea but not Creator B's; readers, anonymous users, and moderators without ownership do not satisfy it. Admin authority remains a separate permission primitive for explicit composition by a future endpoint.
-- Moderator foundation: the centrally defined group name is `Moderator`. `IsModerator`/`is_moderator` requires both explicit group membership and `is_staff`; arbitrary staff users are not moderators. No moderation action permissions were invented because concrete moderation models/actions are not yet defined.
-- Admin foundation: reusable `IsAdmin`/`is_admin` maps system administration to authenticated Django superusers. Moderator status never implies Admin.
-- Moderator assignment: `set_moderator(actor=..., target_user=..., enabled=...)` is the reusable service boundary. Only Admin may call it successfully. Assignment adds only the `Moderator` group and establishes `is_staff`; removal removes only that group. It deliberately does not clear `is_staff`, because the current schema cannot prove whether staff authority has an unrelated legitimate source. Staff without the group is not Moderator.
-- Authorization preservation: moderator assignment/removal preserves all unrelated target-user groups and direct permissions. The Moderator group receives no broad user/group administration permissions and currently has no permissions at all.
-- Database/migrations: data migration `accounts.0003_create_moderator_group` was reviewed and applied to PostgreSQL. It idempotently creates only the empty `Moderator` group; no schema/model field changed. ORM verification found the group with zero permissions and zero members.
-- API regression: no URL, serializer, or view changed. Anonymous health, Topic, Source, and published-Idea read APIs remain public/read-only. BE-012 session-authentication contracts remain unchanged.
-- Validation: all 107 backend tests pass against PostgreSQL; `manage.py check`, `manage.py makemigrations --check --dry-run`, `manage.py showmigrations accounts`, `python -m pip check`, and `git diff --check` pass.
-- Excluded: role strings/booleans, content write endpoints, moderator-management HTTP endpoints, concrete moderation actions/custom permissions, comment/Spark/save/follow/feed/recommendation/messaging/notification APIs, password reset, email verification, OAuth, JWT, and frontend work.
-- Known issues: none in BE-013. Conservative staff removal behavior is intentional and documented, not an unresolved authorization ambiguity.
-- Next logical task: an explicitly scoped later write/moderation milestone may compose these primitives; do not add that API as part of BE-013.
+- BE-014 status: Complete; awaiting Backend Lead review. No BE-014 commit or push was made.
+- BE-014 base SHA: `0741c75433b7b1ca84ff028575c69c8064e29234` (accepted/pushed BE-013 authorization checkpoint).
+- Creator self-service: authenticated Users may create their own optional `CreatorProfile` at `/api/v1/me/creator/`; GET returns 404 before creation, POST creates only for `request.user`, and PATCH updates only creator-editable profile data. `user_id`, `is_verified`, `id`, and `created_at` are read-only.
+- Creator profile security: clients cannot select another User or self-verify. Unsafe authenticated profile writes remain protected by Django/DRF session CSRF enforcement.
+- Private Idea workspace: `GET/POST /api/v1/me/ideas/` and `GET/PATCH/DELETE /api/v1/me/ideas/<pk>/` require Creator capability and are scoped to `Idea.creator.user == request.user`.
+- Draft authoring: POST derives the CreatorProfile from the authenticated user and always creates `DRAFT` with `published_at=None`. Client-controlled creator/status/publication timestamps are not writable.
+- Draft inputs: Source is an existing Source primary key; Topic input uses active Topic primary keys only; inactive Topic selection is rejected; `estimated_read_seconds` is API-validated as at least 1 in addition to the existing database constraint.
+- Lifecycle restriction: only owned DRAFT Ideas can be PATCHed or DELETEd in this workspace. PUBLISHED and HIDDEN Ideas remain visible to their owner in the private workspace but cannot be edited/deleted by the draft workflow. Publication/unpublication remains deferred.
+- Authorization: BE-014 reuses BE-013 `IsCreator` and `IsCreatorOwner`; private Idea querysets are additionally owner-scoped. No moderator bypass is introduced.
+- Public API regression: public `/api/v1/ideas/` remains anonymous/read-only and PUBLISHED-only; Topic, Source, health, and BE-012 authentication contracts remain unchanged.
+- Database/migrations: no model/schema changes and no BE-014 migration. `makemigrations --check --dry-run` reports no changes.
+- Validation: creator/content focused suites pass (76 tests); the full backend suite passes (129 tests); `manage.py check`, `python -m pip check`, and `git diff --check` pass.
+- Excluded: publication transitions, unpublishing, moderation actions, engagement, library, feed/recommendation/search, messaging, notifications, TTS, and frontend work.
+- Known environment note: invoking the venv through `backend/../.venv` emits the pre-existing harmless Python 3.14 `sys.prefix` normalization warning. An unrelated untracked `.openidea/` directory was present before BE-014 and was left untouched.
+- Next logical milestone: define a larger product slice after review, likely publication workflow plus creator-facing public profile/read APIs or engagement, without reopening the completed authentication/authorization foundations.

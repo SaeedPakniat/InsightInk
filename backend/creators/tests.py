@@ -3,6 +3,8 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AnonymousUser, Group
 from django.db import IntegrityError, transaction
 from django.test import TestCase
+from django.urls import reverse
+from rest_framework.test import APIClient
 
 from .models import CreatorProfile
 from .permissions import IsCreator, is_creator
@@ -90,3 +92,116 @@ class CreatorPermissionTests(TestCase):
         self.assertFalse(
             creator.groups.filter(name=MODERATOR_GROUP_NAME).exists()
         )
+
+
+class CreatorProfileWorkspaceAPITests(TestCase):
+    def setUp(self):
+        self.client = APIClient(enforce_csrf_checks=True)
+        self.user = get_user_model().objects.create_user(
+            email="workspace-reader@example.com"
+        )
+        self.other_user = get_user_model().objects.create_user(
+            email="workspace-other@example.com"
+        )
+        self.url = reverse("api:creators:me-creator")
+        self.csrf_url = reverse("api:accounts:csrf")
+
+    def csrf_token(self):
+        response = self.client.get(self.csrf_url)
+        self.assertEqual(response.status_code, 200)
+        return response.json()["csrfToken"]
+
+    def test_anonymous_cannot_access_creator_workspace(self):
+        response = self.client.get(self.url)
+
+        self.assertEqual(response.status_code, 403)
+
+    def test_reader_without_profile_gets_404(self):
+        self.client.force_login(self.user)
+
+        response = self.client.get(self.url)
+
+        self.assertEqual(response.status_code, 404)
+
+    def test_reader_can_create_only_their_own_creator_profile(self):
+        self.client.force_login(self.user)
+        token = self.csrf_token()
+
+        response = self.client.post(
+            self.url,
+            data={
+                "user_id": self.other_user.id,
+                "bio_fa": "زیست فارسی",
+                "bio_en": "English bio",
+                "is_verified": True,
+            },
+            format="json",
+            HTTP_X_CSRFTOKEN=token,
+        )
+
+        self.assertEqual(response.status_code, 201)
+        profile = CreatorProfile.objects.get(user=self.user)
+        self.assertEqual(profile.bio_fa, "زیست فارسی")
+        self.assertEqual(profile.bio_en, "English bio")
+        self.assertFalse(profile.is_verified)
+        self.assertFalse(CreatorProfile.objects.filter(user=self.other_user).exists())
+        self.assertEqual(
+            set(response.json()),
+            {
+                "id",
+                "user_id",
+                "bio_fa",
+                "bio_en",
+                "avatar",
+                "is_verified",
+                "created_at",
+            },
+        )
+        self.assertEqual(response.json()["user_id"], self.user.id)
+
+    def test_creator_cannot_create_second_profile(self):
+        CreatorProfile.objects.create(user=self.user)
+        self.client.force_login(self.user)
+        token = self.csrf_token()
+
+        response = self.client.post(
+            self.url,
+            data={},
+            format="json",
+            HTTP_X_CSRFTOKEN=token,
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(CreatorProfile.objects.filter(user=self.user).count(), 1)
+
+    def test_creator_can_retrieve_and_patch_editable_fields_only(self):
+        profile = CreatorProfile.objects.create(user=self.user)
+        self.client.force_login(self.user)
+        token = self.csrf_token()
+
+        get_response = self.client.get(self.url)
+        patch_response = self.client.patch(
+            self.url,
+            data={
+                "bio_en": "Updated bio",
+                "user_id": self.other_user.id,
+                "is_verified": True,
+            },
+            format="json",
+            HTTP_X_CSRFTOKEN=token,
+        )
+
+        self.assertEqual(get_response.status_code, 200)
+        self.assertEqual(patch_response.status_code, 200)
+        profile.refresh_from_db()
+        self.assertEqual(profile.user, self.user)
+        self.assertEqual(profile.bio_en, "Updated bio")
+        self.assertFalse(profile.is_verified)
+
+    def test_profile_write_requires_csrf(self):
+        self.client.force_login(self.user)
+
+        response = self.client.post(self.url, data={}, format="json")
+
+        self.assertEqual(response.status_code, 403)
+        self.assertFalse(CreatorProfile.objects.filter(user=self.user).exists())
