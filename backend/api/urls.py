@@ -1,7 +1,13 @@
 from django.urls import include, path
 from rest_framework.routers import DefaultRouter
 
-from content.views import CreatorIdeaViewSet, IdeaViewSet, SourceViewSet, TopicViewSet
+from content.views import (
+    CreatorIdeaViewSet,
+    FeedView,
+    IdeaViewSet,
+    SourceViewSet,
+    TopicViewSet,
+)
 
 from .views import health
 
@@ -17,4 +23,5 @@ urlpatterns = [
     path("", include("accounts.urls")),
     path("", include("creators.urls")),
     path("health/", health, name="health"),
+    path("feed/", FeedView.as_view(), name="feed"),
 ] + router.urls

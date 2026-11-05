@@ -1,6 +1,6 @@
-from django.db.models import Prefetch
 from rest_framework import status
 from rest_framework.exceptions import ValidationError
+from rest_framework.generics import ListAPIView
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
@@ -8,6 +8,8 @@ from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
 from creators.permissions import IsCreator, IsCreatorOwner
 
 from .models import Idea, Source, Topic
+from .pagination import FeedCursorPagination
+from .selectors import public_idea_queryset
 from .serializers import (
     CreatorIdeaSerializer,
     IdeaSerializer,
@@ -29,20 +31,18 @@ class SourceViewSet(ReadOnlyModelViewSet):
 
 
 class IdeaViewSet(ReadOnlyModelViewSet):
-    queryset = (
-        Idea.objects.filter(status=Idea.IdeaStatus.PUBLISHED)
-        .select_related("creator", "creator__user", "source")
-        .prefetch_related(
-            Prefetch(
-                "topics",
-                queryset=Topic.objects.filter(is_active=True).order_by("id"),
-                to_attr="active_topics",
-            )
-        )
-        .order_by("-id")
-    )
+    queryset = public_idea_queryset().order_by("-id")
     serializer_class = IdeaSerializer
     permission_classes = [AllowAny]
+
+
+class FeedView(ListAPIView):
+    serializer_class = IdeaSerializer
+    permission_classes = [AllowAny]
+    pagination_class = FeedCursorPagination
+
+    def get_queryset(self):
+        return public_idea_queryset().order_by("-id")
 
 
 class CreatorIdeaViewSet(ModelViewSet):

@@ -1,3 +1,5 @@
+from urllib.parse import urlsplit
+
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AnonymousUser, Group
 from django.core.exceptions import ValidationError
@@ -986,3 +988,139 @@ class CreatorIdeaWorkspaceAPITests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual([item["id"] for item in response.json()], [published.id])
+
+
+class FeedAPITests(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+        self.user = get_user_model().objects.create_user(
+            email="feed-creator@example.com",
+            display_name="Feed Creator",
+        )
+        self.creator = CreatorProfile.objects.create(user=self.user)
+        self.source = Source.objects.create(
+            type=Source.SourceType.ARTICLE,
+            title="Feed Source",
+            language="en",
+        )
+        self.active_topic = Topic.objects.create(
+            slug="feed-active",
+            name_fa="فید",
+            name_en="Feed",
+        )
+        self.inactive_topic = Topic.objects.create(
+            slug="feed-inactive",
+            name_fa="غیرفعال",
+            name_en="Inactive",
+            is_active=False,
+        )
+        self.url = reverse("api:feed")
+
+    def create_idea(self, *, status=Idea.IdeaStatus.PUBLISHED, title=None):
+        idea = Idea.objects.create(
+            creator=self.creator,
+            source=self.source,
+            language="en",
+            title=title or f"Idea {Idea.objects.count() + 1}",
+            body="Feed body",
+            estimated_read_seconds=60,
+            status=status,
+        )
+        return idea
+
+    def test_feed_is_anonymous_cursor_paginated_and_published_only(self):
+        published = self.create_idea(title="Published")
+        draft = self.create_idea(status=Idea.IdeaStatus.DRAFT, title="Draft")
+        hidden = self.create_idea(status=Idea.IdeaStatus.HIDDEN, title="Hidden")
+
+        response = self.client.get(self.url)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(set(response.json()), {"next", "previous", "results"})
+        self.assertIsNone(response.json()["previous"])
+        self.assertEqual(
+            [item["id"] for item in response.json()["results"]],
+            [published.id],
+        )
+        returned_ids = {item["id"] for item in response.json()["results"]}
+        self.assertNotIn(draft.id, returned_ids)
+        self.assertNotIn(hidden.id, returned_ids)
+
+    def test_feed_uses_newest_first_stable_id_order(self):
+        ideas = [self.create_idea(title=f"Published {index}") for index in range(3)]
+
+        response = self.client.get(self.url)
+
+        self.assertEqual(
+            [item["id"] for item in response.json()["results"]],
+            [ideas[2].id, ideas[1].id, ideas[0].id],
+        )
+
+    def test_feed_cursor_pages_do_not_overlap(self):
+        ideas = [self.create_idea(title=f"Published {index}") for index in range(12)]
+
+        first_response = self.client.get(self.url)
+        self.assertEqual(first_response.status_code, 200)
+        self.assertEqual(len(first_response.json()["results"]), 10)
+        self.assertIsNotNone(first_response.json()["next"])
+
+        next_url = urlsplit(first_response.json()["next"])
+        second_response = self.client.get(
+            f"{next_url.path}?{next_url.query}"
+        )
+
+        self.assertEqual(second_response.status_code, 200)
+        self.assertEqual(len(second_response.json()["results"]), 2)
+
+        first_ids = {item["id"] for item in first_response.json()["results"]}
+        second_ids = {item["id"] for item in second_response.json()["results"]}
+        self.assertTrue(first_ids.isdisjoint(second_ids))
+        self.assertEqual(
+            first_response.json()["results"][0]["id"],
+            ideas[-1].id,
+        )
+
+    def test_feed_uses_same_safe_nested_public_representation(self):
+        idea = self.create_idea()
+        idea.topics.add(self.active_topic, self.inactive_topic)
+
+        response = self.client.get(self.url)
+
+        self.assertEqual(response.status_code, 200)
+        item = response.json()["results"][0]
+        self.assertEqual(
+            set(item),
+            {
+                "id",
+                "language",
+                "title",
+                "body",
+                "estimated_read_seconds",
+                "published_at",
+                "creator",
+                "source",
+                "topics",
+            },
+        )
+        self.assertEqual(item["creator"]["display_name"], "Feed Creator")
+        self.assertEqual(item["source"]["id"], self.source.id)
+        self.assertEqual(
+            [topic["id"] for topic in item["topics"]],
+            [self.active_topic.id],
+        )
+
+    def test_feed_first_page_uses_two_queries_for_nested_results(self):
+        for index in range(5):
+            idea = self.create_idea(title=f"Published {index}")
+            idea.topics.add(self.active_topic)
+
+        with self.assertNumQueries(2):
+            response = self.client.get(self.url)
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(len(response.json()["results"]), 5)
+
+    def test_feed_rejects_writes(self):
+        for method in ("post", "put", "patch", "delete"):
+            with self.subTest(method=method):
+                response = getattr(self.client, method)(self.url, data={})
+                self.assertEqual(response.status_code, 405)

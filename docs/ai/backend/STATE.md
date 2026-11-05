@@ -1,17 +1,17 @@
 # Backend State
 
-- BE-014 status: Complete; awaiting Backend Lead review. No BE-014 commit or push was made.
-- BE-014 base SHA: `0741c75433b7b1ca84ff028575c69c8064e29234` (accepted/pushed BE-013 authorization checkpoint).
-- Creator self-service: authenticated Users may create their own optional `CreatorProfile` at `/api/v1/me/creator/`; GET returns 404 before creation, POST creates only for `request.user`, and PATCH updates only creator-editable profile data. `user_id`, `is_verified`, `id`, and `created_at` are read-only.
-- Creator profile security: clients cannot select another User or self-verify. Unsafe authenticated profile writes remain protected by Django/DRF session CSRF enforcement.
-- Private Idea workspace: `GET/POST /api/v1/me/ideas/` and `GET/PATCH/DELETE /api/v1/me/ideas/<pk>/` require Creator capability and are scoped to `Idea.creator.user == request.user`.
-- Draft authoring: POST derives the CreatorProfile from the authenticated user and always creates `DRAFT` with `published_at=None`. Client-controlled creator/status/publication timestamps are not writable.
-- Draft inputs: Source is an existing Source primary key; Topic input uses active Topic primary keys only; inactive Topic selection is rejected; `estimated_read_seconds` is API-validated as at least 1 in addition to the existing database constraint.
-- Lifecycle restriction: only owned DRAFT Ideas can be PATCHed or DELETEd in this workspace. PUBLISHED and HIDDEN Ideas remain visible to their owner in the private workspace but cannot be edited/deleted by the draft workflow. Publication/unpublication remains deferred.
-- Authorization: BE-014 reuses BE-013 `IsCreator` and `IsCreatorOwner`; private Idea querysets are additionally owner-scoped. No moderator bypass is introduced.
-- Public API regression: public `/api/v1/ideas/` remains anonymous/read-only and PUBLISHED-only; Topic, Source, health, and BE-012 authentication contracts remain unchanged.
-- Database/migrations: no model/schema changes and no BE-014 migration. `makemigrations --check --dry-run` reports no changes.
-- Validation: creator/content focused suites pass (76 tests); the full backend suite passes (129 tests); `manage.py check`, `python -m pip check`, and `git diff --check` pass.
-- Excluded: publication transitions, unpublishing, moderation actions, engagement, library, feed/recommendation/search, messaging, notifications, TTS, and frontend work.
-- Known environment note: invoking the venv through `backend/../.venv` emits the pre-existing harmless Python 3.14 `sys.prefix` normalization warning. An unrelated untracked `.openidea/` directory was present before BE-014 and was left untouched.
-- Next logical milestone: define a larger product slice after review, likely publication workflow plus creator-facing public profile/read APIs or engagement, without reopening the completed authentication/authorization foundations.
+- BE-015 status: Complete; accepted by Backend Lead pending checkpoint commit/push.
+- BE-015 base SHA: `f68c5fa9241cbf5d2272e8179b2650594d101314` (clean repository after OpenIDEA ignore checkpoint).
+- Core feed: public anonymous `GET /api/v1/feed/` is implemented as the baseline public feed.
+- Visibility: feed candidates are strictly `Idea.status == PUBLISHED`; DRAFT and HIDDEN Ideas are excluded. Existing public Idea list/detail behavior remains unchanged.
+- Pagination: feed uses DRF `CursorPagination` with fixed page size 10 and deterministic `-id` ordering. The response envelope is `next`, `previous`, and `results`. No client-controlled page-size parameter is added.
+- Ranking boundary: BE-015 is intentionally not the recommendation system. The baseline ordering is stable newest-ID-first; interest/save/spark/follow/freshness/popularity scoring remains deferred to the later recommendation milestone.
+- Query reuse: `content.selectors.public_idea_queryset()` centralizes the optimized public Idea queryset for both the existing public Idea API and the feed, using creator/user/source `select_related` plus active-Topic prefetch.
+- Representation: feed reuses the existing safe public `IdeaSerializer`, including Creator summary, Source summary, reading estimate, publication timestamp, and active Topics only.
+- Performance: a populated first feed page serializes nested public data in two database queries (Idea/select-related + Topic prefetch); CursorPagination performs no count query.
+- Write safety: feed is read-only; POST/PUT/PATCH/DELETE return 405. Authentication is not required for public feed reads.
+- Database/migrations: no model or schema change and no BE-015 migration. `makemigrations --check --dry-run` reports no changes.
+- Validation: focused content suite passes 67 tests; full backend suite passes 135 tests; `manage.py check`, `python -m pip check`, and `git diff --check` pass.
+- Excluded: personalization/recommendation ranking, UserInterest onboarding, engagement (Spark/Save/Comment), creator follow signals, search, moderation, realtime, messaging, notifications, TTS, and frontend work.
+- Known issues: none identified in BE-015.
+- Next logical backend milestone: BE-016 Engagement foundation/API (Spark + Save + Comments, with Report Comment only if its moderation contract can be implemented without inventing unresolved policy).
