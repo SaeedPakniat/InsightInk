@@ -1,9 +1,12 @@
 from django.conf import settings
 from django.contrib.auth import get_user_model
+from django.contrib.auth.models import AnonymousUser, Group
 from django.db import IntegrityError, transaction
 from django.test import TestCase
 
 from .models import CreatorProfile
+from .permissions import IsCreator, is_creator
+from accounts.permissions import MODERATOR_GROUP_NAME, is_moderator
 
 
 class CreatorProfileModelTests(TestCase):
@@ -48,3 +51,42 @@ class CreatorProfileModelTests(TestCase):
         self.user.delete()
 
         self.assertFalse(CreatorProfile.objects.filter(pk=profile.pk).exists())
+
+
+class CreatorPermissionTests(TestCase):
+    @staticmethod
+    def request_for(user):
+        return type("Request", (), {"user": user})()
+
+    def test_anonymous_user_is_not_creator(self):
+        anonymous = AnonymousUser()
+
+        self.assertFalse(is_creator(anonymous))
+        self.assertFalse(
+            IsCreator().has_permission(self.request_for(anonymous), None)
+        )
+
+    def test_authenticated_user_without_profile_is_not_creator(self):
+        reader = get_user_model().objects.create_user(email="reader@example.com")
+
+        self.assertFalse(is_creator(reader))
+
+    def test_profile_grants_creator_without_staff_or_superuser(self):
+        creator = get_user_model().objects.create_user(email="creator-role@example.com")
+        CreatorProfile.objects.create(user=creator)
+
+        self.assertTrue(is_creator(creator))
+        self.assertFalse(creator.is_staff)
+        self.assertFalse(creator.is_superuser)
+        self.assertTrue(
+            IsCreator().has_permission(self.request_for(creator), None)
+        )
+
+    def test_creator_alone_is_not_moderator(self):
+        creator = get_user_model().objects.create_user(email="creator-only@example.com")
+        CreatorProfile.objects.create(user=creator)
+
+        self.assertFalse(is_moderator(creator))
+        self.assertFalse(
+            creator.groups.filter(name=MODERATOR_GROUP_NAME).exists()
+        )

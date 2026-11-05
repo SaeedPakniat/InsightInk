@@ -1,4 +1,5 @@
 from django.contrib.auth import get_user_model
+from django.contrib.auth.models import AnonymousUser, Group
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError, transaction
 from django.db.models.deletion import ProtectedError
@@ -8,6 +9,8 @@ from django.utils import timezone
 from rest_framework.test import APIClient
 
 from creators.models import CreatorProfile
+from creators.permissions import IsCreatorOwner
+from accounts.permissions import MODERATOR_GROUP_NAME
 
 from .models import Idea, Source, Topic
 
@@ -610,3 +613,59 @@ class IdeaModelTests(ContentModelTestCase):
             self.source.delete()
 
         self.assertTrue(Idea.objects.filter(pk=idea.pk).exists())
+
+
+class IdeaCreatorOwnershipPermissionTests(ContentModelTestCase):
+    def setUp(self):
+        super().setUp()
+        self.idea = self.create_idea()
+        self.other_user = get_user_model().objects.create_user(
+            email="other-creator@example.com"
+        )
+        self.other_creator = CreatorProfile.objects.create(user=self.other_user)
+        self.permission = IsCreatorOwner()
+
+    @staticmethod
+    def request_for(user):
+        return type("Request", (), {"user": user})()
+
+    def test_creator_owns_idea_linked_to_their_profile(self):
+        request = self.request_for(self.user)
+
+        self.assertTrue(self.permission.has_permission(request, None))
+        self.assertTrue(self.permission.has_object_permission(request, None, self.idea))
+
+    def test_creator_does_not_own_another_creators_idea(self):
+        request = self.request_for(self.other_user)
+
+        self.assertTrue(self.permission.has_permission(request, None))
+        self.assertFalse(
+            self.permission.has_object_permission(request, None, self.idea)
+        )
+
+    def test_reader_cannot_satisfy_creator_owner_permission(self):
+        reader = get_user_model().objects.create_user(email="owner-reader@example.com")
+        request = self.request_for(reader)
+
+        self.assertFalse(self.permission.has_permission(request, None))
+        self.assertFalse(
+            self.permission.has_object_permission(request, None, self.idea)
+        )
+
+    def test_anonymous_cannot_satisfy_creator_owner_permission(self):
+        request = self.request_for(AnonymousUser())
+
+        self.assertFalse(self.permission.has_permission(request, None))
+        self.assertFalse(
+            self.permission.has_object_permission(request, None, self.idea)
+        )
+
+    def test_moderator_status_does_not_bypass_creator_ownership(self):
+        self.other_user.is_staff = True
+        self.other_user.save(update_fields=["is_staff"])
+        self.other_user.groups.add(Group.objects.get(name=MODERATOR_GROUP_NAME))
+        request = self.request_for(self.other_user)
+
+        self.assertFalse(
+            self.permission.has_object_permission(request, None, self.idea)
+        )

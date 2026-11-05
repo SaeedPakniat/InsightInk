@@ -1,17 +1,17 @@
 # Backend State
 
-- BE-012 status: Complete.
-- BE-012 starting SHA: `3c53e16b09fc1c7d5c2a8fb78cfd8ccdc3d6538c` (`master`, equal to `origin/master`, accepted BE-011 plus Q-003 documentation alignment; clean starting worktree).
-- Authentication configuration: DRF globally uses only `SessionAuthentication`; there is no global authenticated permission, so endpoint permissions remain explicit.
-- Session security: Django's normal session login/logout lifecycle is used, session identifiers rotate on login, `SESSION_COOKIE_HTTPONLY` is explicitly true, local HTTP development does not force `SESSION_COOKIE_SECURE`, and default SameSite behavior is unchanged.
-- CSRF bootstrap: `GET /api/v1/auth/csrf/` returns only `csrfToken` and establishes/refreshes the Django CSRF cookie.
-- CSRF enforcement: Django `CsrfViewMiddleware` remains enabled and explicitly protects anonymous registration/login as well as authenticated logout. Requests without a valid CSRF token are rejected with 403; no CSRF exemption or global weakening exists.
-- Registration: `POST /api/v1/auth/register/` accepts required email/password plus optional `display_name` and `preferred_ui_language`, validates passwords with Django validators, creates through the custom User manager, returns only safe current-user fields with 201, and establishes an authenticated session.
-- Login/logout: `POST /api/v1/auth/login/` uses Django `authenticate` and `login` with generic invalid-credential behavior; `POST /api/v1/auth/logout/` requires authentication plus CSRF and uses Django `logout`, returning 204.
-- Current user: authenticated `GET /api/v1/me/` returns exactly `id`, `email`, `display_name`, and `preferred_ui_language`.
-- Public API regression: anonymous health, Topic list/detail, Source list/detail, and published-Idea list/detail remain public through explicit `AllowAny` permissions.
-- Database/migrations: no project model changes and no new migration; migration drift reports `No changes detected`. Existing Django session-table usage is unchanged.
-- Validation: all 81 backend tests pass; Django checks, dependency health, migration drift, and focused CSRF/session/security regression tests pass.
-- Excluded: JWT/token/OAuth, CORS infrastructure, password reset, email verification, MFA, remember-me, roles/ownership permissions, content write endpoints, and frontend work.
-- Known issues: none in BE-012.
-- Next logical task: BE-013 authorization foundation only.
+- BE-013 status: Complete; awaiting Backend Lead review. No commit or push was made.
+- BE-013 starting SHA: `0a5422bf8dd316fee980d18c419ff463c6aacfc1` (`master`, equal to `origin/master`, accepted/pushed BE-012 checkpoint; clean starting worktree).
+- Locked roles: Reader/User remains an ordinary authenticated `accounts.User`; Creator is derived only from the existence of `user.creator_profile`; Moderator requires both `is_staff` and membership in the `Moderator` Django group; Admin is Django superuser authority.
+- Creator capability: reusable `IsCreator`/`is_creator` checks require authentication and an existing `CreatorProfile`. Creator capability does not require staff, group membership, or superuser status.
+- Creator ownership: reusable `IsCreatorOwner` checks the concrete relation `resource.creator.user_id == request.user.id`. For `Idea`, Creator A may satisfy ownership for Creator A's Idea but not Creator B's; readers, anonymous users, and moderators without ownership do not satisfy it. Admin authority remains a separate permission primitive for explicit composition by a future endpoint.
+- Moderator foundation: the centrally defined group name is `Moderator`. `IsModerator`/`is_moderator` requires both explicit group membership and `is_staff`; arbitrary staff users are not moderators. No moderation action permissions were invented because concrete moderation models/actions are not yet defined.
+- Admin foundation: reusable `IsAdmin`/`is_admin` maps system administration to authenticated Django superusers. Moderator status never implies Admin.
+- Moderator assignment: `set_moderator(actor=..., target_user=..., enabled=...)` is the reusable service boundary. Only Admin may call it successfully. Assignment adds only the `Moderator` group and establishes `is_staff`; removal removes only that group. It deliberately does not clear `is_staff`, because the current schema cannot prove whether staff authority has an unrelated legitimate source. Staff without the group is not Moderator.
+- Authorization preservation: moderator assignment/removal preserves all unrelated target-user groups and direct permissions. The Moderator group receives no broad user/group administration permissions and currently has no permissions at all.
+- Database/migrations: data migration `accounts.0003_create_moderator_group` was reviewed and applied to PostgreSQL. It idempotently creates only the empty `Moderator` group; no schema/model field changed. ORM verification found the group with zero permissions and zero members.
+- API regression: no URL, serializer, or view changed. Anonymous health, Topic, Source, and published-Idea read APIs remain public/read-only. BE-012 session-authentication contracts remain unchanged.
+- Validation: all 107 backend tests pass against PostgreSQL; `manage.py check`, `manage.py makemigrations --check --dry-run`, `manage.py showmigrations accounts`, `python -m pip check`, and `git diff --check` pass.
+- Excluded: role strings/booleans, content write endpoints, moderator-management HTTP endpoints, concrete moderation actions/custom permissions, comment/Spark/save/follow/feed/recommendation/messaging/notification APIs, password reset, email verification, OAuth, JWT, and frontend work.
+- Known issues: none in BE-013. Conservative staff removal behavior is intentional and documented, not an unresolved authorization ambiguity.
+- Next logical task: an explicitly scoped later write/moderation milestone may compose these primitives; do not add that API as part of BE-013.

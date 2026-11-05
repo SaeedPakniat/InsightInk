@@ -1,9 +1,9 @@
 from django.contrib.admin.sites import AdminSite
 from django.conf import settings
 from django.contrib.auth import get_user_model
-from django.contrib.auth.models import AbstractUser
+from django.contrib.auth.models import AbstractUser, Group, Permission
 from django.contrib.sessions.models import Session
-from django.core.exceptions import FieldDoesNotExist
+from django.core.exceptions import FieldDoesNotExist, PermissionDenied
 from django.db import IntegrityError, transaction
 from django.test import SimpleTestCase, TestCase
 from django.urls import reverse
@@ -14,6 +14,14 @@ from rest_framework.test import APIClient
 from .admin import CustomUserAdmin
 from .forms import CustomUserChangeForm, CustomUserCreationForm
 from .models import User
+from .permissions import (
+    MODERATOR_GROUP_NAME,
+    IsAdmin,
+    IsModerator,
+    is_admin,
+    is_moderator,
+)
+from .services import set_moderator
 
 
 class CustomUserConfigurationTests(SimpleTestCase):
@@ -33,6 +41,14 @@ class CustomUserConfigurationTests(SimpleTestCase):
 
         self.assertFalse(email_field.blank)
         self.assertTrue(email_field.unique)
+
+    def test_user_has_no_duplicate_role_field(self):
+        field_names = {field.name for field in User._meta.get_fields()}
+
+        self.assertTrue(
+            {"role", "account_type", "user_type", "is_creator", "is_moderator"}
+            .isdisjoint(field_names)
+        )
 
 
 class UserManagerTests(TestCase):
@@ -424,3 +440,157 @@ class LogoutAPITests(SessionAuthenticationAPITestCase):
         )
         self.assertFalse(Session.objects.filter(session_key=old_session_key).exists())
         self.assertEqual(self.client.get(self.me_url).status_code, 403)
+
+
+class AuthorizationPermissionTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(email="reader-permissions@example.com")
+        self.moderator_group = Group.objects.get(name=MODERATOR_GROUP_NAME)
+
+    @staticmethod
+    def request_for(user):
+        return type("Request", (), {"user": user})()
+
+    def test_moderator_group_is_provisioned(self):
+        self.assertEqual(self.moderator_group.name, "Moderator")
+
+    def test_ordinary_user_is_not_moderator(self):
+        self.assertFalse(is_moderator(self.user))
+        self.assertFalse(
+            IsModerator().has_permission(self.request_for(self.user), None)
+        )
+
+    def test_group_and_staff_capability_are_both_required_for_moderator(self):
+        self.user.groups.add(self.moderator_group)
+        self.assertFalse(is_moderator(self.user))
+
+        self.user.is_staff = True
+        self.user.save(update_fields=["is_staff"])
+
+        self.assertTrue(is_moderator(self.user))
+        self.assertTrue(
+            IsModerator().has_permission(self.request_for(self.user), None)
+        )
+
+    def test_staff_without_group_is_not_moderator(self):
+        self.user.is_staff = True
+        self.user.save(update_fields=["is_staff"])
+
+        self.assertFalse(is_moderator(self.user))
+
+    def test_ordinary_user_is_not_admin(self):
+        self.assertFalse(is_admin(self.user))
+        self.assertFalse(IsAdmin().has_permission(self.request_for(self.user), None))
+
+    def test_moderator_is_not_admin(self):
+        self.user.is_staff = True
+        self.user.save(update_fields=["is_staff"])
+        self.user.groups.add(self.moderator_group)
+
+        self.assertTrue(is_moderator(self.user))
+        self.assertFalse(is_admin(self.user))
+
+    def test_superuser_is_admin(self):
+        admin = User.objects.create_superuser(email="admin-permissions@example.com")
+
+        self.assertTrue(is_admin(admin))
+        self.assertTrue(IsAdmin().has_permission(self.request_for(admin), None))
+
+
+class ModeratorAssignmentServiceTests(TestCase):
+    def setUp(self):
+        self.admin = User.objects.create_superuser(email="admin@example.com")
+        self.target = User.objects.create_user(email="target@example.com")
+        self.moderator_group = Group.objects.get(name=MODERATOR_GROUP_NAME)
+
+    def create_moderator(self, email="moderator@example.com"):
+        moderator = User.objects.create_user(email=email, is_staff=True)
+        moderator.groups.add(self.moderator_group)
+        return moderator
+
+    def assert_assignment_denied(self, actor, *, enabled=True):
+        with self.assertRaises(PermissionDenied):
+            set_moderator(actor=actor, target_user=self.target, enabled=enabled)
+
+    def test_admin_can_assign_moderator(self):
+        set_moderator(actor=self.admin, target_user=self.target, enabled=True)
+        self.target.refresh_from_db()
+
+        self.assertTrue(is_moderator(self.target))
+        self.assertTrue(self.target.is_staff)
+
+    def test_admin_can_remove_moderator(self):
+        set_moderator(actor=self.admin, target_user=self.target, enabled=True)
+
+        set_moderator(actor=self.admin, target_user=self.target, enabled=False)
+        self.target.refresh_from_db()
+
+        self.assertFalse(is_moderator(self.target))
+        self.assertFalse(self.target.groups.filter(name=MODERATOR_GROUP_NAME).exists())
+
+    def test_removal_does_not_clear_untracked_staff_authority(self):
+        self.target.is_staff = True
+        self.target.save(update_fields=["is_staff"])
+        self.target.groups.add(self.moderator_group)
+
+        set_moderator(actor=self.admin, target_user=self.target, enabled=False)
+        self.target.refresh_from_db()
+
+        self.assertTrue(self.target.is_staff)
+        self.assertFalse(is_moderator(self.target))
+
+    def test_moderator_cannot_assign_moderator(self):
+        self.assert_assignment_denied(self.create_moderator())
+
+    def test_moderator_cannot_remove_moderator(self):
+        self.target.is_staff = True
+        self.target.save(update_fields=["is_staff"])
+        self.target.groups.add(self.moderator_group)
+
+        self.assert_assignment_denied(self.create_moderator(), enabled=False)
+        self.assertTrue(is_moderator(self.target))
+
+    def test_creator_cannot_assign_moderator(self):
+        from creators.models import CreatorProfile
+
+        creator = User.objects.create_user(email="creator-role@example.com")
+        CreatorProfile.objects.create(user=creator)
+
+        self.assert_assignment_denied(creator)
+
+    def test_ordinary_user_cannot_assign_moderator(self):
+        ordinary_user = User.objects.create_user(email="ordinary-role@example.com")
+
+        self.assert_assignment_denied(ordinary_user)
+
+    def test_assignment_preserves_unrelated_groups_and_permissions(self):
+        unrelated_group = Group.objects.create(name="Publishing Team")
+        unrelated_permission = Permission.objects.get(
+            content_type__app_label="auth",
+            codename="view_group",
+        )
+        self.target.groups.add(unrelated_group)
+        self.target.user_permissions.add(unrelated_permission)
+
+        set_moderator(actor=self.admin, target_user=self.target, enabled=True)
+        set_moderator(actor=self.admin, target_user=self.target, enabled=False)
+
+        self.assertTrue(self.target.groups.filter(pk=unrelated_group.pk).exists())
+        self.assertTrue(
+            self.target.user_permissions.filter(pk=unrelated_permission.pk).exists()
+        )
+
+    def test_moderator_group_has_no_broad_auth_administration_permissions(self):
+        prohibited_codenames = {
+            "change_user",
+            "change_group",
+            "add_group",
+            "delete_group",
+        }
+
+        self.assertFalse(
+            self.moderator_group.permissions.filter(
+                content_type__app_label="auth",
+                codename__in=prohibited_codenames,
+            ).exists()
+        )
