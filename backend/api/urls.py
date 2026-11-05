@@ -22,6 +22,7 @@ router.register("me/ideas", CreatorIdeaViewSet, basename="creator-idea")
 urlpatterns = [
     path("", include("accounts.urls")),
     path("", include("creators.urls")),
+    path("", include("engagement.urls")),
     path("health/", health, name="health"),
     path("feed/", FeedView.as_view(), name="feed"),
 ] + router.urls

@@ -1,17 +1,21 @@
 # Backend State
 
-- BE-015 status: Complete; accepted by Backend Lead pending checkpoint commit/push.
-- BE-015 base SHA: `f68c5fa9241cbf5d2272e8179b2650594d101314` (clean repository after OpenIDEA ignore checkpoint).
-- Core feed: public anonymous `GET /api/v1/feed/` is implemented as the baseline public feed.
-- Visibility: feed candidates are strictly `Idea.status == PUBLISHED`; DRAFT and HIDDEN Ideas are excluded. Existing public Idea list/detail behavior remains unchanged.
-- Pagination: feed uses DRF `CursorPagination` with fixed page size 10 and deterministic `-id` ordering. The response envelope is `next`, `previous`, and `results`. No client-controlled page-size parameter is added.
-- Ranking boundary: BE-015 is intentionally not the recommendation system. The baseline ordering is stable newest-ID-first; interest/save/spark/follow/freshness/popularity scoring remains deferred to the later recommendation milestone.
-- Query reuse: `content.selectors.public_idea_queryset()` centralizes the optimized public Idea queryset for both the existing public Idea API and the feed, using creator/user/source `select_related` plus active-Topic prefetch.
-- Representation: feed reuses the existing safe public `IdeaSerializer`, including Creator summary, Source summary, reading estimate, publication timestamp, and active Topics only.
-- Performance: a populated first feed page serializes nested public data in two database queries (Idea/select-related + Topic prefetch); CursorPagination performs no count query.
-- Write safety: feed is read-only; POST/PUT/PATCH/DELETE return 405. Authentication is not required for public feed reads.
-- Database/migrations: no model or schema change and no BE-015 migration. `makemigrations --check --dry-run` reports no changes.
-- Validation: focused content suite passes 67 tests; full backend suite passes 135 tests; `manage.py check`, `python -m pip check`, and `git diff --check` pass.
-- Excluded: personalization/recommendation ranking, UserInterest onboarding, engagement (Spark/Save/Comment), creator follow signals, search, moderation, realtime, messaging, notifications, TTS, and frontend work.
-- Known issues: none identified in BE-015.
-- Next logical backend milestone: BE-016 Engagement foundation/API (Spark + Save + Comments, with Report Comment only if its moderation contract can be implemented without inventing unresolved policy).
+- BE-016 status: Complete; accepted by Backend Lead pending checkpoint commit/push.
+- BE-016 base SHA: `7a0676be8fcdb1ffa7906da85dd0d888bf373e35` (accepted/pushed BE-015 feed checkpoint; clean starting worktree).
+- Engagement domain: new Django `engagement` app owns `Spark`, `SavedIdea`, and `Comment` rather than placing one model per app.
+- Spark model: `user -> accounts.User`, `idea -> content.Idea`, `created_at`; PostgreSQL-backed unique constraint on `(user, idea)`.
+- SavedIdea model: `user`, `idea`, `saved_at`, optional `last_opened_at`; unique constraint on `(user, idea)`. This table is also the future basic Library source, matching the locked data-model decision not to duplicate Save and LibraryEntry.
+- Comment model: `author`, `idea`, `body`, status `visible|hidden|deleted`, `created_at`, `updated_at`. Nested replies are not implemented.
+- Spark API: authenticated/CSRF-protected `PUT/DELETE /api/v1/ideas/<id>/spark/`; both methods are idempotent and operate only on PUBLISHED Ideas.
+- Save API: authenticated/CSRF-protected `PUT/DELETE /api/v1/ideas/<id>/save/`; both methods are idempotent and operate only on PUBLISHED Ideas.
+- Comment API: anonymous `GET /api/v1/ideas/<id>/comments/` returns only VISIBLE comments on PUBLISHED Ideas. Authenticated/CSRF-protected POST creates a VISIBLE comment with author/Idea derived server-side.
+- Comment validation: body is trimmed, must be nonblank, and is capped at 4,000 characters as a backend abuse/input-validation implementation limit because the source requires length/content validation but does not specify a numeric maximum.
+- Comment deletion: authenticated owner-only `DELETE /api/v1/comments/<id>/` is CSRF-protected and idempotently soft-deletes by setting status to DELETED. Public reads exclude HIDDEN/DELETED comments. Moderator/Admin moderation deletion remains deferred to the audited moderation workflow rather than bypassing audit requirements here.
+- Visibility boundary: public reader interactions target PUBLISHED Ideas only; DRAFT and HIDDEN Ideas return 404 for Spark/Save/Comment public surfaces.
+- Report Comment: canonical route remains documented but is intentionally deferred. The Report target representation and final report reason/policy contract are unresolved in the moderation design; BE-016 does not invent them.
+- Database/migrations: new `engagement.0001_initial` creates Comment, SavedIdea, and Spark and their documented constraints. Applied successfully to PostgreSQL; migration drift is clean.
+- Validation: focused engagement suite passes 24 tests; full backend suite passes 159 tests; `manage.py check`, migration drift, pip check, and git diff check pass.
+- Existing regression boundary: authentication, authorization, creator workspace, public Idea API, and cursor-paginated public feed remain unchanged.
+- Excluded: comment reporting/moderation actions, creator follow, Library read endpoints/stats, reading events, recommendation scoring, search, realtime, messaging, notifications, TTS, and frontend work.
+- Known issues: none identified in BE-016.
+- Next logical backend milestone: BE-017 Library + public Creator experience, reusing SavedIdea for the basic library and adding public Creator list/detail/published Ideas plus follow/unfollow if the creator-follow contract remains document-complete.

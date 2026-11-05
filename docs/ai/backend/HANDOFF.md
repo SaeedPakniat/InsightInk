@@ -1,19 +1,19 @@
 # Backend Handoff
 
-- Task ID: BE-015
-- Exact base SHA: `f68c5fa9241cbf5d2272e8179b2650594d101314`
-- Result: Complete and accepted for checkpoint. Implemented the baseline public feed without introducing recommendation logic or schema changes.
-- Endpoint: `GET /api/v1/feed/` is anonymous/public and read-only.
-- Feed contract: response uses DRF cursor pagination with `next`, `previous`, and `results`; fixed page size is 10. Ordering is deterministic descending Idea primary key for the baseline phase.
-- Visibility: only PUBLISHED Ideas enter the feed. DRAFT and HIDDEN Ideas remain excluded. Existing `GET /api/v1/ideas/` and Idea detail contracts are unchanged.
-- Shared query path: new `content.selectors.public_idea_queryset()` supplies the optimized published-content queryset to both `IdeaViewSet` and `FeedView`. It select-related loads CreatorProfile/User and Source, and prefetches active Topics into `active_topics`.
-- Serializer: feed reuses the existing public `IdeaSerializer`; no private lifecycle/status fields or hidden Topic data are exposed.
-- Pagination implementation: `content.pagination.FeedCursorPagination` uses `page_size=10` and `ordering="-id"`. This is a feed-baseline implementation decision, not the later user-specific recommendation ranking.
-- Performance: feed nested serialization is covered by a two-query regression test. Cursor pagination avoids a total-count query.
-- Security/methods: AllowAny applies to GET; non-read methods are unsupported and return 405. No auth, CSRF, CORS, or role behavior changed.
-- Database/migrations: no model/schema change; no migration; migration drift check reports `No changes detected`.
-- Tests/checks: content suite 67 tests passed; full backend suite 135 tests passed; Django system check, pip check, and git diff check passed.
-- Files changed: `backend/api/urls.py`; `backend/content/views.py`; `backend/content/tests.py`; new `backend/content/pagination.py`; new `backend/content/selectors.py`; `docs/ai/backend/STATE.md`; `docs/ai/backend/HANDOFF.md`.
+- Task ID: BE-016
+- Exact base SHA: `7a0676be8fcdb1ffa7906da85dd0d888bf373e35`
+- Result: Complete and accepted for checkpoint. Added the first Reader engagement vertical slice: Spark, Save, and Comments.
+- Domain structure: new `backend/engagement/` app contains engagement models, serializers, views, URLs, migration, and focused tests. This preserves the locked modular-monolith domain boundary.
+- Models: `Spark(user, idea, created_at)`; `SavedIdea(user, idea, saved_at, last_opened_at?)`; `Comment(author, idea, body, status, created_at, updated_at)`. Spark and SavedIdea enforce unique `(user, idea)` constraints. Comment statuses are exactly visible/hidden/deleted.
+- Spark contract: `PUT /api/v1/ideas/<id>/spark/` ensures one Spark exists; repeated PUT remains 204 with one row. DELETE ensures the current user's Spark is absent; repeated DELETE remains 204. Auth + session CSRF required.
+- Save contract: `PUT /api/v1/ideas/<id>/save/` and DELETE mirror Spark idempotency and security. SavedIdea is intentionally the future basic library entry; no duplicate LibraryEntry model was added.
+- Comment read/create: `GET /api/v1/ideas/<id>/comments/` is anonymous and returns only visible comments with safe author summary `id/display_name`; POST requires auth + CSRF, derives author/Idea server-side, forces visible status, trims body, rejects blank body, and caps API input at 4,000 characters.
+- Comment delete: `DELETE /api/v1/comments/<id>/` requires authenticated ownership + CSRF and soft-deletes to status `deleted`. Repeated owner delete is idempotent. Other ordinary users receive 403. Hidden/deleted comments never appear in public comment lists.
+- Content visibility: all engagement endpoints target PUBLISHED Ideas only. DRAFT/HIDDEN Ideas are treated as unavailable on public engagement routes.
+- Moderation boundary: moderator/admin comment-removal behavior and `POST /comments/<id>/report/` are deferred to the moderation milestone because the project requires audited moderation actions while Report target/reason design remains intentionally unresolved.
+- Migration: `engagement.0001_initial` was generated, inspected, and applied to PostgreSQL. It contains only the three engagement models and their documented constraints.
+- Tests/checks: focused engagement suite 24 tests passed; full backend suite 159 tests passed; Django check, migration drift check, pip check, and git diff check pass.
+- Files changed/new: `backend/config/settings.py`; `backend/api/urls.py`; new `backend/engagement/__init__.py`; `apps.py`; `admin.py`; `models.py`; `serializers.py`; `views.py`; `urls.py`; `tests.py`; `migrations/__init__.py`; `migrations/0001_initial.py`; `docs/ai/backend/STATE.md`; `docs/ai/backend/HANDOFF.md`.
 - Known issues: none identified.
-- Next logical task: BE-016 Engagement, bundling the first real reader interaction slice (Spark, Save, Comments) while preserving public feed/read contracts.
-- Delivery: ready for one bounded BE-015 checkpoint commit/push.
+- Next logical task: BE-017 Library + public Creator experience.
+- Delivery: ready for one bounded BE-016 checkpoint commit/push.
