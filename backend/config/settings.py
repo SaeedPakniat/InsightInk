@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     "library",
     "explore",
     "recommendations",
+    "moderation",
     "rest_framework",
     "django.contrib.admin",
     "django.contrib.auth",

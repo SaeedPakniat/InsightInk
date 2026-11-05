@@ -1,22 +1,22 @@
 # Backend Handoff
 
-- Task ID: BE-019
-- Exact base SHA: `c347442b3ea3c71e761bba95ca8088f5e51461d9`
-- Result: Complete and accepted for checkpoint. Added explicit User interests, deterministic personalized recommendations, bilingual explanations, and Jaccard-based Related Ideas.
-- UserInterest model: added under accounts because interests are user preference/account-domain data. Fields are user FK, Topic FK, created_at; unique `(user, topic)` constraint. No explicit_weight column was added because that field is optional in the conceptual model and no locked API/product behavior uses manual per-topic weighting.
-- Interest endpoints: `GET /api/v1/me/interests/` and `PUT /api/v1/me/interests/`. Both require authentication; PUT also receives normal SessionAuthentication CSRF enforcement. PUT uses atomic replacement semantics and only accepts active Topic IDs. Empty list clears; duplicate/inactive/unknown IDs return 400.
-- Recommendation endpoint: `GET /api/v1/recommendations/` requires authentication and returns up to 20 objects shaped as `{idea, score, reason}`. The Idea is serialized with the existing safe public representation.
-- Candidate selection: at most 200 PUBLISHED Ideas from the shared public selector are scored. User signals are read from UserInterest, SavedIdea Topic counts, Spark Topic counts, and CreatorFollow.
-- Scoring constants: interest +5; save affinity max +4; spark affinity max +3; followed creator +3; popularity 0..1; freshness 0..1. Save/Spark affinity is normalized with cap=3; popularity uses cap=10 Sparks; freshness decays linearly over a 30-day window.
-- Language/seen boundaries: `preferred_ui_language` localizes recommendation reasons only. It is not treated as content preference, honoring the i18n rule separating UI language from content language. Already-seen penalty is deliberately zero because no ReadingEvent/read definition exists yet.
-- Explanations: deterministic, signal-consistent Persian/English reasons are generated without an LLM. The highest weighted active signal chooses the reason.
-- Related Ideas: public `GET /api/v1/ideas/<id>/related/` operates only when the source Idea is PUBLISHED. Candidates must share at least one active Topic. Jaccard similarity is primary; different Source format adds 0.10; popularity and freshness each add at most 0.05 as tie-breakers. Results are capped at 10 and return `{idea, score, similarity, reason}`.
-- Related candidate strategy: at most 100 topic-overlap PUBLISHED candidates are considered. Draft/Hidden/unrelated Ideas are excluded.
-- Architecture: `recommendations/scoring.py` is pure math; `selectors.py` fetches candidate/signal data; `explanations.py` creates deterministic user-facing reasons; `services.py` orchestrates ranking; views are thin.
-- Migration: `accounts.0004_userinterest` generated, inspected, and applied to PostgreSQL. It contains only UserInterest plus its unique constraint. No recommendation model/migration exists.
-- Tests/checks: accounts+recommendations focused suite 81 tests passed; full backend suite 230 tests passed; Django check, migration-drift check, pip check, and git diff check pass.
-- Files changed/new: accounts model/serializer/view/url/tests plus `accounts/migrations/0004_userinterest.py`; config settings; API root URLs; new recommendations app files including scoring/selectors/explanations/services/serializers/views/urls/tests; backend STATE/HANDOFF.
-- Desktop teaching notes: living study file maintained separately at `/home/Pandatron/Desktop/InsightInk_Backend_Teaching_Notes.md`.
-- Known issues: no BE-019 defect identified. Numeric ranking constants are documented baseline hypotheses for testing and academic explanation, not source-mandated values.
-- Next logical task: BE-020 Moderation + hardening baseline, unless the project chooses to switch to frontend integration now that the first defensible backend MVP capabilities are largely present.
-- Delivery: ready for one bounded BE-019 checkpoint commit/push.
+- Task ID: BE-020
+- Exact base SHA: `94b766c176d3c90d6cdb6ae66018e094f6720310`
+- Result: Complete and accepted for checkpoint. Added Comment reporting, bounded Moderator/Admin report queue/review, report state-machine enforcement, audited Comment hiding, and moderation persistence.
+- Report creation: `POST /api/v1/comments/<id>/report/` requires authenticated session + CSRF. Valid reasons are harassment/spam/inappropriate_content/other; details are optional and capped at 2,000 characters. Reporter, target type/id, and OPEN status are server controlled. Only visible comments on published Ideas may be reported.
+- Report storage: generic `target_type + target_id` follows the planned data model and leaves room for future user/idea/message report targets, but no generic report-creation endpoint is exposed. This phase implements only the source-backed Comment report story.
+- Lifecycle: `OPEN -> REVIEWING -> RESOLVED|REJECTED`. State transitions are implemented through transaction-protected service functions using `select_for_update` to avoid conflicting concurrent moderation transitions. Direct OPEN-to-terminal and terminal re-transition attempts return validation errors.
+- Queue/API: `GET /api/v1/moderation/reports/` (cursor page size 25, optional status filter), `GET /api/v1/moderation/reports/<id>/`, and explicit POST actions `start-review/`, `hide-comment/`, `resolve/`, `reject/`.
+- Permissions: new moderation-domain `IsModeratorOrAdmin` reuses `accounts.is_moderator/is_admin`. A random staff user is denied; bounded Moderator group+staff is allowed; superuser Admin is allowed without Moderator membership.
+- Comment moderation: hide action is allowed only for a REVIEWING Comment report. It changes Comment status to HIDDEN rather than hard-deleting the row. Existing public Comment API immediately stops exposing that Comment. Repeated hide is rejected so duplicate audit rows are not produced.
+- Audit: new `ModerationAction` records actor, optional Report, action type, generic target, note, and timestamp. Action types implemented: review_started, comment_hidden, report_resolved, report_rejected. Report detail returns the action history with safe moderator summaries.
+- Evidence/retention: Report reporter and audit actor/report FKs use PROTECT so safety evidence is not silently cascaded away. Final account-deletion/anonymization policy remains unresolved and must be designed explicitly before account deletion exists.
+- Security: all unsafe report/moderation operations use the existing SessionAuthentication/CSRF protection. User-supplied report details and moderation notes are length-bounded. Report queue/detail/actions are inaccessible to ordinary users and non-Moderator staff.
+- Policy boundaries: misinformation category is not enabled because the docs require a defined misinformation policy first. No user restrictions, block/mute, arbitrary content moderation, or message moderation are invented in this task.
+- Migration: `moderation.0001_initial` generated, inspected, and applied. It creates Report and ModerationAction only.
+- Tests/checks: focused moderation suite 24 tests passed; full backend suite 254 tests passed; Django check, migration drift, moderation showmigrations, pip check, and git diff check pass.
+- Files changed/new: `backend/config/settings.py`; `backend/api/urls.py`; new `backend/moderation/` app containing models, permissions, exceptions, services, serializers, pagination, views, URLs, tests, admin/apps/init, and migration; backend STATE/HANDOFF.
+- Desktop teaching notes continue at `/home/Pandatron/Desktop/InsightInk_Backend_Teaching_Notes.md`.
+- Known issues: no BE-020 defect identified. Remaining hardening includes rate-limit strategy, OpenAPI contract generation/stabilization, account privacy lifecycle/export deletion, and production deployment settings.
+- Next recommendation: switch the main implementation track to frontend foundations/integration because the first defensible core backend now covers the MVP user path through moderation. Continue later backend phases only when their frontend/product dependency is ready.
+- Delivery: ready for one bounded BE-020 checkpoint commit/push.
