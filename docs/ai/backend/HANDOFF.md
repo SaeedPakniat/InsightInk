@@ -1,20 +1,21 @@
 # Backend Handoff
 
-- Task ID: BE-017
-- Exact base SHA: `2a37ee7ac40ec818fa3329035278361d4ccbdcb2`
-- Result: Complete and accepted for checkpoint. Added the saved Library surface plus public Creator discovery/reach/follow behavior.
-- Library implementation: new `backend/library/` app provides API/read behavior only; it intentionally owns no duplicate Library model. `GET /api/v1/library/saved/` reads the authenticated user's existing `engagement.SavedIdea` rows.
-- Saved Library contract: requires authentication; returns newest-save-first items shaped as `{saved_at, idea}`; underlying Idea uses the existing safe public Idea serializer. Only currently PUBLISHED Ideas are returned, so DRAFT/HIDDEN content cannot leak through a stale save.
-- Library performance: SavedIdea + nested Idea/Creator/User/Source are select-related and active Idea Topics are prefetched. A query regression test isolates the data path with DRF force_authenticate and confirms two data queries. SessionAuthentication behavior remains covered separately by the auth suite.
-- Stats boundary: the planned `GET /api/v1/library/stats/` remains deferred because the project open question explicitly requires defining what “read” means before reading/opening statistics exist. No ReadingEvent was added.
-- CreatorFollow: new relational model in the existing creators domain with user FK, CreatorProfile FK, created_at, and unique `(user, creator)` database constraint.
-- Public Creator API: `GET /api/v1/creators/`; `GET /api/v1/creators/<id>/`; and cursor-paginated `GET /api/v1/creators/<id>/ideas/`. Public profile fields are id/display_name/bio_fa/bio_en/avatar/is_verified plus follower_count/spark_count/idea_count. No email or account authority fields are exposed.
-- Reach counts: implemented in `creators.selectors.public_creator_queryset()` using database annotations. follower_count counts follow relations; idea_count counts only PUBLISHED Ideas; spark_count counts Sparks attached to PUBLISHED Ideas. Draft/Hidden reach is excluded.
-- Follow contract: authenticated + CSRF-protected `PUT/DELETE /api/v1/creators/<id>/follow/`. PUT/DELETE are idempotent; self-follow returns 400; missing Creator returns 404. No notification behavior is introduced yet.
-- Creator Ideas: the separate subresource was selected because source requirements require published Ideas on the Creator experience while canonical docs do not define a specific nested route. Keeping Ideas separate avoids unbounded arrays in Creator detail and permits cursor pagination.
-- Migration: `creators.0002_creatorfollow` was generated, inspected, and applied to PostgreSQL. It contains only CreatorFollow and its unique constraint. The library app has no model migration.
-- Tests/checks: focused creators+library suite 29 tests passed; full backend suite 173 tests passed; Django check, migration drift check, creators showmigrations, pip check, and git diff check all pass.
-- Files changed/new: `backend/config/settings.py`; `backend/api/urls.py`; `backend/creators/models.py`; `serializers.py`; `views.py`; `urls.py`; `tests.py`; new `selectors.py`; new `migrations/0002_creatorfollow.py`; new `backend/library/` app files including serializers/views/urls/tests; `docs/ai/backend/STATE.md`; `docs/ai/backend/HANDOFF.md`.
-- Known issues: none identified.
-- Next logical task: BE-018 Explore/Search.
-- Delivery: ready for one bounded BE-017 checkpoint commit/push.
+- Task ID: BE-018
+- Exact base SHA: `dcaac3de8bce349449c3bbbeeb91bf592ca9933c`
+- Result: Complete and accepted for checkpoint. Added bilingual PostgreSQL/Django Explore/Search plus active-Topic browsing without schema changes or external search infrastructure.
+- New domain: `backend/explore/` contains normalization, query-parameter serializer, selectors, views, URLs, and focused tests. The app has no persistent model because search state is derived from existing relational content.
+- Search contract: `GET /api/v1/search/` is anonymous/read-only and cursor-paginated. Optional params: `q` (max 200), `language` (`fa|en`), `type` (book/article/movie/podcast), `topic` (slug). Filters may be used with or without `q`; no params returns the baseline public Explore listing.
+- Query scope: text query searches Idea title/body, Source title/original_creator_text, Creator User display_name, and Persian/English Topic names. All results originate from `content.selectors.public_idea_queryset()`, so only PUBLISHED Ideas and active serialized Topics are exposed.
+- Persian/English support: `explore.normalization.normalize_search_text()` normalizes NFKC, Arabic/Persian Yeh/Kaf variants, ZWNJ, repeated whitespace, trim, and casefold on the user query. `normalized_search_expression()` mirrors the required stored-field substitutions in PostgreSQL using Django expressions + `REGEXP_REPLACE`. This makes Persian/Arabic keyboard variants and ZWNJ/space forms match without destructively changing stored text. English search remains case-insensitive.
+- Topic browsing contract: `GET /api/v1/topics/<slug>/ideas/` is anonymous/read-only, cursor-paginated, active-Topic-only, and PUBLISHED-Idea-only. Inactive/missing Topic returns 404.
+- Filter semantics: language is content language, not UI language; source type is relational Source.type; Topic filter requires an active matching Topic relationship. Invalid language/type values return 400 rather than silently broadening the query.
+- Pagination/ranking: search/topic browse reuse the existing 10-item `FeedCursorPagination` and `-id` baseline ordering. No recommendation score or search relevance ranking is introduced yet.
+- Stored-data rule: BE-018 never rewrites Idea/Source/Creator/Topic original text. Search normalization exists only as Python/query expressions.
+- Infrastructure boundary: no Elasticsearch, Postgres extension dependency, vector search, embeddings, RAG, LLM, or search microservice. This follows the architecture rule to prove PostgreSQL search insufficient before adding infrastructure.
+- Trending boundary: roadmap mentions a simple trending definition but provides no locked metric/window; BE-018 leaves it deferred instead of inventing product policy.
+- Database/migrations: no model/schema change; no migration; migration drift is clean.
+- Tests/checks: focused Explore suite 24 tests passed; full backend suite 197 tests passed; Django check, migration drift check, pip check, and git diff check pass.
+- Files changed/new: `backend/config/settings.py`; `backend/api/urls.py`; new `backend/explore/__init__.py`; `apps.py`; `admin.py`; `models.py`; `migrations/__init__.py`; `normalization.py`; `serializers.py`; `selectors.py`; `views.py`; `urls.py`; `tests.py`; `docs/ai/backend/STATE.md`; `docs/ai/backend/HANDOFF.md`.
+- Known issues: no BE-018 defect identified. This is deliberate basic multilingual substring search, not stemming/fuzzy/semantic search.
+- Next logical task: BE-019 deterministic recommendations + UserInterest cold-start foundation.
+- Delivery: ready for one bounded BE-018 checkpoint commit/push.

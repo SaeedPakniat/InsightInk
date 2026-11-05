@@ -1,19 +1,21 @@
 # Backend State
 
-- BE-017 status: Complete; accepted by Backend Lead pending checkpoint commit/push.
-- BE-017 base SHA: `2a37ee7ac40ec818fa3329035278361d4ccbdcb2` (accepted/pushed BE-016 engagement checkpoint; clean starting worktree).
-- Library domain: new `library` Django app owns Library API behavior without duplicating Save data. It queries the existing `engagement.SavedIdea`, matching the locked decision that Save is the basic Library entry.
-- Saved Library API: authenticated `GET /api/v1/library/saved/` returns only the current user's SavedIdea rows whose Ideas are still PUBLISHED, ordered newest-save first. Each item exposes `saved_at` plus the existing safe public Idea representation.
-- Library privacy/visibility: another user's saves are never returned; DRAFT/HIDDEN Ideas are excluded even if a SavedIdea row exists from earlier state. Nested Creator/Source data uses select_related and active Topics use prefetch; the Library data path is covered by a two-query regression test independent of session-auth queries.
-- Library stats: `/api/v1/library/stats/` remains intentionally deferred. The project explicitly requires a measurable definition of “read” before reading/opening statistics are implemented; BE-017 does not invent one.
-- CreatorFollow model: new `creators.CreatorFollow(user, creator, created_at)` with PostgreSQL-backed unique constraint on `(user, creator)`.
-- Public Creator list/detail: anonymous `GET /api/v1/creators/` and `GET /api/v1/creators/<id>/` expose only public CreatorProfile information: id, display name, bilingual bios, avatar, verification state, and derived public reach counts. Email, user_id, staff/admin state, and other account internals are not exposed.
-- Public Creator counts: `follower_count` derives from CreatorFollow rows; `idea_count` counts PUBLISHED Ideas only; `spark_count` counts Sparks across PUBLISHED Ideas only. Counts are query annotations rather than duplicated/stored counter fields.
-- Creator published Ideas: anonymous cursor-paginated `GET /api/v1/creators/<id>/ideas/` returns only that Creator's PUBLISHED Ideas using the existing safe public Idea serializer and public Idea selector. Missing Creator IDs return 404.
-- Follow API: authenticated/CSRF-protected `PUT/DELETE /api/v1/creators/<id>/follow/` is idempotent. Repeated PUT creates at most one relation; repeated DELETE leaves none. Self-follow is rejected as a routine domain validation rule.
-- Migration: `creators.0002_creatorfollow` creates only CreatorFollow and its documented unique constraint. Applied successfully to PostgreSQL; migration drift is clean. The Library app adds no table/migration.
-- Validation: focused creators+library suite passes 29 tests; full backend suite passes 173 tests; `manage.py check`, migration drift, `showmigrations creators`, `python -m pip check`, and `git diff --check` pass.
-- Existing regression boundary: auth/session/CSRF, role authorization, creator self-workspace, draft authoring, public Idea API, cursor feed, Spark/Save/Comment behavior remain unchanged.
-- Excluded: reading/statistics definition, Library filters, report/moderation workflow, search/explore, recommendation scoring, realtime, messaging, notifications, TTS, and frontend work.
-- Known issues: none identified in BE-017.
-- Next logical backend milestone: BE-018 Explore/Search, adding query search, topic browsing, source/type filters, and a deliberate Persian text-normalization baseline without introducing Elasticsearch or external search infrastructure.
+- BE-018 status: Complete; accepted by Backend Lead pending checkpoint commit/push.
+- BE-018 base SHA: `dcaac3de8bce349449c3bbbeeb91bf592ca9933c` (accepted/pushed BE-017 Library + Creator checkpoint; clean starting worktree).
+- Explore/Search domain: new `explore` Django app owns public search, filtering, topic browsing, and search-text normalization behavior. It adds no database model/table.
+- Search endpoint: anonymous/read-only `GET /api/v1/search/` with cursor pagination. Supported query parameters are optional `q`, `language=fa|en`, `type=book|article|movie|podcast`, and `topic=<active-topic-slug>`. Parameters compose; omitting `q` makes the route a general Explore listing over public content.
+- Search visibility: candidates come only from the shared public Idea selector, so only PUBLISHED Ideas can appear. DRAFT/HIDDEN Ideas never enter search/explore results.
+- Search scope: text query searches normalized Idea title/body, Source title/original creator text, Creator display name, and Topic Persian/English names. Result representation reuses the existing safe public Idea serializer.
+- Bilingual normalization: query-time normalization supports English + Persian without rewriting stored source text. Python query normalization performs Unicode NFKC, Arabic Yeh `ي` and Alef Maqsura `ى` -> Persian Yeh `ی`, Arabic Kaf `ك` -> Persian Kaf `ک`, ZWNJ -> normal space, repeated-whitespace collapse, trim, and casefold. PostgreSQL field expressions mirror the required Arabic/Persian character substitutions, ZWNJ replacement, and whitespace collapse; `icontains` provides case-insensitive English matching.
+- Stored-text integrity: original Idea/Source/Creator/Topic text is not mutated for search. Normalization is derived at comparison time as required by the i18n architecture.
+- Search validation: `q` is bounded to 200 characters; invalid content language or Source type returns DRF 400 validation errors. No client-controlled arbitrary ordering or raw SQL input exists.
+- Filters: content-language filter is explicitly separate from UI language. Source format/type and active Topic slug filters operate against relational fields. An inactive Topic filter yields no results.
+- Topic browsing: anonymous cursor-paginated `GET /api/v1/topics/<slug>/ideas/` returns PUBLISHED Ideas for an active Topic only; inactive/missing Topic slugs return 404. Existing `/api/v1/topics/` API remains unchanged.
+- Pagination/order: Explore/Search and Topic Ideas reuse `FeedCursorPagination` (page size 10, deterministic `-id` baseline ordering). This is discovery infrastructure, not recommendation ranking.
+- Infrastructure boundary: no Elasticsearch, external search service, vector DB, embeddings, or LLM/RAG search was introduced. PostgreSQL/Django remains the search baseline until measured evidence proves insufficient.
+- Trending: the Developer Bible mentions a simple trending definition, but no metric/window is locked. BE-018 does not invent a product-policy formula; trending remains deferred.
+- Database/migrations: no schema/model changes and no BE-018 migration. `makemigrations --check --dry-run` reports no changes.
+- Validation: focused Explore suite passes 24 tests; full backend suite passes 197 tests; `manage.py check`, migration drift, `python -m pip check`, and `git diff --check` pass.
+- Existing regression boundary: auth/CSRF/roles, creator workspace, feed, engagement, Library, Creator discovery/follow all remain passing.
+- Known issues: the query-time normalization baseline specifically covers locked Persian concerns (Yeh/Kaf variants, whitespace, ZWNJ) and English case-insensitivity; more advanced stemming/fuzzy ranking/full-text indexes are intentionally not part of this phase.
+- Next logical backend milestone: BE-019 deterministic recommendation foundation, beginning with the still-missing UserInterest model/API needed for cold start, then deterministic candidate scoring/related Ideas without LLMs.

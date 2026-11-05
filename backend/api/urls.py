@@ -24,6 +24,7 @@ urlpatterns = [
     path("", include("creators.urls")),
     path("", include("engagement.urls")),
     path("", include("library.urls")),
+    path("", include("explore.urls")),
     path("health/", health, name="health"),
     path("feed/", FeedView.as_view(), name="feed"),
 ] + router.urls
