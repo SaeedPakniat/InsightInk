@@ -36,6 +36,7 @@ INSTALLED_APPS = [
     "creators",
     "content",
     "engagement",
+    "library",
     "rest_framework",
     "django.contrib.admin",
     "django.contrib.auth",

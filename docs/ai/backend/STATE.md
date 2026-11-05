@@ -1,21 +1,19 @@
 # Backend State
 
-- BE-016 status: Complete; accepted by Backend Lead pending checkpoint commit/push.
-- BE-016 base SHA: `7a0676be8fcdb1ffa7906da85dd0d888bf373e35` (accepted/pushed BE-015 feed checkpoint; clean starting worktree).
-- Engagement domain: new Django `engagement` app owns `Spark`, `SavedIdea`, and `Comment` rather than placing one model per app.
-- Spark model: `user -> accounts.User`, `idea -> content.Idea`, `created_at`; PostgreSQL-backed unique constraint on `(user, idea)`.
-- SavedIdea model: `user`, `idea`, `saved_at`, optional `last_opened_at`; unique constraint on `(user, idea)`. This table is also the future basic Library source, matching the locked data-model decision not to duplicate Save and LibraryEntry.
-- Comment model: `author`, `idea`, `body`, status `visible|hidden|deleted`, `created_at`, `updated_at`. Nested replies are not implemented.
-- Spark API: authenticated/CSRF-protected `PUT/DELETE /api/v1/ideas/<id>/spark/`; both methods are idempotent and operate only on PUBLISHED Ideas.
-- Save API: authenticated/CSRF-protected `PUT/DELETE /api/v1/ideas/<id>/save/`; both methods are idempotent and operate only on PUBLISHED Ideas.
-- Comment API: anonymous `GET /api/v1/ideas/<id>/comments/` returns only VISIBLE comments on PUBLISHED Ideas. Authenticated/CSRF-protected POST creates a VISIBLE comment with author/Idea derived server-side.
-- Comment validation: body is trimmed, must be nonblank, and is capped at 4,000 characters as a backend abuse/input-validation implementation limit because the source requires length/content validation but does not specify a numeric maximum.
-- Comment deletion: authenticated owner-only `DELETE /api/v1/comments/<id>/` is CSRF-protected and idempotently soft-deletes by setting status to DELETED. Public reads exclude HIDDEN/DELETED comments. Moderator/Admin moderation deletion remains deferred to the audited moderation workflow rather than bypassing audit requirements here.
-- Visibility boundary: public reader interactions target PUBLISHED Ideas only; DRAFT and HIDDEN Ideas return 404 for Spark/Save/Comment public surfaces.
-- Report Comment: canonical route remains documented but is intentionally deferred. The Report target representation and final report reason/policy contract are unresolved in the moderation design; BE-016 does not invent them.
-- Database/migrations: new `engagement.0001_initial` creates Comment, SavedIdea, and Spark and their documented constraints. Applied successfully to PostgreSQL; migration drift is clean.
-- Validation: focused engagement suite passes 24 tests; full backend suite passes 159 tests; `manage.py check`, migration drift, pip check, and git diff check pass.
-- Existing regression boundary: authentication, authorization, creator workspace, public Idea API, and cursor-paginated public feed remain unchanged.
-- Excluded: comment reporting/moderation actions, creator follow, Library read endpoints/stats, reading events, recommendation scoring, search, realtime, messaging, notifications, TTS, and frontend work.
-- Known issues: none identified in BE-016.
-- Next logical backend milestone: BE-017 Library + public Creator experience, reusing SavedIdea for the basic library and adding public Creator list/detail/published Ideas plus follow/unfollow if the creator-follow contract remains document-complete.
+- BE-017 status: Complete; accepted by Backend Lead pending checkpoint commit/push.
+- BE-017 base SHA: `2a37ee7ac40ec818fa3329035278361d4ccbdcb2` (accepted/pushed BE-016 engagement checkpoint; clean starting worktree).
+- Library domain: new `library` Django app owns Library API behavior without duplicating Save data. It queries the existing `engagement.SavedIdea`, matching the locked decision that Save is the basic Library entry.
+- Saved Library API: authenticated `GET /api/v1/library/saved/` returns only the current user's SavedIdea rows whose Ideas are still PUBLISHED, ordered newest-save first. Each item exposes `saved_at` plus the existing safe public Idea representation.
+- Library privacy/visibility: another user's saves are never returned; DRAFT/HIDDEN Ideas are excluded even if a SavedIdea row exists from earlier state. Nested Creator/Source data uses select_related and active Topics use prefetch; the Library data path is covered by a two-query regression test independent of session-auth queries.
+- Library stats: `/api/v1/library/stats/` remains intentionally deferred. The project explicitly requires a measurable definition of “read” before reading/opening statistics are implemented; BE-017 does not invent one.
+- CreatorFollow model: new `creators.CreatorFollow(user, creator, created_at)` with PostgreSQL-backed unique constraint on `(user, creator)`.
+- Public Creator list/detail: anonymous `GET /api/v1/creators/` and `GET /api/v1/creators/<id>/` expose only public CreatorProfile information: id, display name, bilingual bios, avatar, verification state, and derived public reach counts. Email, user_id, staff/admin state, and other account internals are not exposed.
+- Public Creator counts: `follower_count` derives from CreatorFollow rows; `idea_count` counts PUBLISHED Ideas only; `spark_count` counts Sparks across PUBLISHED Ideas only. Counts are query annotations rather than duplicated/stored counter fields.
+- Creator published Ideas: anonymous cursor-paginated `GET /api/v1/creators/<id>/ideas/` returns only that Creator's PUBLISHED Ideas using the existing safe public Idea serializer and public Idea selector. Missing Creator IDs return 404.
+- Follow API: authenticated/CSRF-protected `PUT/DELETE /api/v1/creators/<id>/follow/` is idempotent. Repeated PUT creates at most one relation; repeated DELETE leaves none. Self-follow is rejected as a routine domain validation rule.
+- Migration: `creators.0002_creatorfollow` creates only CreatorFollow and its documented unique constraint. Applied successfully to PostgreSQL; migration drift is clean. The Library app adds no table/migration.
+- Validation: focused creators+library suite passes 29 tests; full backend suite passes 173 tests; `manage.py check`, migration drift, `showmigrations creators`, `python -m pip check`, and `git diff --check` pass.
+- Existing regression boundary: auth/session/CSRF, role authorization, creator self-workspace, draft authoring, public Idea API, cursor feed, Spark/Save/Comment behavior remain unchanged.
+- Excluded: reading/statistics definition, Library filters, report/moderation workflow, search/explore, recommendation scoring, realtime, messaging, notifications, TTS, and frontend work.
+- Known issues: none identified in BE-017.
+- Next logical backend milestone: BE-018 Explore/Search, adding query search, topic browsing, source/type filters, and a deliberate Persian text-normalization baseline without introducing Elasticsearch or external search infrastructure.
