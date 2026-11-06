@@ -1,29 +1,28 @@
 # Frontend State
 
-- Task: FE-004 — Personalized For You Feed.
-- Status: Implementation complete; pending user manual/visual acceptance before commit/push.
-- Base commit: `2187510d4bd18214cc4e186bcae8699da0608cce`.
+- Task: FE-005 — Latest / Explore Cursor Feed, including accepted-direction FE-004A desktop centering polish.
+- Status: Accepted by user after Explore spacing review; FE-004A/FE-005 ready for commit/push.
+- Base commit: `efbf4a7a1cf1ba7e70f261575976d6e3f401000a` (`feat(frontend): add personalized home feed`), matching `origin/master` when this task began.
 - Frontend root: `frontend/`.
-- Stack remains React + TypeScript + Vite, React Router, TanStack Query, i18next/react-i18next, Vitest/Testing Library, plain CSS design tokens.
-- FE-001/FE-001A, FE-002 and FE-003 are committed and pushed on `master`.
-- Auth remains Django session/cookie auth with CSRF for unsafe requests; no JWT/localStorage auth tokens.
-- FE-004 product decision: authenticated `/app` is now the personalized "For You" reader home using `GET /api/v1/recommendations/`. General `GET /api/v1/feed/` is retained for a future Latest/Explore surface.
-- Recommendation contract: array of `{idea: Idea, score: number, reason: string}`; authenticated; current backend limit is 20 results and there is no recommendation pagination.
-- Backend recommendation ranking signals: explicit interests, saved-topic affinity, Spark-topic affinity, followed creators, popularity, and freshness.
-- New frontend type `RecommendationItem` and typed API client `getRecommendations()`.
-- TanStack Query key: `['recommendations']`; stale time 30 seconds.
-- Interests onboarding now invalidates the recommendation query on successful save so changed interests are reflected when navigating back to `/app`.
-- `AuthenticatedHomePage` no longer renders the foundation/debug dashboard, account summary, or two-card preview. It now has a compact reader welcome, Edit interests, Log out, and the personalized feed.
-- `PersonalizedFeed` renders the complete recommendation array rather than `slice(0, 2)`.
-- Internal recommendation score is deliberately not shown to users. Transparent backend reason is shown above each IdeaCard.
-- Recommendation reasons detect Persian script and receive their own `lang`/`dir`, preventing layout problems when backend reason language differs from the local UI language.
-- KNOWN LANGUAGE CONTRACT NUANCE: backend reason language follows account `preferred_ui_language`; the current frontend language toggle is local-device state and does not PATCH the account preference. A locally switched UI can therefore contain a recommendation-reason line in the account's other language. Layout is correct, but syncing account language requires a future backend profile-update contract.
-- Feed is deliberately finite because the backend recommendation endpoint is finite/unpaginated. After the returned set, UI shows an explicit end marker rather than fake infinite scrolling.
-- Loading state renders three IdeaCard skeletons; error state supports retry; empty state directs the user to choose/edit interests.
-- Live authenticated smoke test through Vite using the seeded demo reader: HTTP 200, 20 recommendations, 20 unique Idea IDs. First reason: `Because you selected Psychology.`.
-- Visual review completed at 1440×1100 and 390×844 using real public IdeaCard content and the exact FE-004 layout/reason treatment; no observed horizontal overflow.
-- Temporary screenshot-only review route/file was removed before final validation.
-- Quality before final cleanup: TypeScript, ESLint, Prettier and production build pass; 11 test files / 23 tests pass; runtime `npm audit --omit=dev` reports 0 vulnerabilities.
-- FE-004 production bundle before final cleanup: ~139.41 KB JS gzip and ~5.78 KB CSS gzip.
-- Backend implementation files changed by FE-004: none.
-- Next logical task after FE-004 acceptance: FE-005 — Latest/Explore feed using the existing cursor-paginated `GET /api/v1/feed/`, with TanStack Infinite Query/load-more behavior and duplicate-safe page flattening.
+- FE-004 personalized For You feed was committed/pushed by the user before this task.
+- FE-004A layout decision: personalized feed header/list/state/end now use a centered 48rem reading rail on wide screens. This removes the accidental-looking RTL-side dead space while deliberately preserving wider desktop room for a future contextual rail (active interests, feed signals, saved/followed shortcuts). No placeholder/fake sidebar content was added.
+- FE-004A visual review: centered rail checked at 1440×1100 and 390×844; desktop is materially more balanced and mobile remains unchanged.
+- FE-005 product split: `/app` = personalized For You from `/recommendations/`; protected `/explore` = chronological Latest from public `/feed/`.
+- Shared `FeedModeNav` provides For You / Latest switching on both surfaces.
+- Feed backend contract confirmed from actual source: DRF `FeedCursorPagination`, page size 10, ordering `-id`.
+- Real first feed page returned IDs 40…31 and `next=http://localhost:5173/api/v1/feed/?cursor=...`.
+- `getFeedPage(cursor)` now accepts a cursor token and safely constructs the relative API request. `cursorFromFeedUrl()` extracts only the cursor token from backend next URLs rather than trusting/using the absolute host.
+- TanStack `useInfiniteQuery` drives Latest pages with `initialPageParam=null` and next-page cursor extraction.
+- `flattenUniqueIdeas()` appends pages in server order while defensively removing duplicate Idea IDs if adjacent cursor pages ever overlap.
+- UX intentionally uses explicit Load 10 more rather than automatic sentinel loading. This preserves cursor/infinite-query architecture while keeping user control, accessibility and the product's anti-mindless-scroll stance.
+- Latest page states: initial skeletons, initial fetch error/retry, empty feed, loaded count, loading-next-page state, explicit end-of-collection state.
+- Live cursor smoke through Vite: 4 pages, 40 items, 40 unique IDs; sequence starts 40…36 and ends 5…1.
+- Latest/Explore visual review completed at 1440×1100 and 390×844; centered rail, feed switcher and cards are coherent with no observed horizontal overflow.
+- Explore spacing bug found during user review: CSS referenced undefined `--space-7` / `--space-9`, so browsers dropped those gap/margin declarations. Added the missing design-system tokens (`1.75rem` / `2.25rem`), restoring intended header, card-list and pagination spacing without page-specific hacks.
+- Temporary screenshot-only review route was removed before final validation.
+- Final quality gates: TypeScript PASS; ESLint PASS; Vitest 13 files / 27 tests PASS; production build PASS; Prettier PASS; `npm audit --omit=dev` reports 0 vulnerabilities.
+- Final production bundle: ~140.71 KB JS gzip and ~6.04 KB CSS gzip.
+- Backend implementation files changed: none.
+- Future contextual-rail decision retained: do not add now; likely desktop-only rail after core browsing/engagement surfaces exist so it can contain real user signals rather than decorative filler.
+- Manual acceptance: user confirmed the centered home and corrected Explore spacing feel right.
+- Next frontend task: FE-006 — Idea detail route using the existing public Idea detail API contract.
