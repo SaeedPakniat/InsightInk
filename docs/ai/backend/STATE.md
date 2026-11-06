@@ -1,28 +1,31 @@
 # Backend State
 
-- BE-ENG-STATE-001 status: Complete; accepted by Backend Lead pending bounded checkpoint commit/push.
-- Exact base SHA: `d145b2ac8795f21c773233d38fe8816138ada541`.
-- Repository preflight: branch `master`; HEAD == origin/master at task start; working tree was clean.
-- Frontend boundary: no `frontend/**` or `docs/ai/frontend/**` files are modified by this backend task.
-- New endpoint: authenticated `GET /api/v1/me/engagement/?idea_ids=40,39,38`.
-- Purpose: provide batched viewer-specific Spark/Save state for Feed, Idea Detail, For You, Latest, future Search, and Related Ideas without embedding private state into public Idea serializers.
-- Authentication: Django session/DRF authentication; anonymous request receives the existing project-standard 403. GET requires no CSRF token.
-- Query parameter: canonical comma-separated positive integer IDs in `idea_ids`; parameter is required and may not be blank.
-- Batch maximum: 100 comma-separated ID tokens per request.
-- Duplicate handling: IDs are deduplicated while preserving first-occurrence request order.
-- Invalid input: malformed, zero, negative, decimal/fractional IDs return 400 with `idea_ids must be a comma-separated list of positive integers.`; >100 IDs returns 400 with `At most 100 Idea IDs may be requested.`.
-- Missing/empty input: missing returns 400 `idea_ids query parameter is required.`; empty returns 400 `idea_ids query parameter must not be empty.`.
-- Visibility/privacy: only `PUBLISHED` Ideas are returned. Draft, hidden, and nonexistent IDs are omitted identically, revealing no lifecycle distinction.
-- False-state semantics: every requested published Idea is returned even when neither interaction exists, with `sparked=false, saved=false`.
-- Response shape: `{"items":[{"idea_id":40,"sparked":true,"saved":false}, ...]}`; no Idea body, timestamps, counts, comments, creator state, recommendation score, or other payload is included.
-- Ordering guarantee: response items follow first occurrence order of requested normalized IDs, excluding nonpublic/nonexistent IDs.
-- Query strategy: one `Idea` queryset filtered by requested IDs + published status, with two correlated SQL `Exists` annotations scoped to the current user for `Spark` and `SavedIdea`. Response order is reconstructed from the normalized request list. Query count is exactly 1 for a one-ID request and exactly 1 for a 100-ID batch in regression tests.
-- Existing mutations remain unchanged: `PUT/DELETE /api/v1/ideas/<id>/spark/` and `PUT/DELETE /api/v1/ideas/<id>/save/` remain authenticated, CSRF-protected for unsafe methods, published-only, idempotent, explicit PUT/DELETE operations returning HTTP 204.
-- Public Idea representation remains unchanged; no viewer-specific fields were added to `IdeaSerializer`.
+- BE-FOLLOW-STATE-001 status: Complete; implementation checkpoint committed and ready to push with backend documentation sync.
+- Exact implementation commit SHA: `7352883676d64da9ac63a4c0f1ed1980601b8dec`.
+- Exact base SHA: `aed1a6f27185a9661e5ec18ccf3f9f8d8558b8dc`.
+- Frontend boundary: FE-011 has pre-existing uncommitted work under `frontend/**` and `docs/ai/frontend/**`; this backend task does not modify, stage, reset, stash, clean, checkout, or discard those paths.
+- New endpoint: authenticated/read-only `GET /api/v1/me/creator-follows/?creator_ids=1,2,3`.
+- Purpose: provide batched viewer-specific Creator follow state after refresh/direct navigation without adding private viewer fields to public Creator serializers and without one request per Creator.
+- Authentication: Django session/DRF authentication; anonymous GET receives the existing project-standard 403. GET requires no CSRF token.
+- Query parameter: required comma-separated positive integer CreatorProfile IDs in `creator_ids`.
+- Batch maximum: 100 requested ID tokens.
+- Duplicate handling: duplicate IDs are normalized while preserving first-occurrence request order.
+- Missing/empty behavior: missing -> 400 `creator_ids query parameter is required.`; blank -> 400 `creator_ids query parameter must not be empty.`.
+- Invalid behavior: malformed, decimal, zero, or negative IDs -> 400 `creator_ids must be a comma-separated list of positive integers.`; >100 tokens -> 400 `At most 100 CreatorProfile IDs may be requested.`.
+- Existence behavior: valid existing CreatorProfiles always receive an item, including false state. Nonexistent IDs are omitted.
+- Response shape: `{"items":[{"creator_id":1,"following":false,"can_follow":true}]}`.
+- Self-follow behavior: if the requested CreatorProfile belongs to the authenticated User, response is always `following=false, can_follow=false`. This remains true even if invalid legacy self-follow data somehow exists.
+- Normal creator behavior: `can_follow=true`; `following` reflects whether the current User has a CreatorFollow row.
+- Ordering guarantee: first-occurrence request order after duplicate normalization, with nonexistent IDs removed.
+- Query strategy: one CreatorProfile queryset filtered by requested IDs, annotated with a correlated current-user `Exists` subquery over CreatorFollow; values include creator user_id so self-follow eligibility is computed without an extra query. Response ordering is reconstructed from the normalized request list.
+- Query-count regression: exactly 1 SQL query for a one-Creator request and exactly 1 SQL query for a 100-Creator request.
+- User isolation: another User's CreatorFollow does not affect the current viewer's state.
+- Existing follow mutation contract unchanged: `PUT /api/v1/creators/<id>/follow/` and `DELETE /api/v1/creators/<id>/follow/` remain authenticated, CSRF-protected for unsafe methods, explicit, idempotent, and HTTP 204 when successful; self-follow PUT remains HTTP 400.
+- Existing public Creator APIs unchanged: list/detail/Creator Ideas and derived follower_count behavior continue using the prior serializers/selectors.
 - Schema/migrations: none required.
-- Focused regression: engagement + Library + recommendations suite passes 65 tests.
-- Full backend suite: 310/310 tests pass.
-- Quality: `manage.py check` pass; `makemigrations --check --dry-run` reports no changes; `python -m pip check` pass; `git diff --check` pass.
-- Real seeded smoke: demo Reader has 6 Sparks and 6 Saves. Batched request for real IDs 1,3,35,2 returned respectively spark-only, save-only, both, and neither states with HTTP 200 and exactly 1 SQL query.
-- Seed/demo data: unchanged by BE-ENG-STATE-001.
-- Frontend blocker: none identified. FE-007 can consume the new batch viewer-state endpoint while keeping existing optimistic PUT/DELETE mutation contracts.
+- Focused Creator suite: 36/36 tests pass.
+- Full backend suite: 322/322 tests pass.
+- Quality: `manage.py check` pass; `makemigrations --check --dry-run` reports no changes; `python -m pip check` reports no broken requirements; `git diff --check` pass.
+- Real seeded smoke: demo Reader `demo-reader@example.com`; Creator 1 رها مرادی -> false/true; Creator 2 Nora Hayes -> true/true; Creator 3 Arman Daryan -> true/true; Creator 4 Maya Chen -> false/true. HTTP 200, query count = 1.
+- Seed/demo data: unchanged.
+- Frontend blocker: none identified. FE-011 can hydrate Follow/Following state through the new batch endpoint and continue using existing PUT/DELETE mutations.
