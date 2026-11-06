@@ -23,7 +23,7 @@ export function RegisterPage() {
     mutationFn: register,
     onSuccess: (user) => {
       queryClient.setQueryData(SESSION_QUERY_KEY, user)
-      navigate('/app', { replace: true })
+      navigate('/onboarding/interests', { replace: true })
     },
   })
 

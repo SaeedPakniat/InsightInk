@@ -7,6 +7,21 @@ export type CurrentUser = {
   preferred_ui_language: UiLanguage
 }
 
+export type Topic = {
+  id: number
+  slug: string
+  name_fa: string
+  name_en: string
+}
+
+export type CurrentInterests = {
+  topics: Topic[]
+}
+
+export type UpdateInterestsPayload = {
+  topics: number[]
+}
+
 export type LoginPayload = {
   email: string
   password: string

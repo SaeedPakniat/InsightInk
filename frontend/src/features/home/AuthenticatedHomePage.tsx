@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 
 import { logout } from '../../api/auth'
@@ -59,6 +59,12 @@ export function AuthenticatedHomePage() {
           <span className="foundation-card__index">02</span>
           <h2>{t('home.nextTitle')}</h2>
           <p>{t('home.nextBody')}</p>
+          <Link
+            className="button button--secondary foundation-card__action"
+            to="/onboarding/interests"
+          >
+            {t('home.interestsAction')}
+          </Link>
         </Card>
       </div>
 
