@@ -90,6 +90,23 @@ export type ViewerEngagementResponse = {
   items: ViewerEngagementItem[]
 }
 
+export type CommentAuthor = {
+  id: number
+  display_name: string
+}
+
+export type IdeaComment = {
+  id: number
+  author: CommentAuthor
+  body: string
+  created_at: string
+  updated_at: string
+}
+
+export type CreateCommentPayload = {
+  body: string
+}
+
 export type LoginPayload = {
   email: string
   password: string

@@ -1,58 +1,46 @@
 # Frontend State
 
-- Task: FE-007 — Spark + Save Engagement.
-- Status: Accepted by user; FE-007 ready for checkpoint commit/push.
-- Base backend commit: `84ea6a36be32d2e4ece582196d2920b4daaec5ac` (`feat(engagement): expose viewer interaction state`).
-- Previous accepted frontend commit: `d145b2ac8795f21c773233d38fe8816138ada541`.
+- Task: FE-008 — Idea Detail Comments.
+- Status: Accepted by user; FE-008 ready for checkpoint commit/push.
+- Base commit: `6f491d757cc5d641898c963eb68caeb79b694ba5` (`feat(frontend): add spark and save engagement`).
 - Frontend root: `frontend/`.
-- Backend contract verified from source and handoff:
-  - authenticated batched `GET /api/v1/me/engagement/?idea_ids=...`;
-  - max 100 requested tokens/request;
-  - explicit false/false returned for public Ideas without interactions;
-  - draft/hidden/missing omitted;
-  - existing Spark/Save PUT/DELETE remain explicit, idempotent, CSRF-protected, 204.
-- New frontend types: `ViewerEngagementItem`, `ViewerEngagementResponse`.
-- New API client:
-  - `getViewerEngagement(ideaIds)`
-  - `setSparked(ideaId, boolean)`
-  - `setSaved(ideaId, boolean)`.
-- Engagement cache architecture:
-  - screen-level `useHydrateViewerEngagement(ids)` fetches viewer state in batches;
-  - each result is normalized into `['viewerEngagement','idea',id]`;
-  - IdeaCard and Idea Detail observe the same normalized cache entry;
-  - hydration chunks at 100 IDs, so >100 loaded Latest cards become bounded batch calls rather than an invalid oversized request or N+1.
-- Personalized For You and Latest hydrate currently rendered Idea IDs only for authenticated sessions.
-- Public Idea Detail hydrates its single Idea only if a session exists.
-- New reusable `IdeaEngagementActions`:
-  - Spark and Save buttons;
-  - `aria-pressed` states;
-  - localized labels;
-  - pressed Spark amber, pressed Save teal;
-  - compact card variant and larger detail variant;
-  - anonymous detail shows Sign in to Spark or Save with login return path;
-  - anonymous card renders no private engagement controls.
-- Optimistic mutation behavior:
-  - cache updates in `onMutate` before PUT/DELETE resolves;
-  - previous state captured;
-  - network failure restores previous state;
-  - accessible error message explains rollback;
-  - both buttons lock while either mutation is pending to prevent cross-mutation rollback races.
-- Mutation cache behavior:
-  - active viewer-engagement batch state is invalidated/refetched after mutation for server confirmation;
-  - recommendations are invalidated with `refetchType:'none'` so the current reading feed does not suddenly reorder after a click, but is stale for the next refresh/navigation;
-  - `['library','saved']` is marked stale on Save changes for future/current Library integration.
-- No Spark counts are invented because no public count contract is part of FE-007.
-- Live backend read smoke through Vite succeeded for demo reader:
-  - Idea 1 -> sparked true / saved false
-  - Idea 2 -> false / false
-  - Idea 3 -> false / true
-  - Idea 35 -> true / true.
-- A first manual curl mutation smoke correctly returned 403 because the script reused a pre-login CSRF token after Django login rotation; this was a smoke-script error, not a product error. Frontend auth already calls `clearCsrfToken()` after login/register so unsafe FE-007 requests bootstrap the rotated token correctly.
-- Visual review completed at 1440×1100 and 390×844 using production IdeaCard:
-  - unpressed/pressed states are visually distinct;
-  - RTL layout remains coherent;
-  - controls remain subordinate to reading content;
-  - no observed horizontal overflow.
-- Temporary visual-review route/file removed before final validation.
-- Backend implementation files changed by FE-007: none.
-- Next logical task after acceptance: FE-008 — Comments on Idea Detail, followed by the saved Library surface.
+- Backend comment contract verified from actual source:
+  - public GET `/api/v1/ideas/<idea_id>/comments/`;
+  - authenticated POST on same route;
+  - owner-only authenticated DELETE `/api/v1/comments/<comment_id>/`;
+  - visible comments only, ordered by ascending ID;
+  - body trimmed, nonblank, max length 4000;
+  - serializer fields: id, author{id,display_name}, body, created_at, updated_at.
+- New frontend types: `CommentAuthor`, `IdeaComment`, `CreateCommentPayload`.
+- New API client: `getIdeaComments`, `createIdeaComment`, `deleteComment`.
+- Query key: `['comments','idea',ideaId]`; public query stale time 30 seconds.
+- Idea Detail now renders `CommentsSection` after creator/source context.
+- Anonymous readers can read visible comments; composer is replaced by a Sign in to comment action that returns to the same Idea after login.
+- Authenticated readers get a controlled textarea with maxLength 4000, localized count/help/error, and disabled submit for blank/pending content.
+- Optimistic POST:
+  - temporary comment with ID -1 appended immediately;
+  - textarea clears while posting;
+  - server 201 replaces the temporary comment;
+  - failure restores the previous list and restores the draft text.
+- Optimistic DELETE:
+  - owner-only delete UI;
+  - two-stage Delete -> Confirm delete / Cancel;
+  - confirmed comment removed immediately;
+  - failure restores the previous list and shows an alert.
+- No edit/reply UI was invented because no backend API exists for either.
+- Comment body direction is inferred independently from UI/Idea language using Unicode script detection; no language attribute is invented because the backend does not store comment language.
+- Visual design intentionally resembles reading marginalia: one composer panel, then separated linear comments; no reaction counters or social-feed chrome.
+- Real seeded public comment smoke through Vite:
+  - Idea 25 -> one English comment by Demo Reader;
+  - Idea 18 -> one Persian comment by Demo Reader;
+  - Idea 37 -> one English comment by Demo Reader.
+- Visual review:
+  - authenticated comment composer + owner delete state reviewed at 1440×1100 using real Idea 25 comment;
+  - public full Idea Detail + Persian discussion reviewed at 390×2200 using real Idea 18;
+  - mixed-direction comments remain readable and no horizontal overflow observed.
+- Persian character counter wording changed from slash notation to `{{count}} از ۴۰۰۰` after RTL visual review.
+- Temporary review route/file removed before final validation.
+- Final quality gates: TypeScript PASS; ESLint PASS; Vitest 25 files / 74 tests PASS; production build PASS; Prettier PASS; `npm audit --omit=dev` reports 0 vulnerabilities.
+- FE-008 production bundle: ~147.38 KB JS gzip and ~7.99 KB CSS gzip.
+- Backend implementation files changed by FE-008: none.
+- Next logical task after acceptance: FE-009 — Saved Library using the existing saved-library API and FE-007 shared Save cache behavior.

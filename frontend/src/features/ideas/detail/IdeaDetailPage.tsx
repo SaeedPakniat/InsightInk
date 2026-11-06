@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { ApiError } from '../../../api/client'
 import { ErrorState } from '../../../components/ui/Feedback'
 import { useSession } from '../../auth/session'
+import { CommentsSection } from '../../comments/CommentsSection'
 import { IdeaEngagementActions } from '../../engagement/IdeaEngagementActions'
 import { useHydrateViewerEngagement } from '../../engagement/viewerEngagement'
 import { ContentLanguageBadge } from '../../languages/ContentLanguageBadge'
@@ -175,6 +176,8 @@ export function IdeaDetailPage() {
             </div>
           </div>
         </section>
+
+        <CommentsSection ideaId={idea.id} />
       </div>
     </article>
   )
