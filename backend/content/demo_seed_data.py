@@ -1,0 +1,546 @@
+"""Static, offline demo dataset for InsightInk development.
+
+The runtime seed command performs no network access. Source metadata below was
+selected from legitimate public/official pages during dataset preparation.
+Idea text is original demo copy; it is not copied from source passages,
+transcripts, dialogue, or articles.
+"""
+
+DEMO_PASSWORD = "InsightInkDemo2026!"
+
+TOPICS = [
+    {"slug": "technology", "name_fa": "فناوری", "name_en": "Technology"},
+    {"slug": "artificial-intelligence", "name_fa": "هوش مصنوعی", "name_en": "Artificial Intelligence"},
+    {"slug": "psychology", "name_fa": "روان‌شناسی", "name_en": "Psychology"},
+    {"slug": "philosophy", "name_fa": "فلسفه", "name_en": "Philosophy"},
+    {"slug": "science", "name_fa": "علم", "name_en": "Science"},
+    {"slug": "history", "name_fa": "تاریخ", "name_en": "History"},
+    {"slug": "literature", "name_fa": "ادبیات", "name_en": "Literature"},
+    {"slug": "economics", "name_fa": "اقتصاد", "name_en": "Economics"},
+    {"slug": "business", "name_fa": "کسب‌وکار", "name_en": "Business"},
+    {"slug": "creativity", "name_fa": "خلاقیت", "name_en": "Creativity"},
+    {"slug": "productivity", "name_fa": "بهره‌وری", "name_en": "Productivity"},
+    {"slug": "society", "name_fa": "جامعه", "name_en": "Society"},
+    {"slug": "health", "name_fa": "سلامت", "name_en": "Health"},
+    {"slug": "cinema", "name_fa": "سینما", "name_en": "Cinema"},
+]
+
+DEMO_USERS = [
+    {
+        "email": "demo-reader@example.com",
+        "display_name": "Demo Reader",
+        "preferred_ui_language": "en",
+        "is_creator": False,
+    },
+    {
+        "email": "demo-curator-persian@example.com",
+        "display_name": "رها مرادی",
+        "preferred_ui_language": "fa",
+        "is_creator": True,
+        "bio_fa": "کیوریتور آزمایشی اینسایت‌اینک با تمرکز بر ادبیات، فلسفه و جامعه.",
+        "bio_en": "Demo InsightInk curator focused on literature, philosophy, and society.",
+        "is_verified": True,
+    },
+    {
+        "email": "demo-curator-lens@example.com",
+        "display_name": "Nora Hayes",
+        "preferred_ui_language": "en",
+        "is_creator": True,
+        "bio_fa": "کیوریتور آزمایشی برای روان‌شناسی، سینما و ایده‌های زندگی روزمره.",
+        "bio_en": "Demo curator exploring psychology, cinema, and everyday ideas.",
+        "is_verified": True,
+    },
+    {
+        "email": "demo-curator-systems@example.com",
+        "display_name": "Arman Daryan",
+        "preferred_ui_language": "en",
+        "is_creator": True,
+        "bio_fa": "کیوریتور آزمایشی فناوری، هوش مصنوعی، اقتصاد و تفکر سیستمی.",
+        "bio_en": "Demo curator for technology, AI, economics, and systems thinking.",
+        "is_verified": False,
+    },
+    {
+        "email": "demo-curator-curious@example.com",
+        "display_name": "Maya Chen",
+        "preferred_ui_language": "en",
+        "is_creator": True,
+        "bio_fa": "کیوریتور آزمایشی درباره خلاقیت، طراحی، بهره‌وری و یادگیری.",
+        "bio_en": "Demo curator for creativity, design, productivity, and learning.",
+        "is_verified": False,
+    },
+]
+
+# Each source carries a private metadata.demo_seed_key used only for deterministic
+# development seeding. metadata is not exposed by the public Source serializer.
+# provenance_url documents where title/creator/type metadata was checked.
+SOURCES = [
+    {
+        "key": "book-meditations",
+        "type": "book",
+        "title": "Meditations",
+        "original_creator_text": "Marcus Aurelius",
+        "language": "en",
+        "external_url": "https://www.gutenberg.org/ebooks/2680",
+        "provenance_url": "https://www.gutenberg.org/ebooks/2680",
+    },
+    {
+        "key": "book-republic",
+        "type": "book",
+        "title": "The Republic",
+        "original_creator_text": "Plato",
+        "language": "en",
+        "external_url": "https://www.gutenberg.org/ebooks/55201",
+        "provenance_url": "https://www.gutenberg.org/ebooks/55201",
+    },
+    {
+        "key": "book-art-of-war",
+        "type": "book",
+        "title": "The Art of War",
+        "original_creator_text": "Sun Tzu",
+        "language": "en",
+        "external_url": "https://www.gutenberg.org/ebooks/17405",
+        "provenance_url": "https://www.gutenberg.org/ebooks/17405",
+    },
+    {
+        "key": "book-walden",
+        "type": "book",
+        "title": "Walden",
+        "original_creator_text": "Henry David Thoreau",
+        "language": "en",
+        "external_url": "https://www.gutenberg.org/ebooks/205",
+        "provenance_url": "https://www.gutenberg.org/ebooks/205",
+    },
+    {
+        "key": "book-on-liberty",
+        "type": "book",
+        "title": "On Liberty",
+        "original_creator_text": "John Stuart Mill",
+        "language": "en",
+        "external_url": "https://www.gutenberg.org/ebooks/34901",
+        "provenance_url": "https://www.gutenberg.org/ebooks/34901",
+    },
+    {
+        "key": "book-souls-black-folk",
+        "type": "book",
+        "title": "The Souls of Black Folk",
+        "original_creator_text": "W. E. B. Du Bois",
+        "language": "en",
+        "external_url": "https://www.gutenberg.org/ebooks/408",
+        "provenance_url": "https://www.gutenberg.org/ebooks/408",
+    },
+    {
+        "key": "book-shahnameh",
+        "type": "book",
+        "title": "شاهنامه",
+        "original_creator_text": "فردوسی",
+        "language": "fa",
+        "external_url": "https://fa.wikisource.org/wiki/%D8%B4%D8%A7%D9%87%D9%86%D8%A7%D9%85%D9%87",
+        "provenance_url": "https://fa.wikisource.org/wiki/%D8%B4%D8%A7%D9%87%D9%86%D8%A7%D9%85%D9%87",
+    },
+    {
+        "key": "book-golestan",
+        "type": "book",
+        "title": "گلستان",
+        "original_creator_text": "سعدی",
+        "language": "fa",
+        "external_url": "https://fa.wikisource.org/wiki/%DA%AF%D9%84%D8%B3%D8%AA%D8%A7%D9%86",
+        "provenance_url": "https://fa.wikisource.org/wiki/%DA%AF%D9%84%D8%B3%D8%AA%D8%A7%D9%86",
+    },
+    {
+        "key": "article-attention",
+        "type": "article",
+        "title": "Attention Is All You Need",
+        "original_creator_text": "Ashish Vaswani et al.",
+        "language": "en",
+        "external_url": "https://arxiv.org/abs/1706.03762",
+        "provenance_url": "https://arxiv.org/abs/1706.03762",
+    },
+    {
+        "key": "article-bitter-lesson",
+        "type": "article",
+        "title": "The Bitter Lesson",
+        "original_creator_text": "Rich Sutton",
+        "language": "en",
+        "external_url": "http://www.incompleteideas.net/IncIdeas/BitterLesson.html",
+        "provenance_url": "http://www.incompleteideas.net/IncIdeas/BitterLesson.html",
+    },
+    {
+        "key": "article-turing-machines",
+        "type": "article",
+        "title": "Turing Machines",
+        "original_creator_text": "Liesbeth De Mol — Stanford Encyclopedia of Philosophy",
+        "language": "en",
+        "external_url": "https://plato.stanford.edu/entries/turing-machine/",
+        "provenance_url": "https://plato.stanford.edu/entries/turing-machine/",
+    },
+    {
+        "key": "article-as-we-may-think",
+        "type": "article",
+        "title": "As We May Think",
+        "original_creator_text": "Vannevar Bush",
+        "language": "en",
+        "external_url": "https://www.theatlantic.com/magazine/archive/1945/07/as-we-may-think/303881/",
+        "provenance_url": "https://www.theatlantic.com/magazine/archive/1945/07/as-we-may-think/303881/",
+    },
+    {
+        "key": "movie-inside-out",
+        "type": "movie",
+        "title": "Inside Out",
+        "original_creator_text": "Pete Docter and Ronnie del Carmen",
+        "language": "en",
+        "external_url": "https://www.pixar.com/inside-out",
+        "provenance_url": "https://www.pixar.com/inside-out",
+    },
+    {
+        "key": "movie-wall-e",
+        "type": "movie",
+        "title": "WALL-E",
+        "original_creator_text": "Andrew Stanton",
+        "language": "en",
+        "external_url": "https://www.pixar.com/wall-e",
+        "provenance_url": "https://www.pixar.com/wall-e",
+    },
+    {
+        "key": "movie-soul",
+        "type": "movie",
+        "title": "Soul",
+        "original_creator_text": "Pete Docter and Kemp Powers",
+        "language": "en",
+        "external_url": "https://www.pixar.com/soul",
+        "provenance_url": "https://www.pixar.com/soul",
+    },
+    {
+        "key": "movie-ratatouille",
+        "type": "movie",
+        "title": "Ratatouille",
+        "original_creator_text": "Brad Bird",
+        "language": "en",
+        "external_url": "https://www.pixar.com/ratatouille",
+        "provenance_url": "https://www.pixar.com/ratatouille",
+    },
+    {
+        "key": "podcast-hidden-brain",
+        "type": "podcast",
+        "title": "Hidden Brain",
+        "original_creator_text": "Shankar Vedantam — Hidden Brain Media",
+        "language": "en",
+        "external_url": "https://www.hiddenbrain.org/podcast/",
+        "provenance_url": "https://www.hiddenbrain.org/podcast/",
+    },
+    {
+        "key": "podcast-99pi",
+        "type": "podcast",
+        "title": "99% Invisible",
+        "original_creator_text": "Roman Mars — 99% Invisible",
+        "language": "en",
+        "external_url": "https://99percentinvisible.org/",
+        "provenance_url": "https://99percentinvisible.org/about/the-show/",
+    },
+    {
+        "key": "podcast-planet-money",
+        "type": "podcast",
+        "title": "Planet Money",
+        "original_creator_text": "NPR",
+        "language": "en",
+        "external_url": "https://www.npr.org/podcasts/510289/planet-money",
+        "provenance_url": "https://www.npr.org/podcasts/510289/planet-money",
+    },
+    {
+        "key": "podcast-ted-radio-hour",
+        "type": "podcast",
+        "title": "TED Radio Hour",
+        "original_creator_text": "Manoush Zomorodi — TED",
+        "language": "en",
+        "external_url": "https://www.ted.com/podcasts/ted-radio-hour",
+        "provenance_url": "https://www.ted.com/podcasts/ted-radio-hour",
+    },
+]
+
+# Idea titles are intentionally stable demo identifiers. The command uses
+# (creator, source, language, title) as the deterministic lookup key.
+IDEAS = [
+    {
+        "creator": "demo-curator-persian@example.com", "source": "book-meditations", "language": "en",
+        "title": "Control the response, not the weather",
+        "body": "A useful Stoic distinction is between what happens around us and the judgment we add afterward. Planning still matters, but peace cannot depend on controlling every outcome. A better daily question is: what part of this situation is actually mine to choose? That shift turns attention away from resentment and toward the next deliberate action.",
+        "seconds": 55, "topics": ["philosophy", "productivity"], "published_at": "2026-09-20T08:00:00+00:00",
+    },
+    {
+        "creator": "demo-curator-persian@example.com", "source": "book-meditations", "language": "fa",
+        "title": "آرامش از کوچک‌کردن جهان نمی‌آید",
+        "body": "آرامش همیشه نتیجه کم‌شدن مسئله‌ها نیست؛ گاهی نتیجه روشن‌شدن مرز مسئولیت ماست. اگر تمام انرژی ذهنی صرف رفتار دیگران، خبرها و اتفاق‌های خارج از اختیار شود، برای تصمیمی که واقعاً می‌توانیم بگیریم چیزی باقی نمی‌ماند. نگاه رواقی یادآوری می‌کند که کیفیت واکنش ما خودش بخشی از کیفیت زندگی است.",
+        "seconds": 70, "topics": ["philosophy", "psychology"], "published_at": "2026-09-21T08:00:00+00:00",
+    },
+    {
+        "creator": "demo-curator-persian@example.com", "source": "book-republic", "language": "en",
+        "title": "A system reveals what it rewards",
+        "body": "When discussing justice, it helps to look beyond individual intentions and ask what a system repeatedly rewards. Institutions train behavior through incentives, status, and expectations. A society may praise one virtue in words while rewarding the opposite in practice. The gap between declared values and actual incentives is often where the most revealing analysis begins.",
+        "seconds": 65, "topics": ["philosophy", "society"], "published_at": "2026-09-22T08:00:00+00:00",
+    },
+    {
+        "creator": "demo-curator-persian@example.com", "source": "book-republic", "language": "fa",
+        "title": "عدالت فقط یک ویژگی فردی نیست",
+        "body": "وقتی درباره عدالت حرف می‌زنیم، آسان است که بحث را به «آدم خوب» و «آدم بد» تقلیل دهیم. اما ساختارها هم مهم‌اند: چه کسی قدرت دارد، چه چیزی پاداش می‌گیرد و چه رفتاری عادی می‌شود. دیدن عدالت در مقیاس نهادها کمک می‌کند بفهمیم چرا نیت خوبِ افراد همیشه به نتیجه عادلانه منتهی نمی‌شود.",
+        "seconds": 75, "topics": ["philosophy", "society"], "published_at": "2026-09-23T08:00:00+00:00",
+    },
+    {
+        "creator": "demo-curator-systems@example.com", "source": "book-art-of-war", "language": "en",
+        "title": "Good strategy reduces the need for heroic effort",
+        "body": "A strong strategy changes the conditions before the hardest moment arrives. Instead of relying on last-minute brilliance, it improves information, timing, positioning, and options. This applies outside conflict too: teams that clarify priorities early often need fewer emergency meetings later. Strategic work is partly the art of making future decisions easier.",
+        "seconds": 60, "topics": ["business", "productivity"], "published_at": "2026-09-24T08:00:00+00:00",
+    },
+    {
+        "creator": "demo-curator-systems@example.com", "source": "book-art-of-war", "language": "fa",
+        "title": "اطلاعات خوب، بخشی از خودِ استراتژی است",
+        "body": "تصمیم‌گیری بدون شناخت محیط، بیشتر شبیه حدس‌زدن است تا استراتژی. پیش از انتخاب مسیر باید بدانیم چه چیزی واقعاً در حال تغییر است، کدام محدودیت قطعی است و کجا فقط تصور ماست. در پروژه‌های فنی هم جمع‌کردن شواهد پیش از انتخاب ابزار می‌تواند از هفته‌ها بازکاری جلوگیری کند.",
+        "seconds": 65, "topics": ["business", "technology"], "published_at": "2026-09-25T08:00:00+00:00",
+    },
+    {
+        "creator": "demo-curator-curious@example.com", "source": "book-walden", "language": "en",
+        "title": "Simplicity is a design constraint",
+        "body": "Simplicity is more useful when treated as a constraint rather than an aesthetic. Fewer commitments, tools, and possessions can make attention easier to direct, but only if the reduction serves something meaningful. The point is not to own as little as possible; it is to notice which complexity was chosen and which complexity simply accumulated.",
+        "seconds": 65, "topics": ["productivity", "philosophy"], "published_at": "2026-09-26T08:00:00+00:00",
+    },
+    {
+        "creator": "demo-curator-curious@example.com", "source": "book-walden", "language": "fa",
+        "title": "سادگی یعنی انتخاب آگاهانه‌ی پیچیدگی",
+        "body": "همه‌ی پیچیدگی‌ها بد نیستند. یک مهارت عمیق یا رابطه جدی می‌تواند پیچیده باشد و ارزشش را داشته باشد. مسئله، پیچیدگی‌هایی است که بی‌دعوت وارد زندگی می‌شوند: تعهدهای بی‌اهمیت، ابزارهای تکراری و تصمیم‌های کوچک بی‌پایان. ساده‌سازی یعنی حذف چیزی که توجه را مصرف می‌کند اما ارزش متناسبی نمی‌سازد.",
+        "seconds": 80, "topics": ["productivity", "health"], "published_at": "2026-09-27T08:00:00+00:00",
+    },
+    {
+        "creator": "demo-curator-persian@example.com", "source": "book-on-liberty", "language": "en",
+        "title": "Disagreement can be a public resource",
+        "body": "A healthy disagreement does more than protect the person holding an unpopular view. It also forces widely accepted beliefs to explain themselves instead of becoming slogans. Even when a claim is wrong, answering it carefully can expose weak assumptions in the majority position. The value of open discussion is partly the pressure it puts on certainty.",
+        "seconds": 70, "topics": ["philosophy", "society"], "published_at": "2026-09-28T08:00:00+00:00",
+    },
+    {
+        "creator": "demo-curator-persian@example.com", "source": "book-on-liberty", "language": "fa",
+        "title": "آزادی بدون تحمل تفاوت کامل نمی‌شود",
+        "body": "دفاع از آزادی وقتی آسان است که طرف مقابل شبیه ما فکر کند. آزمون واقعی زمانی است که یک نظر آزاردهنده، عجیب یا نامحبوب باشد. البته آزادی به معنای بی‌قانونی نیست؛ آسیب به دیگران مرز مهمی است. اما جامعه‌ای که فقط نظرهای راحت را تحمل می‌کند، از ظرفیت یادگیری خودش کم می‌کند.",
+        "seconds": 75, "topics": ["society", "philosophy"], "published_at": "2026-09-29T08:00:00+00:00",
+    },
+    {
+        "creator": "demo-curator-persian@example.com", "source": "book-souls-black-folk", "language": "en",
+        "title": "Identity changes when you are constantly observed",
+        "body": "A person does not build identity in isolation. Social expectations become a kind of mirror, especially when a group is repeatedly judged through stereotypes. That can create tension between self-understanding and the version reflected back by institutions or other people. Recognizing that tension helps explain why belonging and dignity are structural issues as well as personal ones.",
+        "seconds": 75, "topics": ["society", "psychology", "history"], "published_at": "2026-09-30T08:00:00+00:00",
+    },
+    {
+        "creator": "demo-curator-persian@example.com", "source": "book-souls-black-folk", "language": "fa",
+        "title": "جامعه روی تصویر ما از خودمان اثر می‌گذارد",
+        "body": "هویت فقط پاسخ خصوصی به پرسش «من کیستم؟» نیست. نگاه دیگران، فرصت‌های موجود و کلیشه‌های اجتماعی هم در این پاسخ دخالت می‌کنند. وقتی یک گروه مدام از بیرون با برچسب‌های محدودکننده دیده شود، اعضای آن باید همزمان با خودِ واقعی و تصویر تحمیل‌شده از بیرون زندگی کنند.",
+        "seconds": 70, "topics": ["society", "psychology"], "published_at": "2026-10-01T08:00:00+00:00",
+    },
+    {
+        "creator": "demo-curator-persian@example.com", "source": "book-shahnameh", "language": "en",
+        "title": "Strength without judgment becomes fragile",
+        "body": "Epic stories often celebrate courage, but their tragedies also show that force without judgment can be dangerous. A capable person still needs patience, information, and the willingness to question first impressions. Heroism is not simply acting boldly; sometimes it means slowing down before a decision becomes irreversible.",
+        "seconds": 60, "topics": ["literature", "history", "philosophy"], "published_at": "2026-10-02T08:00:00+00:00",
+    },
+    {
+        "creator": "demo-curator-persian@example.com", "source": "book-shahnameh", "language": "fa",
+        "title": "تراژدی از جایی شروع می‌شود که شناخت عقب می‌ماند",
+        "body": "در بسیاری از لحظه‌های شاهنامه، توانایی شخصیت‌ها کم نیست؛ چیزی که کم می‌آید شناخت به‌موقع است. قدرت، شجاعت و وفاداری اگر با پرسش‌کردن و دیدنِ پیامدها همراه نباشند، می‌توانند به فاجعه برسند. این نگاه، داستان حماسی را به درس ساده «قوی باش» محدود نمی‌کند؛ بلکه مسئولیتِ تشخیص را هم جدی می‌گیرد.",
+        "seconds": 85, "topics": ["literature", "history", "philosophy"], "published_at": "2026-10-03T08:00:00+00:00",
+    },
+    {
+        "creator": "demo-curator-persian@example.com", "source": "book-golestan", "language": "en",
+        "title": "Advice works better when it fits human scale",
+        "body": "Short stories can carry ethical ideas without turning them into abstract lectures. A concrete scene gives the reader motives, consequences, and ambiguity at once. That makes practical wisdom easier to remember: instead of memorizing a rule, we remember a situation and ask whether our own behavior resembles it.",
+        "seconds": 60, "topics": ["literature", "philosophy", "society"], "published_at": "2026-10-04T08:00:00+00:00",
+    },
+    {
+        "creator": "demo-curator-persian@example.com", "source": "book-golestan", "language": "fa",
+        "title": "حکمت وقتی ماندگار می‌شود که قابل دیدن باشد",
+        "body": "یکی از قدرت‌های حکایت این است که اخلاق را از حالت شعار بیرون می‌آورد. به‌جای اینکه فقط گفته شود «چنین باش»، موقعیتی می‌بینیم که در آن غرور، ترس، بخشندگی یا طمع نتیجه‌ای واقعی می‌سازد. همین تصویر کوچک باعث می‌شود پیام با تجربه روزمره پیوند بخورد و دیرتر فراموش شود.",
+        "seconds": 75, "topics": ["literature", "philosophy"], "published_at": "2026-10-05T08:00:00+00:00",
+    },
+    {
+        "creator": "demo-curator-systems@example.com", "source": "article-attention", "language": "en",
+        "title": "Architecture can remove a bottleneck instead of optimizing it",
+        "body": "A major design leap often happens when a system stops asking how to make an old bottleneck faster and asks whether the bottleneck is necessary at all. The Transformer is a useful engineering example: changing the structure made parallel computation much more natural. The broader lesson is to question inherited constraints before spending months optimizing around them.",
+        "seconds": 70, "topics": ["artificial-intelligence", "technology", "science"], "published_at": "2026-10-06T08:00:00+00:00",
+    },
+    {
+        "creator": "demo-curator-systems@example.com", "source": "article-attention", "language": "fa",
+        "title": "گاهی نوآوری یعنی حذف یک عادت معماری",
+        "body": "در مهندسی نرم‌افزار و هوش مصنوعی، خیلی از محدودیت‌ها واقعاً فیزیکی نیستند؛ از معماری قبلی به ارث رسیده‌اند. یک طراحی تازه می‌تواند به‌جای بهترکردن همان مسیر، مسئله را طوری بازتعریف کند که گلوگاه قبلی اهمیت کمتری داشته باشد. این نگاه برای انتخاب معماری پروژه هم مهم است: اول فرض‌ها را بررسی کن، بعد بهینه‌سازی کن.",
+        "seconds": 80, "topics": ["artificial-intelligence", "technology"], "published_at": "2026-10-07T08:00:00+00:00",
+    },
+    {
+        "creator": "demo-curator-systems@example.com", "source": "article-bitter-lesson", "language": "en",
+        "title": "Scalable methods often outlive handcrafted cleverness",
+        "body": "A clever shortcut can dominate while compute or data is scarce, yet lose once a more general method scales. The lesson is not that domain knowledge is useless; it is that we should separate knowledge that improves learning from brittle rules that prevent a system from benefiting from more resources. Good architecture leaves room for growth.",
+        "seconds": 70, "topics": ["artificial-intelligence", "technology"], "published_at": "2026-10-08T08:00:00+00:00",
+    },
+    {
+        "creator": "demo-curator-systems@example.com", "source": "article-bitter-lesson", "language": "fa",
+        "title": "راه‌حل هوشمند باید با بزرگ‌شدن مسئله هم زنده بماند",
+        "body": "گاهی یک راه‌حل دستی در مقیاس کوچک فوق‌العاده به‌نظر می‌رسد، اما با داده و محاسبات بیشتر تبدیل به محدودیت می‌شود. برای طراحی سیستم، سؤال مهم این است که آیا روش امروز از رشد فردا هم سود می‌برد یا نه. سادگیِ قابل‌گسترش می‌تواند از پیچیدگیِ بسیار دقیق اما شکننده ارزشمندتر باشد.",
+        "seconds": 70, "topics": ["artificial-intelligence", "technology", "business"], "published_at": "2026-10-09T08:00:00+00:00",
+    },
+    {
+        "creator": "demo-curator-systems@example.com", "source": "article-turing-machines", "language": "en",
+        "title": "A simple model can clarify the limits of computation",
+        "body": "A useful theoretical model does not need to look like a modern computer. By stripping computation down to a small set of operations, we can ask precise questions about what any algorithmic process can or cannot do. Simplicity here is not lack of realism; it is a tool for separating essential structure from implementation detail.",
+        "seconds": 70, "topics": ["technology", "science", "philosophy"], "published_at": "2026-10-10T08:00:00+00:00",
+    },
+    {
+        "creator": "demo-curator-systems@example.com", "source": "article-turing-machines", "language": "fa",
+        "title": "مدل ساده، سؤال عمیق را قابل‌بررسی می‌کند",
+        "body": "ماشین تورینگ شبیه لپ‌تاپ امروز نیست و قرار هم نیست باشد. ارزش آن در این است که جزئیات اضافی را کنار می‌زند تا بتوانیم درباره مفهوم «محاسبه‌پذیری» دقیق حرف بزنیم. در مهندسی هم مدل‌سازی خوب همین کار را می‌کند: چیزهای مهم را نگه می‌دارد و موقتاً بقیه را حذف می‌کند.",
+        "seconds": 75, "topics": ["technology", "science"], "published_at": "2026-10-11T08:00:00+00:00",
+    },
+    {
+        "creator": "demo-curator-curious@example.com", "source": "article-as-we-may-think", "language": "en",
+        "title": "Tools shape how we remember connections",
+        "body": "Information systems are not only storage boxes. Their structure influences which relationships we notice and how easily we return to an earlier thought. A good knowledge tool reduces the cost of following associations without turning every note into a rigid hierarchy. The design challenge is helping memory without pretending that memory itself is perfectly organized.",
+        "seconds": 75, "topics": ["technology", "creativity", "productivity"], "published_at": "2026-10-12T08:00:00+00:00",
+    },
+    {
+        "creator": "demo-curator-curious@example.com", "source": "article-as-we-may-think", "language": "fa",
+        "title": "ابزار یادداشت‌برداری فقط ظرف اطلاعات نیست",
+        "body": "شیوه‌ای که اطلاعات را ذخیره می‌کنیم روی شیوه فکرکردن ما اثر می‌گذارد. اگر بازیابی یک ایده سخت باشد، عملاً بخشی از حافظه شخصی ما از دسترس خارج می‌شود. ابزار خوب باید پیدا کردن ارتباط‌های قبلی را آسان کند، بدون اینکه کاربر را مجبور کند همه‌چیز را از ابتدا در یک ساختار خشک و کامل طبقه‌بندی کند.",
+        "seconds": 80, "topics": ["technology", "creativity", "productivity"], "published_at": "2026-10-13T08:00:00+00:00",
+    },
+    {
+        "creator": "demo-curator-lens@example.com", "source": "movie-inside-out", "language": "en",
+        "title": "Negative emotions can carry useful information",
+        "body": "Treating every unpleasant feeling as a malfunction can make emotional life harder. Sadness, fear, anger, and disgust can each point toward a need, boundary, threat, or loss. Emotional regulation is not the same as permanent positivity. A healthier goal is to notice what a feeling is signaling before deciding how much authority to give it.",
+        "seconds": 65, "topics": ["psychology", "health", "cinema"], "published_at": "2026-10-14T08:00:00+00:00",
+    },
+    {
+        "creator": "demo-curator-lens@example.com", "source": "movie-inside-out", "language": "fa",
+        "title": "احساس ناخوشایند الزاماً احساس بی‌فایده نیست",
+        "body": "گاهی تلاش برای «مثبت‌بودن» باعث می‌شود پیام یک احساس مهم را نشنویم. ترس می‌تواند خطر را نشان دهد، خشم از مرزی عبورکرده خبر بدهد و غم به ما بگوید چیزی برایمان ارزش داشته است. مهارت عاطفی بیشتر شبیه شنیدن و تنظیم‌کردن است تا خاموش‌کردن احساس‌های نامطلوب.",
+        "seconds": 75, "topics": ["psychology", "health", "cinema"], "published_at": "2026-10-15T08:00:00+00:00",
+    },
+    {
+        "creator": "demo-curator-lens@example.com", "source": "movie-wall-e", "language": "en",
+        "title": "Convenience can quietly redesign behavior",
+        "body": "Convenience is valuable, but every system that removes friction also changes habits. When movement, choice, repair, or attention become unnecessary, people may stop practicing capabilities they once used naturally. The question is not whether technology should make life easier; it is which kinds of effort we are comfortable designing out of daily life.",
+        "seconds": 70, "topics": ["technology", "society", "cinema"], "published_at": "2026-10-16T08:00:00+00:00",
+    },
+    {
+        "creator": "demo-curator-lens@example.com", "source": "movie-wall-e", "language": "fa",
+        "title": "راحتی همیشه خنثی نیست",
+        "body": "یک فناوری خوب می‌تواند اصطکاک بیهوده را حذف کند، اما اگر همه اصطکاک‌ها حذف شوند ممکن است بعضی توانایی‌ها هم کم‌کم بی‌استفاده شوند. مسئله مخالفت با آسایش نیست؛ مسئله دیدن معامله‌ای است که انجام می‌دهیم. هر بار که کاری را به سیستم می‌سپاریم، بهتر است بدانیم چه چیزی را به‌دست می‌آوریم و چه عادتی را کمتر تمرین می‌کنیم.",
+        "seconds": 85, "topics": ["technology", "society", "health"], "published_at": "2026-10-17T08:00:00+00:00",
+    },
+    {
+        "creator": "demo-curator-lens@example.com", "source": "movie-soul", "language": "en",
+        "title": "Purpose is larger than a single ambition",
+        "body": "A career goal can organize years of effort, but it becomes dangerous when it is treated as the only proof that life matters. Meaning often appears in ordinary attention, relationships, craft, and curiosity rather than one dramatic achievement. Ambition works better when it gives direction without becoming the sole measure of whether a day was worthwhile.",
+        "seconds": 70, "topics": ["psychology", "creativity", "health", "cinema"], "published_at": "2026-10-18T08:00:00+00:00",
+    },
+    {
+        "creator": "demo-curator-lens@example.com", "source": "movie-soul", "language": "fa",
+        "title": "هدف با ارزش زندگی یکی نیست",
+        "body": "داشتن یک هدف بزرگ می‌تواند انرژی و جهت بدهد، اما اگر تمام ارزش زندگی به رسیدن به همان نقطه وابسته شود، مسیر تبدیل به سالن انتظار می‌شود. تجربه‌های کوچک، ارتباط با آدم‌ها و لذتِ خودِ تمرین هم بخشی از زندگی‌اند. شاید هدف بهتر است قطب‌نما باشد، نه تنها مدرکِ موفق‌بودن.",
+        "seconds": 75, "topics": ["psychology", "health", "cinema"], "published_at": "2026-10-19T08:00:00+00:00",
+    },
+    {
+        "creator": "demo-curator-curious@example.com", "source": "movie-ratatouille", "language": "en",
+        "title": "Taste improves when practice meets feedback",
+        "body": "Loving a craft is not enough to become good at it, but love can keep someone practicing long enough to develop judgment. Skill grows through repeated attempts, honest feedback, and attention to small differences. Creative confidence is strongest when it is paired with the humility to revise, taste again, and learn from people who notice what we miss.",
+        "seconds": 70, "topics": ["creativity", "productivity", "cinema"], "published_at": "2026-10-20T08:00:00+00:00",
+    },
+    {
+        "creator": "demo-curator-curious@example.com", "source": "movie-ratatouille", "language": "fa",
+        "title": "استعداد بدون فرصت دیده‌شدن ناقص می‌ماند",
+        "body": "گاهی مسئله این نیست که استعداد وجود ندارد؛ مسئله این است که سیستم از قبل تصمیم گرفته چه کسی «حق» ورود دارد. کیفیت واقعی نیاز به تمرین دارد، اما برای آشکارشدن هم به فرصت نیاز دارد. محیطی که فقط رزومه و جایگاه را می‌سنجد ممکن است آدمی را از دست بدهد که هنوز فرصت اثبات توانایی‌اش را پیدا نکرده است.",
+        "seconds": 80, "topics": ["creativity", "business", "cinema"], "published_at": "2026-10-21T08:00:00+00:00",
+    },
+    {
+        "creator": "demo-curator-lens@example.com", "source": "podcast-hidden-brain", "language": "en",
+        "title": "A behavior can make sense before it feels rational",
+        "body": "People often explain decisions after the fact with a neat story, even when the real causes include habit, context, emotion, and social cues. That does not make reasoning useless; it means self-observation should be curious rather than overconfident. When a behavior repeats, looking at the environment around it can be more revealing than asking only what we intended.",
+        "seconds": 75, "topics": ["psychology", "science"], "published_at": "2026-10-22T08:00:00+00:00",
+    },
+    {
+        "creator": "demo-curator-lens@example.com", "source": "podcast-hidden-brain", "language": "fa",
+        "title": "همیشه دلیل واقعی رفتارمان را همان لحظه نمی‌دانیم",
+        "body": "ذهن دوست دارد برای تصمیم‌ها روایت منظم بسازد، اما رفتار ما فقط از استدلال آگاهانه نمی‌آید. عادت، محیط، حضور دیگران و حالت عاطفی هم سهم دارند. اگر رفتاری بارها تکرار می‌شود، فقط از خودمان نپرسیم «چرا این کار را کردم؟»؛ ببینیم درست قبل از آن چه شرایطی تکرار شده است.",
+        "seconds": 80, "topics": ["psychology", "science"], "published_at": "2026-10-23T08:00:00+00:00",
+    },
+    {
+        "creator": "demo-curator-curious@example.com", "source": "podcast-99pi", "language": "en",
+        "title": "The best design often disappears into routine",
+        "body": "Many designed systems become invisible once they work reliably: signs, doors, street layouts, interfaces, standards. That invisibility can be a compliment, but it also means we stop asking who the design serves and which assumptions were embedded in it. Looking closely at ordinary objects is a useful way to practice systems thinking.",
+        "seconds": 70, "topics": ["creativity", "technology", "society"], "published_at": "2026-10-24T08:00:00+00:00",
+    },
+    {
+        "creator": "demo-curator-curious@example.com", "source": "podcast-99pi", "language": "fa",
+        "title": "طراحی خوب گاهی آن‌قدر عادی می‌شود که دیگر دیده نمی‌شود",
+        "body": "تابلو، فرم، مسیر حرکت، دکمه یا حتی استاندارد اندازه‌ها نتیجه تصمیم‌های طراحی‌اند، اما وقتی خوب کار می‌کنند حضورشان را فراموش می‌کنیم. تمرین جالب این است که یک چیز روزمره را دوباره ببینیم و بپرسیم: چه کسی این تصمیم را گرفته، برای چه کسی خوب کار می‌کند و چه کسی شاید در آن نادیده گرفته شده باشد؟",
+        "seconds": 85, "topics": ["creativity", "technology", "society"], "published_at": "2026-10-25T08:00:00+00:00",
+    },
+    {
+        "creator": "demo-curator-systems@example.com", "source": "podcast-planet-money", "language": "en",
+        "title": "Prices are messages as well as numbers",
+        "body": "A price does more than tell a buyer what to pay. It can reflect scarcity, expectations, bargaining power, regulation, and the alternatives available to both sides. Reading prices as signals helps explain why the same product can behave differently across time or markets. The number is the visible output of a larger system.",
+        "seconds": 65, "topics": ["economics", "business", "society"], "published_at": "2026-10-26T08:00:00+00:00",
+    },
+    {
+        "creator": "demo-curator-systems@example.com", "source": "podcast-planet-money", "language": "fa",
+        "title": "اقتصاد از انتخاب‌های کوچک روزمره ساخته می‌شود",
+        "body": "اقتصاد فقط نمودارهای کلان و نرخ‌های رسمی نیست. تصمیم یک خانواده برای پس‌انداز، انتخاب یک شرکت برای استخدام و واکنش مشتری به افزایش قیمت، همگی بخشی از همان سیستم‌اند. دیدن پیوند میان تصمیم کوچک و نتیجه بزرگ کمک می‌کند خبرهای اقتصادی از مجموعه‌ای عدد جداگانه به داستانی قابل‌فهم تبدیل شوند.",
+        "seconds": 75, "topics": ["economics", "business"], "published_at": "2026-10-27T08:00:00+00:00",
+    },
+    {
+        "creator": "demo-curator-curious@example.com", "source": "podcast-ted-radio-hour", "language": "en",
+        "title": "Big questions improve when they are broken into perspectives",
+        "body": "Questions about creativity, technology, health, or society rarely have one useful lens. A better approach is to collect several perspectives, notice where they agree, and keep track of what each one cannot explain. Synthesis is not choosing the most impressive speaker; it is building a map that preserves important disagreements.",
+        "seconds": 70, "topics": ["creativity", "science", "society"], "published_at": "2026-10-28T08:00:00+00:00",
+    },
+    {
+        "creator": "demo-curator-curious@example.com", "source": "podcast-ted-radio-hour", "language": "fa",
+        "title": "برای سؤال بزرگ، یک زاویه دید کافی نیست",
+        "body": "موضوع‌هایی مثل آینده فناوری، سلامت یا خلاقیت معمولاً با یک پاسخ کوتاه تمام نمی‌شوند. کنار هم گذاشتن دیدگاه‌های مختلف کمک می‌کند هم نقاط مشترک را ببینیم و هم اختلاف‌ها را حفظ کنیم. جمع‌بندی خوب یعنی تفاوت‌ها را پاک نکنیم؛ مشخص کنیم هر دیدگاه کدام بخش مسئله را بهتر روشن می‌کند.",
+        "seconds": 80, "topics": ["creativity", "science", "society"], "published_at": "2026-10-29T08:00:00+00:00",
+    },
+]
+
+DEMO_READER_INTERESTS = [
+    "artificial-intelligence",
+    "psychology",
+    "philosophy",
+    "productivity",
+]
+
+DEMO_READER_SAVES = [
+    "Architecture can remove a bottleneck instead of optimizing it",
+    "Negative emotions can carry useful information",
+    "سادگی یعنی انتخاب آگاهانه‌ی پیچیدگی",
+    "The best design often disappears into routine",
+    "A system reveals what it rewards",
+]
+
+DEMO_READER_SPARKS = [
+    "Control the response, not the weather",
+    "گاهی نوآوری یعنی حذف یک عادت معماری",
+    "Purpose is larger than a single ambition",
+    "همیشه دلیل واقعی رفتارمان را همان لحظه نمی‌دانیم",
+    "Simplicity is a design constraint",
+    "The best design often disappears into routine",
+]
+
+DEMO_READER_FOLLOWS = [
+    "demo-curator-lens@example.com",
+    "demo-curator-systems@example.com",
+]
+
+DEMO_COMMENTS = [
+    {
+        "idea_title": "Negative emotions can carry useful information",
+        "body": "This made the distinction between feeling something and obeying it much clearer for me.",
+    },
+    {
+        "idea_title": "گاهی نوآوری یعنی حذف یک عادت معماری",
+        "body": "این نگاه برای انتخاب ابزارهای پروژه خیلی کاربردی است؛ مخصوصاً وقتی فقط از روی عادت یک معماری را تکرار می‌کنیم.",
+    },
+    {
+        "idea_title": "Prices are messages as well as numbers",
+        "body": "A useful reminder that the number on the screen is usually the end of a much longer story.",
+    },
+]

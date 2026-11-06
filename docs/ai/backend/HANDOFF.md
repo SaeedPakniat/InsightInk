@@ -1,22 +1,27 @@
 # Backend Handoff
 
-- Task ID: BE-020
-- Exact base SHA: `94b766c176d3c90d6cdb6ae66018e094f6720310`
-- Result: Complete and accepted for checkpoint. Added Comment reporting, bounded Moderator/Admin report queue/review, report state-machine enforcement, audited Comment hiding, and moderation persistence.
-- Report creation: `POST /api/v1/comments/<id>/report/` requires authenticated session + CSRF. Valid reasons are harassment/spam/inappropriate_content/other; details are optional and capped at 2,000 characters. Reporter, target type/id, and OPEN status are server controlled. Only visible comments on published Ideas may be reported.
-- Report storage: generic `target_type + target_id` follows the planned data model and leaves room for future user/idea/message report targets, but no generic report-creation endpoint is exposed. This phase implements only the source-backed Comment report story.
-- Lifecycle: `OPEN -> REVIEWING -> RESOLVED|REJECTED`. State transitions are implemented through transaction-protected service functions using `select_for_update` to avoid conflicting concurrent moderation transitions. Direct OPEN-to-terminal and terminal re-transition attempts return validation errors.
-- Queue/API: `GET /api/v1/moderation/reports/` (cursor page size 25, optional status filter), `GET /api/v1/moderation/reports/<id>/`, and explicit POST actions `start-review/`, `hide-comment/`, `resolve/`, `reject/`.
-- Permissions: new moderation-domain `IsModeratorOrAdmin` reuses `accounts.is_moderator/is_admin`. A random staff user is denied; bounded Moderator group+staff is allowed; superuser Admin is allowed without Moderator membership.
-- Comment moderation: hide action is allowed only for a REVIEWING Comment report. It changes Comment status to HIDDEN rather than hard-deleting the row. Existing public Comment API immediately stops exposing that Comment. Repeated hide is rejected so duplicate audit rows are not produced.
-- Audit: new `ModerationAction` records actor, optional Report, action type, generic target, note, and timestamp. Action types implemented: review_started, comment_hidden, report_resolved, report_rejected. Report detail returns the action history with safe moderator summaries.
-- Evidence/retention: Report reporter and audit actor/report FKs use PROTECT so safety evidence is not silently cascaded away. Final account-deletion/anonymization policy remains unresolved and must be designed explicitly before account deletion exists.
-- Security: all unsafe report/moderation operations use the existing SessionAuthentication/CSRF protection. User-supplied report details and moderation notes are length-bounded. Report queue/detail/actions are inaccessible to ordinary users and non-Moderator staff.
-- Policy boundaries: misinformation category is not enabled because the docs require a defined misinformation policy first. No user restrictions, block/mute, arbitrary content moderation, or message moderation are invented in this task.
-- Migration: `moderation.0001_initial` generated, inspected, and applied. It creates Report and ModerationAction only.
-- Tests/checks: focused moderation suite 24 tests passed; full backend suite 254 tests passed; Django check, migration drift, moderation showmigrations, pip check, and git diff check pass.
-- Files changed/new: `backend/config/settings.py`; `backend/api/urls.py`; new `backend/moderation/` app containing models, permissions, exceptions, services, serializers, pagination, views, URLs, tests, admin/apps/init, and migration; backend STATE/HANDOFF.
-- Desktop teaching notes continue at `/home/Pandatron/Desktop/InsightInk_Backend_Teaching_Notes.md`.
-- Known issues: no BE-020 defect identified. Remaining hardening includes rate-limit strategy, OpenAPI contract generation/stabilization, account privacy lifecycle/export deletion, and production deployment settings.
-- Next recommendation: switch the main implementation track to frontend foundations/integration because the first defensible core backend now covers the MVP user path through moderation. Continue later backend phases only when their frontend/product dependency is ready.
-- Delivery: ready for one bounded BE-020 checkpoint commit/push.
+- Task ID: BE-DATA-001 — Deterministic InsightInk Demo Dataset
+- Exact base SHA: `0cc9ed84beb90d78a55c1c430903471ee447cee2`.
+- Result: Complete and accepted for checkpoint. Added a repeatable offline Django management command that supplies realistic deterministic content for frontend development.
+- Frontend safety: FE-002 has pre-existing uncommitted changes under `frontend/**` and `docs/ai/frontend/**`. BE-DATA-001 did not edit, reset, stash, discard, or stage any of them. Backend Git staging must remain explicit.
+- Usage from `backend/`: `../.venv/bin/python manage.py seed_demo`. From repo root with environment loaded: `.venv/bin/python backend/manage.py seed_demo`.
+- Command files: `backend/content/management/__init__.py`, `backend/content/management/commands/__init__.py`, `backend/content/management/commands/seed_demo.py`.
+- Static dataset: `backend/content/demo_seed_data.py`.
+- Tests: `backend/content/test_seed_demo.py`.
+- Dataset: 14 active bilingual Topics; 20 Sources (8 book / 4 article / 4 movie / 4 podcast); 40 PUBLISHED Ideas (20 English / 20 Persian); 5 demo Users; 4 demo CreatorProfiles.
+- Demo users: `demo-reader@example.com`; `demo-curator-persian@example.com`; `demo-curator-lens@example.com`; `demo-curator-systems@example.com`; `demo-curator-curious@example.com`. All are fictional development identities.
+- Fixed dev-only password: `InsightInkDemo2026!` for all demo accounts. This is deliberately local/demo-only and must never be repurposed as a production credential.
+- Interaction seed: demo reader has 4 UserInterests, 5 SavedIdeas, 6 Sparks, 2 CreatorFollows, and 3 visible Comments. This makes deterministic recommendations/engagement immediately testable.
+- Source provenance: static metadata contains a private `demo_seed_key` and `provenance_url`. Runtime command is offline. Public-domain/open sources are preferred where practical; modern source records use metadata only and Ideas are original paraphrases.
+- Copyright rule: no long quotation/source text/transcript/dialogue is seeded.
+- Cover/media decision: cover URLs are intentionally blank because the project has no accepted deterministic media strategy; no fake remote image URLs or storage architecture were added.
+- Idempotency: Topic slug; demo User email; one CreatorProfile per demo User; Source private metadata key; stable Idea `creator+source+language+title`; relation-level get/update-or-create for activity. Second real run created zero duplicate domain rows and zero new activity rows.
+- Existing-data safety: no global deletes. A regression test verifies unrelated existing User/Topic rows survive another seed run.
+- Focused tests: 10/10 seed tests passed.
+- Full backend tests: 264/264 passed.
+- Quality: Django check passed; no migration drift; pip check clean; git diff check clean; no schema migration required.
+- Real DB API smoke: Topics 200/14; Feed 200/10 first-page items with next cursor; Ideas 200/40. Serialized Feed item contains realistic creator/source/topics/language/read time.
+- Recommendation smoke: authenticated demo-reader test context returns 4 interests and 20 recommendations; seeded English/Persian search returns results.
+- Backend contract issue: none.
+- Files to checkpoint: only backend content management/data/tests plus `docs/ai/backend/STATE.md` and `docs/ai/backend/HANDOFF.md`.
+- Suggested commit: `feat(dev): add deterministic InsightInk demo data`.
