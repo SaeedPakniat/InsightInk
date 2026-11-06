@@ -6,6 +6,7 @@ from .views import (
     CreatorIdeasView,
     CreatorListView,
     CreatorProfileSelfView,
+    ViewerCreatorFollowStateView,
 )
 
 
@@ -13,6 +14,11 @@ app_name = "creators"
 
 urlpatterns = [
     path("me/creator/", CreatorProfileSelfView.as_view(), name="me-creator"),
+    path(
+        "me/creator-follows/",
+        ViewerCreatorFollowStateView.as_view(),
+        name="me-creator-follows",
+    ),
     path("creators/", CreatorListView.as_view(), name="creator-list"),
     path("creators/<int:pk>/", CreatorDetailView.as_view(), name="creator-detail"),
     path(

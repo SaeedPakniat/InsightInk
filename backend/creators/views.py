@@ -10,8 +10,13 @@ from content.selectors import public_idea_queryset
 from content.serializers import IdeaSerializer
 
 from .models import CreatorFollow, CreatorProfile
-from .selectors import public_creator_queryset
-from .serializers import CreatorProfileSelfSerializer, CreatorPublicSerializer
+from .selectors import public_creator_queryset, viewer_creator_follow_state
+from .serializers import (
+    CreatorProfileSelfSerializer,
+    CreatorPublicSerializer,
+    ViewerCreatorFollowQuerySerializer,
+    ViewerCreatorFollowResponseSerializer,
+)
 
 
 class CreatorProfileSelfView(APIView):
@@ -97,3 +102,21 @@ class CreatorFollowView(APIView):
             creator=creator,
         ).delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class ViewerCreatorFollowStateView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        query_serializer = ViewerCreatorFollowQuerySerializer(
+            data=request.query_params
+        )
+        query_serializer.is_valid(raise_exception=True)
+
+        items = viewer_creator_follow_state(
+            user=request.user,
+            creator_ids=query_serializer.validated_data["creator_ids"],
+        )
+        return Response(
+            ViewerCreatorFollowResponseSerializer({"items": items}).data
+        )

@@ -446,3 +446,327 @@ class PublicCreatorAPITests(TestCase):
 
         after = APIClient().get(self.detail_url)
         self.assertEqual(after.json()["follower_count"], 1)
+
+
+class ViewerCreatorFollowStateAPITests(TestCase):
+    def setUp(self):
+        self.reader = get_user_model().objects.create_user(
+            email="follow-state-reader@example.com",
+            display_name="Reader",
+        )
+        self.other_reader = get_user_model().objects.create_user(
+            email="follow-state-other@example.com",
+            display_name="Other Reader",
+        )
+        self.own_creator = CreatorProfile.objects.create(user=self.reader)
+
+        self.creator_users = []
+        self.creators = []
+        for index in range(3):
+            user = get_user_model().objects.create_user(
+                email=f"follow-state-creator-{index}@example.com",
+                display_name=f"Creator {index}",
+            )
+            self.creator_users.append(user)
+            self.creators.append(CreatorProfile.objects.create(user=user))
+
+        self.url = reverse("api:creators:me-creator-follows")
+        CreatorFollow.objects.create(
+            user=self.reader,
+            creator=self.creators[1],
+        )
+
+    def authenticated_client(self):
+        client = APIClient()
+        client.force_authenticate(user=self.reader)
+        return client
+
+    def test_anonymous_get_is_rejected(self):
+        response = APIClient().get(
+            self.url,
+            {"creator_ids": str(self.creators[0].id)},
+        )
+
+        self.assertEqual(response.status_code, 403)
+
+    def test_authenticated_get_returns_followed_and_unfollowed_false_states(self):
+        response = self.authenticated_client().get(
+            self.url,
+            {
+                "creator_ids": (
+                    f"{self.creators[0].id},"
+                    f"{self.creators[1].id},"
+                    f"{self.creators[2].id}"
+                )
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.json(),
+            {
+                "items": [
+                    {
+                        "creator_id": self.creators[0].id,
+                        "following": False,
+                        "can_follow": True,
+                    },
+                    {
+                        "creator_id": self.creators[1].id,
+                        "following": True,
+                        "can_follow": True,
+                    },
+                    {
+                        "creator_id": self.creators[2].id,
+                        "following": False,
+                        "can_follow": True,
+                    },
+                ]
+            },
+        )
+
+    def test_own_creator_returns_can_follow_false_and_following_false(self):
+        # Even if invalid legacy data somehow exists, viewer state must not
+        # advertise the authenticated user's own profile as followable/following.
+        CreatorFollow.objects.create(
+            user=self.reader,
+            creator=self.own_creator,
+        )
+
+        response = self.authenticated_client().get(
+            self.url,
+            {"creator_ids": str(self.own_creator.id)},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.json(),
+            {
+                "items": [
+                    {
+                        "creator_id": self.own_creator.id,
+                        "following": False,
+                        "can_follow": False,
+                    }
+                ]
+            },
+        )
+
+    def test_other_users_follow_does_not_affect_current_user_state(self):
+        CreatorFollow.objects.create(
+            user=self.other_reader,
+            creator=self.creators[0],
+        )
+
+        response = self.authenticated_client().get(
+            self.url,
+            {"creator_ids": str(self.creators[0].id)},
+        )
+
+        self.assertEqual(
+            response.json()["items"][0],
+            {
+                "creator_id": self.creators[0].id,
+                "following": False,
+                "can_follow": True,
+            },
+        )
+
+    def test_duplicate_ids_are_normalized_preserving_first_occurrence_order(self):
+        response = self.authenticated_client().get(
+            self.url,
+            {
+                "creator_ids": (
+                    f"{self.creators[2].id},"
+                    f"{self.creators[0].id},"
+                    f"{self.creators[2].id},"
+                    f"{self.creators[1].id},"
+                    f"{self.creators[0].id}"
+                )
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            [item["creator_id"] for item in response.json()["items"]],
+            [
+                self.creators[2].id,
+                self.creators[0].id,
+                self.creators[1].id,
+            ],
+        )
+
+    def test_missing_and_empty_creator_ids_are_rejected(self):
+        client = self.authenticated_client()
+
+        missing = client.get(self.url)
+        empty = client.get(self.url, {"creator_ids": ""})
+
+        self.assertEqual(missing.status_code, 400)
+        self.assertEqual(
+            missing.json(),
+            {"creator_ids": ["creator_ids query parameter is required."]},
+        )
+        self.assertEqual(empty.status_code, 400)
+        self.assertEqual(
+            empty.json(),
+            {"creator_ids": ["creator_ids query parameter must not be empty."]},
+        )
+
+    def test_malformed_and_nonpositive_creator_ids_are_rejected(self):
+        client = self.authenticated_client()
+
+        for value in (
+            "abc",
+            "-1",
+            "0",
+            "1.5",
+            f"{self.creators[0].id},abc",
+        ):
+            with self.subTest(value=value):
+                response = client.get(self.url, {"creator_ids": value})
+                self.assertEqual(response.status_code, 400)
+                self.assertEqual(
+                    response.json(),
+                    {
+                        "creator_ids": [
+                            "creator_ids must be a comma-separated list of positive integers."
+                        ]
+                    },
+                )
+
+    def test_more_than_100_requested_creator_ids_is_rejected(self):
+        response = self.authenticated_client().get(
+            self.url,
+            {"creator_ids": ",".join(str(index) for index in range(1, 102))},
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(
+            response.json(),
+            {
+                "creator_ids": [
+                    "At most 100 CreatorProfile IDs may be requested."
+                ]
+            },
+        )
+
+    def test_nonexistent_creator_is_omitted(self):
+        missing_id = max(creator.id for creator in self.creators) + 10000
+
+        response = self.authenticated_client().get(
+            self.url,
+            {
+                "creator_ids": (
+                    f"{self.creators[0].id},"
+                    f"{missing_id},"
+                    f"{self.creators[1].id}"
+                )
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            [item["creator_id"] for item in response.json()["items"]],
+            [self.creators[0].id, self.creators[1].id],
+        )
+
+    def test_get_requires_no_csrf_token(self):
+        client = APIClient(enforce_csrf_checks=True)
+        client.force_login(self.reader)
+
+        response = client.get(
+            self.url,
+            {"creator_ids": str(self.creators[0].id)},
+        )
+
+        self.assertEqual(response.status_code, 200)
+
+    def test_query_count_is_one_for_single_and_100_creator_batches(self):
+        extra_creators = []
+        for index in range(96):
+            user = get_user_model().objects.create_user(
+                email=f"follow-state-batch-{index}@example.com"
+            )
+            extra_creators.append(CreatorProfile.objects.create(user=user))
+
+        client = self.authenticated_client()
+
+        with self.assertNumQueries(1):
+            single = client.get(
+                self.url,
+                {"creator_ids": str(self.creators[0].id)},
+            )
+            self.assertEqual(single.status_code, 200)
+
+        creator_ids = [
+            self.own_creator.id,
+            *[creator.id for creator in self.creators],
+            *[creator.id for creator in extra_creators],
+        ]
+        self.assertEqual(len(creator_ids), 100)
+
+        with self.assertNumQueries(1):
+            batch = client.get(
+                self.url,
+                {
+                    "creator_ids": ",".join(
+                        str(creator_id) for creator_id in creator_ids
+                    )
+                },
+            )
+            self.assertEqual(batch.status_code, 200)
+            self.assertEqual(len(batch.json()["items"]), 100)
+
+    def test_existing_follow_mutations_remain_idempotent_and_self_follow_rejected(self):
+        client = APIClient(enforce_csrf_checks=True)
+        client.force_login(self.reader)
+        csrf_url = reverse("api:accounts:csrf")
+        token = client.get(csrf_url).json()["csrfToken"]
+
+        target_url = reverse(
+            "api:creators:creator-follow",
+            args=[self.creators[0].id],
+        )
+        first_put = client.put(
+            target_url,
+            format="json",
+            HTTP_X_CSRFTOKEN=token,
+        )
+        second_put = client.put(
+            target_url,
+            format="json",
+            HTTP_X_CSRFTOKEN=token,
+        )
+
+        self.assertEqual(first_put.status_code, 204)
+        self.assertEqual(second_put.status_code, 204)
+        self.assertEqual(
+            CreatorFollow.objects.filter(
+                user=self.reader,
+                creator=self.creators[0],
+            ).count(),
+            1,
+        )
+
+        first_delete = client.delete(
+            target_url,
+            HTTP_X_CSRFTOKEN=token,
+        )
+        second_delete = client.delete(
+            target_url,
+            HTTP_X_CSRFTOKEN=token,
+        )
+        self.assertEqual(first_delete.status_code, 204)
+        self.assertEqual(second_delete.status_code, 204)
+
+        own_url = reverse(
+            "api:creators:creator-follow",
+            args=[self.own_creator.id],
+        )
+        self_follow = client.put(
+            own_url,
+            format="json",
+            HTTP_X_CSRFTOKEN=token,
+        )
+        self.assertEqual(self_follow.status_code, 400)
