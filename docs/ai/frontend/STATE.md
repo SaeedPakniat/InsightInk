@@ -1,0 +1,25 @@
+# Frontend State
+
+- Task: FE-001A — Development launch scripts + interaction/motion polish (follow-up to FE-001).
+- Status: Accepted by user; FE-001/FE-001A checkpoint ready for commit/push.
+- Base commit: `3c31895a62254008bab437be26e8c9d0e34920e8`.
+- Frontend root: `frontend/`.
+- Stack: React + TypeScript + Vite, React Router, TanStack Query, i18next/react-i18next, Vitest/Testing Library, plain CSS design tokens.
+- Auth: Django session/cookie authentication only. No JWT or localStorage auth tokens. Unsafe requests bootstrap CSRF from `GET /api/v1/auth/csrf/` and send `X-CSRFToken`.
+- Dev API integration: Vite proxies `/api/*` to `http://127.0.0.1:8000`; default API base is `/api/v1`.
+- Session states: checking, anonymous, authenticated, and API-error states are handled without authenticated-route flashing.
+- Routes: `/`, `/login`, `/register`, protected `/app`, and 404 fallback.
+- i18n: Persian default (RTL), English secondary (LTR); root `lang`/`dir` switch dynamically. UI-language selection is currently stored locally; registration sends current UI language as `preferred_ui_language`.
+- Design system: Ink/navy shell, Parchment text, Spark accent, Tide focus/support accent; mobile-first CSS; logical properties; reduced-motion handling; no UI framework.
+- Initial reusable UI: Brand, Button, Card, FormField, PasswordField, LanguageToggle, loading/error feedback.
+- Old-device baseline: production build target includes ES2018 and Safari 14; no heavy UI library, autoplay, or large animation system.
+- Validation: TypeScript, ESLint, 3 Vitest tests, production build, Prettier check all pass. Build bundle: ~135 KB JS gzip + ~3 KB CSS gzip.
+- Visual review: Chromium screenshots checked at 1440×1000 desktop and 390×844 phone sizes for landing/auth screens; RTL hierarchy and responsive layout are coherent with no observed horizontal overflow. Password visibility control was improved to an eye/eye-off SVG with a 44 px-class touch target after review.
+- Live integration smoke: frontend HTTP 200; CSRF via Vite proxy 200 with cookie; anonymous `/me/` 403; register 201; authenticated `/me/` 200; logout 204; temporary account removed.
+- Runtime npm audit: 0 vulnerabilities with `--omit=dev`. Development lint dependency tree currently reports moderate advisories; no forced audit fix applied.
+- FE-001A launchers: root-level executable `run backend.sh`, `run frontend.sh`, and `run website.sh`; Bash shebangs make them independent of the user's Fish shell. Combined launcher starts/stops both services together and supports optional `INSIGHTINK_BACKEND_PORT` / `INSIGHTINK_FRONTEND_PORT` overrides for testing.
+- FE-001A motion: subtle button hover/press feedback, input focus transitions, route-entry motion, and a ~900 ms language morph. Target-language alphabet/word tiles stream from the new reading direction, snap into a temporary ordered layout, the document language/dir changes underneath, then the tiles dissolve while the real UI settles into place.
+- Language morph is deterministic and dependency-free: 14 short-lived glyph/word tiles, CSS transform/opacity animations, no blur/backdrop-filter or animation library. `prefers-reduced-motion` bypasses the morph and switches immediately.
+- Language morph tests cover LTR assembly, RTL assembly, cleanup, and reduced-motion behavior. Current frontend suite: 3 test files / 6 tests passing; production JS ~136.01 KB gzip.
+- FE-001 intentionally does not implement onboarding interests, feed, IdeaCard, idea detail, search, library, creators, recommendations, messaging, notifications, TTS, or PWA.
+- Next logical task: FE-002 — Reader interests onboarding using the existing topics/interests API. IdeaCard and real feed remain separate follow-up tasks.
