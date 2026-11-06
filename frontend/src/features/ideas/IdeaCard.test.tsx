@@ -94,7 +94,7 @@ describe('IdeaCard', () => {
   it('renders creator and original source as separate attribution concepts', () => {
     renderCard(persianIdea)
 
-    expect(screen.getByText('Maya Chen')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Maya Chen' })).toHaveAttribute('href', '/creators/4')
     expect(screen.getByRole('link', { name: 'Open source: TED Radio Hour' })).toHaveAttribute(
       'href',
       'https://www.ted.com/podcasts/ted-radio-hour',

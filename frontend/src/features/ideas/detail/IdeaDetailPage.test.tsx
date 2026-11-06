@@ -96,7 +96,7 @@ describe('IdeaDetailPage', () => {
     expect(screen.getByText('2 min read')).toBeInTheDocument()
     expect(screen.getByText('Science')).toBeInTheDocument()
     expect(screen.getByText('Creativity')).toBeInTheDocument()
-    expect(screen.getByText('Maya Chen')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Maya Chen' })).toHaveAttribute('href', '/creators/4')
     expect(screen.getByRole('link', { name: 'Open original source' })).toHaveAttribute(
       'href',
       'https://www.ted.com/podcasts/ted-radio-hour',

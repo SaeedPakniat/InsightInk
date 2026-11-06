@@ -1,20 +1,20 @@
 # Frontend Handoff
 
-- Task ID: FE-010 — Search & Discovery
-- Base commit: `0100cc8e3d969ac834dfdfd28af985cfecb14f56`
-- Result: accepted by user; ready for checkpoint commit/push.
-- Public route: `/search`.
-- API: public cursor-paginated `GET /search/` with q/type/topic; authenticated requests automatically inherit reader content-language preferences.
-- Search state is shareable URL state; typing waits for submit; filters update URL immediately.
-- Filters: source format + public Topic catalog. No duplicate language picker.
-- Results reuse IdeaCard and FE-007 engagement hydration when authenticated.
-- Global header now exposes Search to anonymous and authenticated users; mobile action is icon-only.
-- Real smoke:
-  - anonymous Fiyat -> Turkish Idea 67;
-  - signed-in demo reader Fiyat -> 0 because Turkish excluded;
-  - Persian search query returns real Persian match.
-- Visual review passed at 1440×1200 and 390×1000 after one mobile header correction.
-- Final checks: typecheck PASS; lint PASS; 30 test files / 88 tests PASS; production build PASS; formatting PASS; runtime npm audit 0 vulnerabilities. Bundle ~150.52 KB JS gzip / ~8.68 KB CSS gzip.
-- No backend implementation changes.
-- Do not commit/push until user validates real Search behavior.
-- Next likely task: FE-011 Creator Profiles + Following.
+- Task ID: FE-011 — Creator Profiles + Following
+- Repository HEAD/base after backend dependency: `6eb12f69b7501319f83d936b87c3f0cdd8532b20`.
+- Backend follow-state implementation: `7352883676d64da9ac63a4c0f1ed1980601b8dec`.
+- Result: accepted by user; ready for frontend checkpoint commit/push.
+- Public route: `/creators/:creatorId`.
+- Public profiles expose bilingual bio fallback, verification, public counts and published cursor-paginated Ideas.
+- Creator names on IdeaCard and Idea Detail are navigable to public Creator Profiles.
+- Authenticated follow state uses `GET /me/creator-follows/?creator_ids=...`.
+- Follow/Unfollow uses existing explicit idempotent CSRF-protected PUT/DELETE.
+- UX covers anonymous sign-in, Follow, Following, self profile, loading/error/retry and mutation failure.
+- Follow mutation optimistically updates both relationship state and public follower count, with rollback and server refetch.
+- Recommendations are invalidated after follow changes.
+- Final checks: typecheck PASS; lint PASS; 33 test files / 102 tests PASS; production build PASS; formatting PASS; runtime npm audit 0 vulnerabilities.
+- Bundle ~152.81 KB JS gzip / ~9.26 KB CSS gzip.
+- Non-blocking build warning: main raw minified JS ~512.12 KB; defer code splitting to hardening.
+- No backend implementation changes from FE-011 frontend work.
+- Do not commit/push until user validates follow/unfollow in real browser.
+- Next likely task: FE-012 Trust & Safety / Reporting.

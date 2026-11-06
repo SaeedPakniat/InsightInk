@@ -9,6 +9,7 @@ import { ContentLanguagesPage } from '../features/onboarding/languages/ContentLa
 import { LatestFeedPage } from '../features/feed/LatestFeedPage'
 import { SavedLibraryPage } from '../features/library/SavedLibraryPage'
 import { SearchPage } from '../features/search/SearchPage'
+import { CreatorProfilePage } from '../features/creators/CreatorProfilePage'
 import { LandingPage } from '../features/home/LandingPage'
 import { IdeaDetailPage } from '../features/ideas/detail/IdeaDetailPage'
 import { NotFoundPage } from '../features/home/NotFoundPage'
@@ -21,6 +22,7 @@ export const router = createBrowserRouter([
       { index: true, element: <LandingPage /> },
       { path: 'ideas/:ideaId', element: <IdeaDetailPage /> },
       { path: 'search', element: <SearchPage /> },
+      { path: 'creators/:creatorId', element: <CreatorProfilePage /> },
       {
         element: <AnonymousOnly />,
         children: [

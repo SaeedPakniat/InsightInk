@@ -1,58 +1,51 @@
 # Frontend State
 
-- Task: FE-010 — Search & Discovery.
-- Status: Accepted by user; FE-010 ready for checkpoint commit/push.
-- Base commit: `0100cc8e3d969ac834dfdfd28af985cfecb14f56` (`feat(frontend): add saved library`).
-- Frontend root: `frontend/`.
-- Backend search contract verified from actual source:
-  - public `GET /api/v1/search/`;
-  - FeedCursorPagination;
-  - q optional/blank, trimmed, max 200;
-  - type optional SourceType choice;
-  - topic optional slug;
-  - public Ideas only;
-  - normalized search across Idea title/body, Source title/original creator, Creator display name and Topic Persian/English names;
-  - search ordering `-id`;
-  - authenticated discovery defaults to stored reader content languages;
-  - anonymous discovery sees all active supported content languages.
-- New frontend type: `SearchFilters`.
-- New API client: `getSearchPage(filters, cursor)`, `cursorFromSearchUrl(next)`.
-- New TanStack infinite Search query with stable key `['search', q, type, topic]`.
-- New public route: `/search`.
-- Root header now exposes Search globally:
-  - mobile: icon-only to avoid crowding Brand + language toggle;
-  - >=42rem: icon + localized label;
-  - active route state is visually indicated.
-- Search state architecture:
-  - committed search state is URL-based via `useSearchParams`;
-  - query input is an uncontrolled form field keyed by URL q, avoiding React effect synchronization;
-  - typing does not trigger a request;
-  - form submit writes q to URL;
-  - format/topic changes write immediately to URL;
-  - Clear resets q/type/topic and form state.
-- Search filters:
-  - Format: All / Book / Article / Film / Podcast using existing SourceType union and translations;
-  - Topic: existing public Topic catalog, localized name;
-  - Topic failure disables only that filter rather than blocking Search.
-- Search results:
-  - reuse IdeaCard;
-  - cursor pages append with duplicate Idea IDs removed;
-  - authenticated result IDs batch-hydrate viewer Spark/Save state;
-  - anonymous result cards remain public and omit private engagement controls.
-- Search language messaging:
-  - anonymous: explains Search spans all supported content languages;
-  - authenticated: explains results follow selected content languages and links to `/onboarding/languages`.
-- Live backend smoke through Vite:
-  - public q=`Fiyat` -> 1 result: Idea 67, language tr;
-  - authenticated demo reader q=`Fiyat` -> 0 results because Turkish is excluded from stored discovery languages;
-  - public Persian q=`یادگیری` -> real Persian search result returned.
+- Task: FE-011 — Creator Profiles + Following.
+- Status: Accepted by user; FE-011 ready for checkpoint commit/push.
+- Frontend feature started from `aed1a6f27185a9661e5ec18ccf3f9f8d8558b8dc`; repository HEAD now includes backend dependency through `6eb12f69b7501319f83d936b87c3f0cdd8532b20`.
+- Backend viewer follow-state implementation: `7352883676d64da9ac63a4c0f1ed1980601b8dec`.
+- Public Creator route: `/creators/:creatorId`.
+- IdeaCard and Idea Detail creator names link to public profiles.
+- Creator Profile:
+  - avatar/fallback initials;
+  - verified indicator;
+  - bilingual bio preference/fallback with truthful lang/dir;
+  - public published-Idea / follower / Spark counts;
+  - published Idea list using production IdeaCard;
+  - cursor load-more;
+  - loading/error/empty/404 states;
+  - authenticated viewer engagement hydration.
+- Viewer follow state:
+  - authenticated GET `/me/creator-follows/?creator_ids=...`;
+  - explicit `following` and `can_follow`;
+  - self profile handled through `can_follow=false`.
+- Follow UI:
+  - anonymous Sign in to follow with return route;
+  - authenticated Follow / Following with `aria-pressed`;
+  - own profile shows neutral ownership state;
+  - pending/error/retry states localized.
+- Follow mutation:
+  - explicit PUT/DELETE;
+  - optimistic following state;
+  - optimistic follower-count +/-1;
+  - rollback on error;
+  - Creator/follow state refetched after settle;
+  - recommendation cache invalidated because follows influence recommendation.
+- Seed contract confirms demo reader follows Creator 2 Nora Hayes and Creator 3 Arman Daryan, but not 1 or 4.
 - Visual review:
-  - desktop 1440×1200 public q=Fiyat: Persian UI + Turkish result rendered correctly;
-  - mobile 390×1000 public q=یادگیری: Persian UI + Persian result/filter layout reviewed;
-  - initial mobile review exposed header crowding; Search label was changed to icon-only below 42rem and re-reviewed successfully;
+  - public seeded Creator profiles at desktop/mobile;
+  - authenticated Nora Following state at 1440×1050;
+  - authenticated Maya Follow state at 390×900;
   - no observed horizontal overflow.
-- Review screenshots/logs removed before final validation.
-- Final quality gates: TypeScript PASS; ESLint PASS; Vitest 30 files / 88 tests PASS; production build PASS; Prettier PASS; `npm audit --omit=dev` reports 0 vulnerabilities.
-- FE-010 production bundle: ~150.52 KB JS gzip and ~8.68 KB CSS gzip.
-- Backend implementation files changed by FE-010: none.
-- Next logical task after acceptance: FE-011 — Creator Profiles + Following, after auditing the existing creator/follow APIs.
+- Final quality gates:
+  - TypeScript PASS;
+  - ESLint PASS;
+  - Vitest 33 files / 102 tests PASS;
+  - production build PASS;
+  - Prettier PASS;
+  - runtime npm audit 0 vulnerabilities;
+  - git diff --check PASS.
+- Bundle: ~152.81 KB JS gzip / ~9.26 KB CSS gzip.
+- Non-blocking Vite warning: raw main JS chunk ~512.12 KB minified. Track route-level code splitting for later hardening.
+- Backend implementation files changed by frontend work: none.
+- Next logical task after FE-011 acceptance: FE-012 — Report / Trust & Safety entry points, after auditing current report/moderation API and product scope.

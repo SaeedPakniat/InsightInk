@@ -77,7 +77,14 @@ export function IdeaCard({ idea }: IdeaCardProps) {
 
           <div className="idea-card__attribution">
             <span className="idea-card__curator">
-              {t('idea.curatedBy')} <strong dir="auto">{idea.creator.display_name}</strong>
+              {t('idea.curatedBy')}{' '}
+              <Link
+                className="idea-card__creator-link"
+                to={`/creators/${idea.creator.id}`}
+                dir="auto"
+              >
+                {idea.creator.display_name}
+              </Link>
               {idea.creator.is_verified && (
                 <span className="idea-card__verified" title={t('idea.verifiedCreator')}>
                   <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">

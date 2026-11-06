@@ -133,7 +133,13 @@ export function IdeaDetailPage() {
 
             <div>
               <span>{t('idea.curatedBy')}</span>
-              <strong dir="auto">{idea.creator.display_name}</strong>
+              <Link
+                className="idea-detail-page__creator-link"
+                to={`/creators/${idea.creator.id}`}
+                dir="auto"
+              >
+                {idea.creator.display_name}
+              </Link>
               {idea.creator.is_verified && (
                 <span className="idea-detail-page__verified">{t('idea.verifiedCreator')}</span>
               )}

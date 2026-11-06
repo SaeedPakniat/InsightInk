@@ -46,6 +46,24 @@ export type IdeaCreator = {
   is_verified: boolean
 }
 
+export type CreatorPublic = IdeaCreator & {
+  bio_fa: string
+  bio_en: string
+  follower_count: number
+  spark_count: number
+  idea_count: number
+}
+
+export type ViewerCreatorFollowItem = {
+  creator_id: number
+  following: boolean
+  can_follow: boolean
+}
+
+export type ViewerCreatorFollowResponse = {
+  items: ViewerCreatorFollowItem[]
+}
+
 export type IdeaSource = {
   id: number
   type: SourceType
