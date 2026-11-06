@@ -1,18 +1,17 @@
 # Frontend Handoff
 
-- Task IDs: FE-004A + FE-005
-- Base commit: `efbf4a7a1cf1ba7e70f261575976d6e3f401000a`
-- Result: accepted by user after centered-home and Explore spacing review; ready for checkpoint commit/push.
-- FE-004A: centered the 48rem personalized reading rail on desktop; mobile unchanged; future Option-B contextual sidebar remains intentionally deferred until it can use real account signals.
-- FE-005: added protected `/explore` Latest feed; `/app` remains personalized For You.
-- New shared FeedModeNav switches between For You and Latest.
-- Cursor contract: page size 10, `-id` ordering, `next/previous/results`; frontend extracts only `cursor` from returned next URL.
-- Data: TanStack Infinite Query appends pages. `flattenUniqueIdeas` de-duplicates by Idea ID while preserving server order.
-- UX: explicit Load 10 more; no automatic infinite loading. Loading/error/empty/loading-next/end states included.
-- Live smoke: all seeded feed content reachable in 4 cursor pages; 40 items / 40 unique IDs.
-- Tests include first/later feed request construction, cursor extraction, duplicate-safe flattening, and page-append behavior.
-- Visual review: centered personalized rail + Latest/Explore at desktop 1440×1100 and mobile 390×844; no observed overflow.
-- User-reported Explore spacing issue traced to missing `--space-7` and `--space-9` tokens. Tokens were added to the design system, fixing dropped margins/gaps on Explore and the personalized feed.
-- Final checks: typecheck PASS; lint PASS; 13 test files / 27 tests PASS; production build PASS; formatting PASS; runtime npm audit 0 vulnerabilities. Bundle ~140.71 KB JS gzip / ~6.04 KB CSS gzip.
-- No backend implementation changes.
-- User accepted the centered home and corrected Explore page. Next task: FE-006 Idea Detail.
+- Task ID: FE-006 — Public Idea Detail
+- Base commit: `7feec5c5e0a8ef345ccf3eaadcba4ff0a8d62075`
+- Result: accepted by user; ready for checkpoint commit/push on top of BE-LANG-001.
+- Route: public `/ideas/:ideaId`; API: public published-only `GET /api/v1/ideas/{id}/`.
+- Files changed: Idea detail API/query/page/tests, shared FormatBadge/presentation helpers, IdeaCard links/refactor/tests, router, bilingual strings, detail/card CSS, FE-006 task/state docs. No backend implementation files modified.
+- IdeaCard navigation uses title link + explicit Read full idea link; Source external URL remains a separate link, avoiding nested anchors.
+- Detail content: full body, format/read time/published date, topics, curator, source context, optional cover, external source link.
+- Error behavior: malformed ID -> local not-found without fetch; backend 404 -> unavailable-Idea state; other fetch error -> retry.
+- Accessibility: semantic article, independent content lang/dir, status-announced skeleton, keyboard-native links.
+- Compatibility: removed CSS `:has()` in favor of explicit optional-cover class.
+- Live smoke: `/api/v1/ideas/40/` HTTP 200; missing 999999 HTTP 404.
+- Visual review: real Persian Idea 40 checked at desktop 1440×1100 and mobile 390×844. Creator attribution alignment was tightened after the first desktop pass.
+- Final checks: typecheck PASS; lint PASS; 15 test files / 32 tests PASS; build PASS; formatting PASS; runtime npm audit 0 vulnerabilities. Bundle ~141.90 KB JS gzip / ~6.66 KB CSS gzip.
+- Do not commit/push until user accepts the reading page.
+- Next likely task: FE-007 Spark + Save integration with optimistic UI.

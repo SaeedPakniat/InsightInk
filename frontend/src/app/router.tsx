@@ -7,6 +7,7 @@ import { AuthenticatedHomePage } from '../features/home/AuthenticatedHomePage'
 import { InterestsOnboardingPage } from '../features/onboarding/InterestsOnboardingPage'
 import { LatestFeedPage } from '../features/feed/LatestFeedPage'
 import { LandingPage } from '../features/home/LandingPage'
+import { IdeaDetailPage } from '../features/ideas/detail/IdeaDetailPage'
 import { NotFoundPage } from '../features/home/NotFoundPage'
 import { RootLayout } from '../layouts/RootLayout'
 
@@ -15,6 +16,7 @@ export const router = createBrowserRouter([
     element: <RootLayout />,
     children: [
       { index: true, element: <LandingPage /> },
+      { path: 'ideas/:ideaId', element: <IdeaDetailPage /> },
       {
         element: <AnonymousOnly />,
         children: [

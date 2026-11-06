@@ -1,4 +1,5 @@
 import { cleanup, render, screen } from '@testing-library/react'
+import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 import type { RecommendationItem } from '../../api/types'
@@ -44,7 +45,11 @@ describe('RecommendedIdea', () => {
   })
 
   it('renders the transparent recommendation reason without exposing internal score', () => {
-    render(<RecommendedIdea item={baseItem} />)
+    render(
+      <MemoryRouter>
+        <RecommendedIdea item={baseItem} />
+      </MemoryRouter>,
+    )
 
     const reason = screen
       .getByText('Because you selected Science.')
@@ -57,12 +62,14 @@ describe('RecommendedIdea', () => {
 
   it('renders a Persian backend reason RTL even inside an English UI', () => {
     render(
-      <RecommendedIdea
-        item={{
-          ...baseItem,
-          reason: 'چون موضوع «علم» را انتخاب کرده‌اید.',
-        }}
-      />,
+      <MemoryRouter>
+        <RecommendedIdea
+          item={{
+            ...baseItem,
+            reason: 'چون موضوع «علم» را انتخاب کرده‌اید.',
+          }}
+        />
+      </MemoryRouter>,
     )
 
     const reason = screen

@@ -1,4 +1,5 @@
 import { cleanup, render, screen } from '@testing-library/react'
+import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 import type { Idea } from '../../api/types'
@@ -42,6 +43,14 @@ const englishIdea: Idea = {
   estimated_read_seconds: 70,
 }
 
+function renderCard(idea: Idea) {
+  return render(
+    <MemoryRouter>
+      <IdeaCard idea={idea} />
+    </MemoryRouter>,
+  )
+}
+
 describe('IdeaCard', () => {
   beforeEach(async () => {
     await changeUiLanguage('en')
@@ -52,7 +61,7 @@ describe('IdeaCard', () => {
   })
 
   it('keeps Persian idea content RTL inside an English UI shell', () => {
-    render(<IdeaCard idea={persianIdea} />)
+    renderCard(persianIdea)
 
     const title = screen.getByRole('heading', {
       name: 'برای سؤال بزرگ، یک زاویه دید کافی نیست',
@@ -68,7 +77,7 @@ describe('IdeaCard', () => {
   })
 
   it('renders creator and original source as separate attribution concepts', () => {
-    render(<IdeaCard idea={persianIdea} />)
+    renderCard(persianIdea)
 
     expect(screen.getByText('Maya Chen')).toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'Open source: TED Radio Hour' })).toHaveAttribute(
@@ -78,10 +87,22 @@ describe('IdeaCard', () => {
     expect(screen.getByText('Manoush Zomorodi — TED')).toBeInTheDocument()
   })
 
+  it('links both title and explicit read action to the public Idea detail route', () => {
+    renderCard(persianIdea)
+
+    expect(
+      screen.getByRole('link', { name: 'برای سؤال بزرگ، یک زاویه دید کافی نیست' }),
+    ).toHaveAttribute('href', '/ideas/40')
+    expect(screen.getByRole('link', { name: /Read full idea/ })).toHaveAttribute(
+      'href',
+      '/ideas/40',
+    )
+  })
+
   it('uses Persian UI labels while keeping English idea content LTR', async () => {
     await changeUiLanguage('fa')
 
-    render(<IdeaCard idea={englishIdea} />)
+    renderCard(englishIdea)
 
     const title = screen.getByRole('heading', {
       name: 'Big questions improve when they are broken into perspectives',
@@ -96,7 +117,7 @@ describe('IdeaCard', () => {
   })
 
   it('does not invent engagement controls that are absent from the Idea contract', () => {
-    render(<IdeaCard idea={englishIdea} />)
+    renderCard(englishIdea)
 
     expect(screen.queryByRole('button', { name: /save/i })).not.toBeInTheDocument()
     expect(screen.queryByText(/spark/i)).not.toBeInTheDocument()

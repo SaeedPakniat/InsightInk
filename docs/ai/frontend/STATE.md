@@ -1,28 +1,25 @@
 # Frontend State
 
-- Task: FE-005 — Latest / Explore Cursor Feed, including accepted-direction FE-004A desktop centering polish.
-- Status: Accepted by user after Explore spacing review; FE-004A/FE-005 ready for commit/push.
-- Base commit: `efbf4a7a1cf1ba7e70f261575976d6e3f401000a` (`feat(frontend): add personalized home feed`), matching `origin/master` when this task began.
+- Task: FE-006 — Public Idea Detail.
+- Status: Accepted by user; FE-006 ready for checkpoint commit/push on top of BE-LANG-001.
+- Base commit: `7feec5c5e0a8ef345ccf3eaadcba4ff0a8d62075` (`feat(frontend): add latest explore feed`).
 - Frontend root: `frontend/`.
-- FE-004 personalized For You feed was committed/pushed by the user before this task.
-- FE-004A layout decision: personalized feed header/list/state/end now use a centered 48rem reading rail on wide screens. This removes the accidental-looking RTL-side dead space while deliberately preserving wider desktop room for a future contextual rail (active interests, feed signals, saved/followed shortcuts). No placeholder/fake sidebar content was added.
-- FE-004A visual review: centered rail checked at 1440×1100 and 390×844; desktop is materially more balanced and mobile remains unchanged.
-- FE-005 product split: `/app` = personalized For You from `/recommendations/`; protected `/explore` = chronological Latest from public `/feed/`.
-- Shared `FeedModeNav` provides For You / Latest switching on both surfaces.
-- Feed backend contract confirmed from actual source: DRF `FeedCursorPagination`, page size 10, ordering `-id`.
-- Real first feed page returned IDs 40…31 and `next=http://localhost:5173/api/v1/feed/?cursor=...`.
-- `getFeedPage(cursor)` now accepts a cursor token and safely constructs the relative API request. `cursorFromFeedUrl()` extracts only the cursor token from backend next URLs rather than trusting/using the absolute host.
-- TanStack `useInfiniteQuery` drives Latest pages with `initialPageParam=null` and next-page cursor extraction.
-- `flattenUniqueIdeas()` appends pages in server order while defensively removing duplicate Idea IDs if adjacent cursor pages ever overlap.
-- UX intentionally uses explicit Load 10 more rather than automatic sentinel loading. This preserves cursor/infinite-query architecture while keeping user control, accessibility and the product's anti-mindless-scroll stance.
-- Latest page states: initial skeletons, initial fetch error/retry, empty feed, loaded count, loading-next-page state, explicit end-of-collection state.
-- Live cursor smoke through Vite: 4 pages, 40 items, 40 unique IDs; sequence starts 40…36 and ends 5…1.
-- Latest/Explore visual review completed at 1440×1100 and 390×844; centered rail, feed switcher and cards are coherent with no observed horizontal overflow.
-- Explore spacing bug found during user review: CSS referenced undefined `--space-7` / `--space-9`, so browsers dropped those gap/margin declarations. Added the missing design-system tokens (`1.75rem` / `2.25rem`), restoring intended header, card-list and pagination spacing without page-specific hacks.
-- Temporary screenshot-only review route was removed before final validation.
-- Final quality gates: TypeScript PASS; ESLint PASS; Vitest 13 files / 27 tests PASS; production build PASS; Prettier PASS; `npm audit --omit=dev` reports 0 vulnerabilities.
-- Final production bundle: ~140.71 KB JS gzip and ~6.04 KB CSS gzip.
+- FE-004A/FE-005 are committed and pushed on `master`.
+- FE-006 backend contract confirmed from actual source/tests: `GET /api/v1/ideas/{id}/` is public via `IdeaViewSet`, returns published Ideas only, and returns 404 for draft/hidden/missing Ideas.
+- Product decision: frontend `/ideas/:ideaId` is a public route outside `RequireAuth`, matching the public API and enabling future shared links without forced login.
+- New API client: `getIdea(ideaId)` -> `/api/v1/ideas/{id}/`; TanStack query key `['idea', id]`, 60-second stale time.
+- IdeaCards now link to detail through both the title and an explicit localized Read full idea action. The existing external Source link remains separate; the card is not wrapped in one giant link, avoiding invalid nested-link markup.
+- Shared Idea-domain pieces extracted from IdeaCard: `FormatBadge`; `getInitials`; `getContentDirection`; `getReadMinutes`; `formatUiNumber`.
+- Detail page renders full, un-clamped body text; localized source-type/read-time/publication-date metadata; active topic chips; InsightInk curator; and a dedicated original Source panel with optional cover and external link.
+- UI language and content language remain separate: Idea title/body receive `idea.language`-derived lang/dir; UI labels remain in the active interface language.
+- Public not-found behavior: malformed route IDs do not call the API; backend 404s become a localized unavailable-Idea state. Other API errors render retryable ErrorState.
+- Loading skeleton is decorative but the page announces localized Loading idea… through a screen-reader status region.
+- Compatibility correction during implementation: optional Source cover layout originally used CSS `:has()`; replaced with explicit `idea-detail-page__source--with-cover` class to avoid raising the Safari/browser baseline.
+- Visual review using real seeded Idea 40 completed at 1440×1100 and 390×844. Persian Idea content remains RTL; source/creator context is readable; no observed horizontal overflow.
+- Desktop bilingual attribution refinement: creator metadata grid now uses `justify-items:start` so an LTR creator name stays clustered with the RTL label/avatar instead of stretching to the opposite side.
+- Live API smoke through Vite: Idea 40 -> HTTP 200, language fa, Source TED Radio Hour, topics science/creativity/society. Missing Idea 999999 -> HTTP 404.
+- Final quality gates: TypeScript PASS; ESLint PASS; Vitest 15 files / 32 tests PASS; production build PASS; Prettier PASS; `npm audit --omit=dev` reports 0 vulnerabilities.
+- FE-006 production bundle: ~141.90 KB JS gzip and ~6.66 KB CSS gzip.
 - Backend implementation files changed: none.
-- Future contextual-rail decision retained: do not add now; likely desktop-only rail after core browsing/engagement surfaces exist so it can contain real user signals rather than decorative filler.
-- Manual acceptance: user confirmed the centered home and corrected Explore spacing feel right.
-- Next frontend task: FE-006 — Idea detail route using the existing public Idea detail API contract.
+- Out of scope for FE-006: Spark, Save, comments, related Ideas, creator-profile navigation and share controls.
+- Next logical task after FE-006 acceptance: FE-007 — engagement on Idea Detail/Card (Spark + Save) using the existing authenticated engagement endpoints and optimistic UI, unless Comments is intentionally prioritized separately.
