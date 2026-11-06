@@ -28,7 +28,7 @@ const science: Topic = {
   name_en: 'Science',
 }
 
-function renderPage() {
+function renderPage(entry = '/onboarding/interests') {
   const queryClient = new QueryClient({
     defaultOptions: {
       queries: { retry: false },
@@ -38,9 +38,10 @@ function renderPage() {
 
   return render(
     <QueryClientProvider client={queryClient}>
-      <MemoryRouter initialEntries={['/onboarding/interests']}>
+      <MemoryRouter initialEntries={[entry]}>
         <Routes>
           <Route path="/onboarding/interests" element={<InterestsOnboardingPage />} />
+          <Route path="/onboarding/languages" element={<div>Languages destination</div>} />
           <Route path="/app" element={<div>App destination</div>} />
         </Routes>
       </MemoryRouter>
@@ -75,6 +76,19 @@ describe('InterestsOnboardingPage', () => {
       expect(vi.mocked(updateInterests).mock.calls[0]?.[0]).toEqual({ topics: [2, 1] })
     })
     expect(await screen.findByText('App destination')).toBeInTheDocument()
+  })
+
+  it('continues first-time setup to content languages after saving interests', async () => {
+    vi.mocked(getTopics).mockResolvedValue([technology, science])
+    vi.mocked(getCurrentInterests).mockResolvedValue({ topics: [] })
+    vi.mocked(updateInterests).mockResolvedValue({ topics: [technology] })
+
+    renderPage('/onboarding/interests?setup=1')
+
+    fireEvent.click(await screen.findByRole('button', { name: /Technology/ }))
+    fireEvent.click(screen.getByRole('button', { name: 'Save and continue' }))
+
+    expect(await screen.findByText('Languages destination')).toBeInTheDocument()
   })
 
   it('shows a real empty state when the backend has no topics', async () => {

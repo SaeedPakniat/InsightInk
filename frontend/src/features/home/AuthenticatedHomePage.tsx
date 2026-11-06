@@ -41,6 +41,9 @@ export function AuthenticatedHomePage() {
           <Link className="button button--secondary" to="/onboarding/interests">
             {t('home.interestsAction')}
           </Link>
+          <Link className="button button--secondary" to="/onboarding/languages">
+            {t('home.languagesAction')}
+          </Link>
           <Button
             variant="ghost"
             disabled={logoutMutation.isPending}

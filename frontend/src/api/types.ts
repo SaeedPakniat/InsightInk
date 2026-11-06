@@ -22,6 +22,21 @@ export type UpdateInterestsPayload = {
   topics: number[]
 }
 
+export type ContentLanguage = {
+  code: string
+  name_en: string
+  name_fa: string
+  native_name: string
+}
+
+export type CurrentContentLanguages = {
+  languages: ContentLanguage[]
+}
+
+export type UpdateContentLanguagesPayload = {
+  languages: string[]
+}
+
 export type SourceType = 'book' | 'article' | 'movie' | 'podcast'
 
 export type IdeaCreator = {

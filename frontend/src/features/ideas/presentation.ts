@@ -9,8 +9,11 @@ export function getInitials(displayName: string) {
     .toUpperCase()
 }
 
+const RTL_LANGUAGE_CODES = new Set(['ar', 'fa', 'he', 'ur'])
+
 export function getContentDirection(language: string): 'rtl' | 'ltr' {
-  return language.toLowerCase().startsWith('fa') ? 'rtl' : 'ltr'
+  const baseLanguage = language.toLowerCase().split('-')[0]
+  return RTL_LANGUAGE_CODES.has(baseLanguage) ? 'rtl' : 'ltr'
 }
 
 export function getReadMinutes(estimatedReadSeconds: number) {

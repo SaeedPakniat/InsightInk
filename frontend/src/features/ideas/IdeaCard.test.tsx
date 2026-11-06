@@ -1,9 +1,11 @@
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { cleanup, render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 import type { Idea } from '../../api/types'
 import { changeUiLanguage } from '../../i18n'
+import { AVAILABLE_LANGUAGES_QUERY_KEY } from '../languages/languageQueries'
 import { IdeaCard } from './IdeaCard'
 
 const persianIdea: Idea = {
@@ -44,10 +46,20 @@ const englishIdea: Idea = {
 }
 
 function renderCard(idea: Idea) {
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  })
+  queryClient.setQueryData(AVAILABLE_LANGUAGES_QUERY_KEY, [
+    { code: 'en', name_en: 'English', name_fa: 'انگلیسی', native_name: 'English' },
+    { code: 'fa', name_en: 'Persian', name_fa: 'فارسی', native_name: 'فارسی' },
+  ])
+
   return render(
-    <MemoryRouter>
-      <IdeaCard idea={idea} />
-    </MemoryRouter>,
+    <QueryClientProvider client={queryClient}>
+      <MemoryRouter>
+        <IdeaCard idea={idea} />
+      </MemoryRouter>
+    </QueryClientProvider>,
   )
 }
 
@@ -71,6 +83,7 @@ describe('IdeaCard', () => {
     expect(content).toHaveAttribute('lang', 'fa')
     expect(content).toHaveAttribute('dir', 'rtl')
     expect(screen.getByText('Podcast')).toBeInTheDocument()
+    expect(screen.getByText('Persian')).toBeInTheDocument()
     expect(screen.getByText('2 min read')).toBeInTheDocument()
     expect(screen.getByText('Science')).toBeInTheDocument()
     expect(screen.getByText('Creativity')).toBeInTheDocument()
@@ -112,6 +125,7 @@ describe('IdeaCard', () => {
     expect(content).toHaveAttribute('lang', 'en')
     expect(content).toHaveAttribute('dir', 'ltr')
     expect(screen.getByText('پادکست')).toBeInTheDocument()
+    expect(screen.getByText('انگلیسی')).toBeInTheDocument()
     expect(screen.getByText('۲ دقیقه مطالعه')).toBeInTheDocument()
     expect(screen.getByText('علم')).toBeInTheDocument()
   })

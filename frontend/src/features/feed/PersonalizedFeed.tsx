@@ -51,9 +51,14 @@ export function PersonalizedFeed() {
         <div className="personalized-feed__state">
           <strong>{t('recommendations.emptyTitle')}</strong>
           <p>{t('recommendations.emptyBody')}</p>
-          <Link className="button button--secondary" to="/onboarding/interests">
-            {t('home.interestsAction')}
-          </Link>
+          <div className="personalized-feed__state-actions">
+            <Link className="button button--secondary" to="/onboarding/interests">
+              {t('home.interestsAction')}
+            </Link>
+            <Link className="button button--secondary" to="/onboarding/languages">
+              {t('home.languagesAction')}
+            </Link>
+          </div>
         </div>
       ) : (
         <>

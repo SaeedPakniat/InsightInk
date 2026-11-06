@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 
 import { updateInterests } from '../../api/interests'
@@ -12,7 +12,9 @@ import { INTERESTS_QUERY_KEY, useInterests, useTopics } from './interests'
 export function InterestsOnboardingPage() {
   const { t } = useTranslation()
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const queryClient = useQueryClient()
+  const isInitialSetup = searchParams.get('setup') === '1'
   const topicsQuery = useTopics()
   const interestsQuery = useInterests()
 
@@ -21,7 +23,7 @@ export function InterestsOnboardingPage() {
     onSuccess: (data) => {
       queryClient.setQueryData(INTERESTS_QUERY_KEY, data)
       void queryClient.invalidateQueries({ queryKey: RECOMMENDATIONS_QUERY_KEY })
-      navigate('/app', { replace: true })
+      navigate(isInitialSetup ? '/onboarding/languages?setup=1' : '/app', { replace: true })
     },
   })
 

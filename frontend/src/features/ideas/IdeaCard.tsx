@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 
 import type { Idea } from '../../api/types'
+import { ContentLanguageBadge } from '../languages/ContentLanguageBadge'
 import { FormatBadge } from './FormatBadge'
 import { formatUiNumber, getContentDirection, getInitials, getReadMinutes } from './presentation'
 
@@ -19,7 +20,10 @@ export function IdeaCard({ idea }: IdeaCardProps) {
   return (
     <article className="idea-card">
       <div className="idea-card__meta">
-        <FormatBadge type={idea.source.type} />
+        <div className="idea-card__meta-primary">
+          <FormatBadge type={idea.source.type} />
+          <ContentLanguageBadge code={idea.language} />
+        </div>
 
         <span className="idea-card__read-time">
           <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">

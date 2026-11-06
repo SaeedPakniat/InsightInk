@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 
 import { ApiError } from '../../../api/client'
 import { ErrorState } from '../../../components/ui/Feedback'
+import { ContentLanguageBadge } from '../../languages/ContentLanguageBadge'
 import { FormatBadge } from '../FormatBadge'
 import { formatUiNumber, getContentDirection, getInitials, getReadMinutes } from '../presentation'
 import { useIdea } from './ideaQuery'
@@ -63,6 +64,7 @@ export function IdeaDetailPage() {
         <header className="idea-detail-page__header">
           <div className="idea-detail-page__meta">
             <FormatBadge type={idea.source.type} />
+            <ContentLanguageBadge code={idea.language} />
             <span className="idea-detail-page__read-time">
               {t('idea.readTime', { minutes: formattedReadMinutes })}
             </span>

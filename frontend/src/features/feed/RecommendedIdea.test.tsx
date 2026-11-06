@@ -1,9 +1,11 @@
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { cleanup, render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 import type { RecommendationItem } from '../../api/types'
 import { changeUiLanguage } from '../../i18n'
+import { AVAILABLE_LANGUAGES_QUERY_KEY } from '../languages/languageQueries'
 import { RecommendedIdea } from './RecommendedIdea'
 
 const baseItem: RecommendationItem = {
@@ -35,6 +37,23 @@ const baseItem: RecommendationItem = {
   reason: 'Because you selected Science.',
 }
 
+function renderRecommended(item: RecommendationItem) {
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  })
+  queryClient.setQueryData(AVAILABLE_LANGUAGES_QUERY_KEY, [
+    { code: 'en', name_en: 'English', name_fa: 'انگلیسی', native_name: 'English' },
+  ])
+
+  return render(
+    <QueryClientProvider client={queryClient}>
+      <MemoryRouter>
+        <RecommendedIdea item={item} />
+      </MemoryRouter>
+    </QueryClientProvider>,
+  )
+}
+
 describe('RecommendedIdea', () => {
   beforeEach(async () => {
     await changeUiLanguage('en')
@@ -45,11 +64,7 @@ describe('RecommendedIdea', () => {
   })
 
   it('renders the transparent recommendation reason without exposing internal score', () => {
-    render(
-      <MemoryRouter>
-        <RecommendedIdea item={baseItem} />
-      </MemoryRouter>,
-    )
+    renderRecommended(baseItem)
 
     const reason = screen
       .getByText('Because you selected Science.')
@@ -61,16 +76,10 @@ describe('RecommendedIdea', () => {
   })
 
   it('renders a Persian backend reason RTL even inside an English UI', () => {
-    render(
-      <MemoryRouter>
-        <RecommendedIdea
-          item={{
-            ...baseItem,
-            reason: 'چون موضوع «علم» را انتخاب کرده‌اید.',
-          }}
-        />
-      </MemoryRouter>,
-    )
+    renderRecommended({
+      ...baseItem,
+      reason: 'چون موضوع «علم» را انتخاب کرده‌اید.',
+    })
 
     const reason = screen
       .getByText('چون موضوع «علم» را انتخاب کرده‌اید.')

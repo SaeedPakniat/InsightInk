@@ -1,25 +1,41 @@
 # Frontend State
 
-- Task: FE-006 — Public Idea Detail.
-- Status: Accepted by user; FE-006 ready for checkpoint commit/push on top of BE-LANG-001.
-- Base commit: `7feec5c5e0a8ef345ccf3eaadcba4ff0a8d62075` (`feat(frontend): add latest explore feed`).
+- Task: FE-006A — Reader Content Languages.
+- Status: Accepted by user; FE-006A ready for checkpoint commit/push.
+- Base commit: `19f578f0c301ff6aafa4764cd249938dbab7c0b8` (`feat(frontend): add public idea detail`).
+- Backend language contract is merged at `9fd181c1e6d97566c6ef2c90f2fe774b6947fd68`.
 - Frontend root: `frontend/`.
-- FE-004A/FE-005 are committed and pushed on `master`.
-- FE-006 backend contract confirmed from actual source/tests: `GET /api/v1/ideas/{id}/` is public via `IdeaViewSet`, returns published Ideas only, and returns 404 for draft/hidden/missing Ideas.
-- Product decision: frontend `/ideas/:ideaId` is a public route outside `RequireAuth`, matching the public API and enabling future shared links without forced login.
-- New API client: `getIdea(ideaId)` -> `/api/v1/ideas/{id}/`; TanStack query key `['idea', id]`, 60-second stale time.
-- IdeaCards now link to detail through both the title and an explicit localized Read full idea action. The existing external Source link remains separate; the card is not wrapped in one giant link, avoiding invalid nested-link markup.
-- Shared Idea-domain pieces extracted from IdeaCard: `FormatBadge`; `getInitials`; `getContentDirection`; `getReadMinutes`; `formatUiNumber`.
-- Detail page renders full, un-clamped body text; localized source-type/read-time/publication-date metadata; active topic chips; InsightInk curator; and a dedicated original Source panel with optional cover and external link.
-- UI language and content language remain separate: Idea title/body receive `idea.language`-derived lang/dir; UI labels remain in the active interface language.
-- Public not-found behavior: malformed route IDs do not call the API; backend 404s become a localized unavailable-Idea state. Other API errors render retryable ErrorState.
-- Loading skeleton is decorative but the page announces localized Loading idea… through a screen-reader status region.
-- Compatibility correction during implementation: optional Source cover layout originally used CSS `:has()`; replaced with explicit `idea-detail-page__source--with-cover` class to avoid raising the Safari/browser baseline.
-- Visual review using real seeded Idea 40 completed at 1440×1100 and 390×844. Persian Idea content remains RTL; source/creator context is readable; no observed horizontal overflow.
-- Desktop bilingual attribution refinement: creator metadata grid now uses `justify-items:start` so an LTR creator name stays clustered with the RTL label/avatar instead of stretching to the opposite side.
-- Live API smoke through Vite: Idea 40 -> HTTP 200, language fa, Source TED Radio Hour, topics science/creativity/society. Missing Idea 999999 -> HTTP 404.
-- Final quality gates: TypeScript PASS; ESLint PASS; Vitest 15 files / 32 tests PASS; production build PASS; Prettier PASS; `npm audit --omit=dev` reports 0 vulnerabilities.
-- FE-006 production bundle: ~141.90 KB JS gzip and ~6.66 KB CSS gzip.
-- Backend implementation files changed: none.
-- Out of scope for FE-006: Spark, Save, comments, related Ideas, creator-profile navigation and share controls.
-- Next logical task after FE-006 acceptance: FE-007 — engagement on Idea Detail/Card (Spark + Save) using the existing authenticated engagement endpoints and optimistic UI, unless Comments is intentionally prioritized separately.
+- BE-LANG-001 exposes 62 active canonical content languages via `GET /api/v1/languages/`; saved reader choices via `GET/PUT /api/v1/me/languages/`.
+- Architecture separation preserved: UI language (fa/en) is independent from reader content-language preferences, Idea.language and Source.language.
+- New frontend types: `ContentLanguage`, `CurrentContentLanguages`, `UpdateContentLanguagesPayload`.
+- New API client: `getLanguages()`, `getCurrentContentLanguages()`, `updateContentLanguages()`.
+- Shared TanStack language queries:
+  - `['languages']` public catalog, stale 1 hour.
+  - `['me','languages']` reader preferences, stale 60 seconds.
+- New protected route: `/onboarding/languages`.
+- Registration flow now uses `/onboarding/interests?setup=1`; first-time interest save continues to `/onboarding/languages?setup=1`, then language save returns to `/app`.
+- Existing-user interest edits without `setup=1` still return directly to `/app`.
+- Reader home now exposes separate Edit interests and Edit languages actions.
+- Language picker UX: backend canonical ordering, selected/available counts, searchable by code + English/Persian/native names, native names marked with language + auto direction, accessible pressed buttons, zero-selection warning, real loading/error/save states.
+- 62-language catalog usability: compact Save languages control is sticky beneath the site header while browsing; avoids forcing a long scroll to submit.
+- Successful language PUT updates `['me','languages']`, invalidates `['recommendations']` and `['feed','latest']`, then returns to `/app`.
+- Discovery behavior itself remains backend-owned: authenticated For You and Latest automatically reflect stored language preferences; frontend does not duplicate filtering rules.
+- Personalized empty state now links to both interests and content languages. Latest empty state links to language settings and explains that current content-language choices can produce no matches.
+- Idea language is now visible on IdeaCard and Idea Detail through a subtle catalog-backed language badge. Shared catalog observers de-duplicate into one TanStack request/cache entry.
+- Content direction expanded from Persian-only to RTL base codes `ar`, `fa`, `he`, `ur`; future BCP-47 suffixes are handled by base-code extraction.
+- Live integration through current Vite proxy using seeded demo reader:
+  - catalog_count = 62
+  - selected = en, zh, es, ar, ja, ko, fa
+  - authenticated first feed languages = ja, ko, zh
+  - recommendation languages = ar, en, es, fa, ja, ko, zh
+  - Turkish in authenticated feed = false
+  - Turkish in recommendations = false
+- Visual review:
+  - full 62-language picker checked at 1440×1100 and 390×844.
+  - real Arabic Idea 48 checked at 390×844; Arabic title/body render RTL and content-language badge resolves correctly.
+  - sticky save bar was tightened from a wide panel to a compact floating control after visual review.
+- Temporary visual-review route/file was removed before final validation.
+- Final quality gates: TypeScript PASS; ESLint PASS; Vitest 19 files / 51 tests PASS; production build PASS; Prettier PASS; `npm audit --omit=dev` reports 0 vulnerabilities.
+- FE-006A production bundle: ~143.94 KB JS gzip and ~7.17 KB CSS gzip.
+- Backend implementation files changed by FE-006A: none.
+- Next logical task after acceptance: FE-007 — Spark + Save engagement with optimistic UI and recommendation-cache invalidation.

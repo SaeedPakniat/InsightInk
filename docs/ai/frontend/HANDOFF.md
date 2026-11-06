@@ -1,17 +1,22 @@
 # Frontend Handoff
 
-- Task ID: FE-006 — Public Idea Detail
-- Base commit: `7feec5c5e0a8ef345ccf3eaadcba4ff0a8d62075`
-- Result: accepted by user; ready for checkpoint commit/push on top of BE-LANG-001.
-- Route: public `/ideas/:ideaId`; API: public published-only `GET /api/v1/ideas/{id}/`.
-- Files changed: Idea detail API/query/page/tests, shared FormatBadge/presentation helpers, IdeaCard links/refactor/tests, router, bilingual strings, detail/card CSS, FE-006 task/state docs. No backend implementation files modified.
-- IdeaCard navigation uses title link + explicit Read full idea link; Source external URL remains a separate link, avoiding nested anchors.
-- Detail content: full body, format/read time/published date, topics, curator, source context, optional cover, external source link.
-- Error behavior: malformed ID -> local not-found without fetch; backend 404 -> unavailable-Idea state; other fetch error -> retry.
-- Accessibility: semantic article, independent content lang/dir, status-announced skeleton, keyboard-native links.
-- Compatibility: removed CSS `:has()` in favor of explicit optional-cover class.
-- Live smoke: `/api/v1/ideas/40/` HTTP 200; missing 999999 HTTP 404.
-- Visual review: real Persian Idea 40 checked at desktop 1440×1100 and mobile 390×844. Creator attribution alignment was tightened after the first desktop pass.
-- Final checks: typecheck PASS; lint PASS; 15 test files / 32 tests PASS; build PASS; formatting PASS; runtime npm audit 0 vulnerabilities. Bundle ~141.90 KB JS gzip / ~6.66 KB CSS gzip.
-- Do not commit/push until user accepts the reading page.
-- Next likely task: FE-007 Spark + Save integration with optimistic UI.
+- Task ID: FE-006A — Reader Content Languages
+- Base commit: `19f578f0c301ff6aafa4764cd249938dbab7c0b8`
+- Backend dependency: BE-LANG-001 at `9fd181c1e6d97566c6ef2c90f2fe774b6947fd68`
+- Result: accepted by user; ready for checkpoint commit/push.
+- Routes:
+  - first-time setup: register -> `/onboarding/interests?setup=1` -> `/onboarding/languages?setup=1` -> `/app`
+  - existing settings: reader-home Edit languages -> `/onboarding/languages`
+- API used exactly:
+  - `GET /api/v1/languages/`
+  - `GET /api/v1/me/languages/`
+  - `PUT /api/v1/me/languages/` with `{languages:string[]}`
+- Picker: 62-language searchable catalog, canonical order, selected count, native names, codes, pressed-state buttons, empty-selection warning, sticky compact Save action.
+- Cache: save updates current-language cache and invalidates personalized recommendations + Latest feed.
+- Content presentation: Idea cards/details show catalog-backed content language; Arabic/Persian/Hebrew/Urdu content gets RTL direction via base language code.
+- Live smoke: demo reader selected `en, zh, es, ar, ja, ko, fa`; authenticated feed/recommendations contain only selected languages; Turkish excluded.
+- Visual review: desktop/mobile picker plus real Arabic Idea detail passed; no observed horizontal overflow.
+- Final checks: typecheck PASS; lint PASS; 19 test files / 51 tests PASS; production build PASS; formatting PASS; runtime npm audit 0 vulnerabilities. Bundle ~143.94 KB JS gzip / ~7.17 KB CSS gzip.
+- No backend implementation changes.
+- Do not commit/push until user accepts the real protected language-preference screen.
+- Next likely task: FE-007 Spark + Save.

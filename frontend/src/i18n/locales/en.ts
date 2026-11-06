@@ -60,8 +60,9 @@ export const en = {
     home: {
       eyebrow: 'InsightInk · Reader space',
       greeting: 'Hello {{name}}',
-      body: 'Your interests and reading signals shape the ideas ranked for you here.',
+      body: 'Your interests, readable languages and reading signals shape the ideas ranked for you here.',
       interestsAction: 'Edit interests',
+      languagesAction: 'Edit languages',
     },
     onboarding: {
       interests: {
@@ -80,6 +81,24 @@ export const en = {
           'There is nothing to choose from right now. You can return here when topics become available.',
         backToApp: 'Back to app',
       },
+      languages: {
+        eyebrow: 'Choose what you can read',
+        title: 'Which content languages do you want?',
+        body: 'These choices filter discovery, recommendations and Latest. They are separate from the language of the InsightInk interface.',
+        selectedCount: '{{count}} selected',
+        availableCount: '{{count}} available languages',
+        searchLabel: 'Search languages',
+        searchPlaceholder: 'English, Español, العربية, 日本語…',
+        emptyWarning:
+          'No content languages are selected. Your personalized and Latest discovery feeds will be empty until you choose at least one.',
+        noResultsTitle: 'No matching language',
+        noResultsBody: 'Try another language name, native name or language code.',
+        continue: 'Save languages',
+        saving: 'Saving…',
+        saveError: 'Your content languages could not be saved. Try again.',
+        loadErrorTitle: 'Languages could not be loaded',
+        loadErrorBody: 'InsightInk could not load the language catalog or your saved choices.',
+      },
     },
     idea: {
       format: {
@@ -94,6 +113,7 @@ export const en = {
       openSource: 'Open source: {{title}}',
       verifiedCreator: 'Verified creator',
       topicsLabel: 'Idea topics',
+      contentLanguage: 'Content language: {{language}}',
       readFull: 'Read full idea',
       detailEyebrow: 'Idea',
       detailNavigation: 'Idea navigation',
@@ -124,8 +144,9 @@ export const en = {
       loadMoreHint: 'Load another cursor page when you want to keep exploring.',
       loadErrorTitle: 'Ideas could not be loaded',
       loadErrorBody: 'The latest ideas are unavailable right now.',
-      emptyTitle: 'No published ideas yet',
-      emptyBody: 'Published ideas will appear here when they become available.',
+      emptyTitle: 'No ideas match your content languages',
+      emptyBody:
+        'Adjust your readable languages or return later when more matching ideas are published.',
       endTitle: 'You reached the end of the current collection.',
       endBody: 'There are no more published ideas after this point.',
     },
@@ -138,7 +159,8 @@ export const en = {
       loadErrorTitle: 'Your recommendations could not be loaded',
       loadErrorBody: 'InsightInk could not rank your personalized ideas right now.',
       emptyTitle: 'Your personalized set is empty',
-      emptyBody: 'Choose a few interests to give InsightInk a starting signal.',
+      emptyBody:
+        'Check your interests and content languages to give InsightInk enough signals to work with.',
       endTitle: 'That is your current personalized set.',
       endBody: 'InsightInk keeps this list finite instead of pretending the scroll has no end.',
       adjustInterests: 'Adjust interests',
