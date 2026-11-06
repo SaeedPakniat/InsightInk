@@ -7,7 +7,12 @@ from rest_framework.views import APIView
 from content.models import Idea
 
 from .models import Comment, SavedIdea, Spark
-from .serializers import CommentSerializer
+from .selectors import viewer_engagement_state
+from .serializers import (
+    CommentSerializer,
+    ViewerEngagementQuerySerializer,
+    ViewerEngagementResponseSerializer,
+)
 
 
 def get_public_idea(idea_id):
@@ -95,3 +100,20 @@ class CommentDetailView(APIView):
             comment.save()
 
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class ViewerEngagementStateView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        query_serializer = ViewerEngagementQuerySerializer(
+            data=request.query_params
+        )
+        query_serializer.is_valid(raise_exception=True)
+        items = viewer_engagement_state(
+            user=request.user,
+            idea_ids=query_serializer.validated_data["idea_ids"],
+        )
+        return Response(
+            ViewerEngagementResponseSerializer({"items": items}).data
+        )

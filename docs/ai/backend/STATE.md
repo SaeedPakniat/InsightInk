@@ -1,35 +1,28 @@
 # Backend State
 
-- BE-LANG-001 status: Complete; accepted by Backend Lead pending bounded checkpoint commit/push.
-- Exact base SHA: `7feec5c5e0a8ef345ccf3eaadcba4ff0a8d62075`.
-- Frontend boundary: FE-006 has pre-existing uncommitted work under `frontend/**` and `docs/ai/frontend/**`; BE-LANG-001 does not modify, stage, reset, stash, format, or discard those paths.
-- Core separation remains explicit: `preferred_ui_language` is UI-only (fa/en); reader content-language preferences are a separate many-to-many relation; `Idea.language` is the Idea text language; `Source.language` is the original work/source language. None is inferred from another.
-- Canonical catalog: new `content.ContentLanguage(code PK, name_en, name_fa, native_name, is_active, display_order)`. Code length is 35 so future BCP-47 tags such as `zh-Hans`/`zh-Hant` fit without redesign. Initial Chinese support intentionally uses `zh`.
-- Initial supported catalog: 62 active languages in deterministic order: en, zh, hi, es, ar, fr, bn, pt, ru, ur, id, de, ja, sw, mr, te, tr, ta, vi, ko, fa, it, th, pl, uk, nl, ms, fil, he, el, cs, ro, hu, sv, da, no, fi, pa, gu, kn, ml, ne, si, my, km, lo, am, so, ha, yo, ig, zu, af, bg, sr, hr, sk, sl, lt, lv, et, ca.
-- Public catalog endpoint: anonymous/read-only `GET /api/v1/languages/`; only active languages; deterministic `display_order, code`; public fields are `code, name_en, name_fa, native_name`.
-- Reader preferences: new `accounts.UserContentLanguage(user, language, created_at)` with unique `(user, language)` and FK to canonical ContentLanguage. It is independent from User.preferred_ui_language.
-- Preference API: authenticated `GET /api/v1/me/languages/` and transactional/idempotent `PUT /api/v1/me/languages/` with replacement semantics. PUT accepts `{"languages":["en","fa","ja"]}`; duplicates are normalized away; unknown or inactive codes return 400; users can only alter their own rows. Empty list is supported and means no default discovery eligibility until changed.
-- Backward-compatible defaults: migration assigns en+fa to every existing User. New Users synchronously receive en+fa through the accounts post-save hook. Real DB probe confirmed a newly created User receives exactly `['en','fa']`; all pre-existing non-demo Users include both.
-- Idea/Source language representation: public JSON remains a stable string code; no nested language object is introduced. Both fields are widened to max_length=35 and have active-catalog model validation. Creator Idea API performs active-catalog validation. Source and Idea language remain independent.
-- Language indexing: `Idea.language` already had `db_index=True` and is the discovery-filtered field, so no duplicate index was added. `Source.language` is metadata and is not used in current discovery predicates, so no speculative index was added.
-- Shared filter syntax: canonical explicit query is `?languages=en,fa,ko,ja`. Codes are comma-separated, deduplicated, and validated against the active catalog. Search retains legacy singular `?language=en` as a compatibility alias. Supplying both on Search returns 400.
-- Filter precedence: explicit `?languages=` overrides stored reader preferences for that request; otherwise authenticated discovery uses stored content languages; anonymous discovery uses all active catalog languages. Default/non-explicit filtering is compiled as SQL subqueries rather than loading all candidates into Python.
-- Feed: authenticated `GET /api/v1/feed/` defaults to stored languages; anonymous Feed includes all active supported languages; explicit languages override; publication filtering/order/cursor pagination remain unchanged. Cursor tests prove excluded languages do not leak across pages and pages do not overlap.
-- Public Idea list/detail: authenticated `/api/v1/ideas/` list is discovery-filtered; anonymous list sees all active supported languages. Direct `/api/v1/ideas/<id>/` retrieval is intentionally NOT preference-filtered and remains public when the Idea is public.
-- Search: authenticated Search defaults to stored content languages; anonymous Search uses all active languages; explicit languages override. Text normalization/search logic remains unchanged and works across English, Persian, Spanish, Arabic, Japanese, Korean, Chinese test content.
-- Topic browsing: `GET /api/v1/topics/<slug>/ideas/` applies the same discovery-language eligibility and explicit override.
-- Recommendations: language is an eligibility filter before scoring, not a ranking weight. Candidate queryset filters by eligible codes before the existing interest/save/Spark/follow/popularity/freshness scoring. Existing score weights are unchanged. Explicit languages may override for the request.
-- Related Ideas: authenticated related discovery uses stored/explicit eligible languages for candidates; anonymous related discovery uses all active catalog languages. The source Idea itself is retrieved by public visibility only, so an excluded-language direct source remains accessible.
-- Library/history: unchanged by design. Saved published Ideas remain visible even if their language is removed from discovery preferences. Sparks/comments/history rows are not deleted or hidden by preference changes.
-- Creator/public profile APIs: no language authorization was added; this milestone only changes the explicitly documented discovery surfaces plus the general public Idea list.
-- Migrations: `content.0002_contentlanguage_alter_idea_language_and_more`; `content.0003_seed_content_languages`; `accounts.0005_usercontentlanguage`; `accounts.0006_seed_default_content_languages`. All applied successfully to PostgreSQL; migration drift is clean.
-- Demo strategy: full 62-language catalog is migration-backed; content is representative rather than synthetic in every language. Existing 20 English + 20 Persian Ideas remain; added 4 each Spanish/Arabic/Korean/Japanese/Chinese/Hindi and 3 Turkish Ideas. Total deterministic published demo Ideas = 67.
-- Demo Reader `demo-reader@example.com` exact selected languages after seed: en, fa, es, ar, ko, ja, zh (API returns catalog display order: en, zh, es, ar, ja, ko, fa). Turkish and Russian are not selected.
-- Demo history proof: one Turkish Idea (`Fiyat yalnızca bir sayı değil, bir sinyaldir`) is deterministically saved, so Library/direct-access behavior can be verified while Turkish remains excluded from default discovery.
-- Seed idempotency real DB: first multilingual expansion created 27 Ideas, added 5 preference rows beyond migrated en/fa, and added 1 Turkish Save; second run created 0 Ideas, 0 language preferences, and 0 Saves. Existing 40 Ideas were updated deterministically.
-- Demo content counts by language: en=20, fa=20, es=4, ar=4, ko=4, ja=4, zh=4, hi=4, tr=3. No poor-quality filler was created for the remaining catalog languages.
-- Real API smoke: /languages/ 200 with 62; /me/languages/ 200 with demo selection; authenticated Feed 200 with only selected languages and next cursor; anonymous Feed 200 including Turkish/Hindi; explicit Feed languages=tr returns only 3 Turkish items; unknown code returns 400.
-- Real Search smoke: Turkish query with no override returns 0 for demo Reader; same query with `languages=tr` returns Turkish. Recommendations return 20 items from selected languages only. Topic default excludes Turkish; topic override includes Turkish. Authenticated Related excludes Turkish; anonymous Related includes it.
-- Real access/history smoke: Library still contains the saved Turkish Idea; direct Turkish Idea detail returns 200 with Idea language `tr` while its Source language remains `en`.
-- Validation: 97 focused multilingual tests passed before full suite. Full backend suite passes 298 tests. `manage.py check`, `makemigrations --check --dry-run`, `python -m pip check`, and `git diff --check` pass.
-- Backend/API blocker: none identified. Frontend can integrate the new `/languages/`, `/me/languages/`, and canonical `?languages=` contract without changing UI-language semantics.
+- BE-ENG-STATE-001 status: Complete; accepted by Backend Lead pending bounded checkpoint commit/push.
+- Exact base SHA: `d145b2ac8795f21c773233d38fe8816138ada541`.
+- Repository preflight: branch `master`; HEAD == origin/master at task start; working tree was clean.
+- Frontend boundary: no `frontend/**` or `docs/ai/frontend/**` files are modified by this backend task.
+- New endpoint: authenticated `GET /api/v1/me/engagement/?idea_ids=40,39,38`.
+- Purpose: provide batched viewer-specific Spark/Save state for Feed, Idea Detail, For You, Latest, future Search, and Related Ideas without embedding private state into public Idea serializers.
+- Authentication: Django session/DRF authentication; anonymous request receives the existing project-standard 403. GET requires no CSRF token.
+- Query parameter: canonical comma-separated positive integer IDs in `idea_ids`; parameter is required and may not be blank.
+- Batch maximum: 100 comma-separated ID tokens per request.
+- Duplicate handling: IDs are deduplicated while preserving first-occurrence request order.
+- Invalid input: malformed, zero, negative, decimal/fractional IDs return 400 with `idea_ids must be a comma-separated list of positive integers.`; >100 IDs returns 400 with `At most 100 Idea IDs may be requested.`.
+- Missing/empty input: missing returns 400 `idea_ids query parameter is required.`; empty returns 400 `idea_ids query parameter must not be empty.`.
+- Visibility/privacy: only `PUBLISHED` Ideas are returned. Draft, hidden, and nonexistent IDs are omitted identically, revealing no lifecycle distinction.
+- False-state semantics: every requested published Idea is returned even when neither interaction exists, with `sparked=false, saved=false`.
+- Response shape: `{"items":[{"idea_id":40,"sparked":true,"saved":false}, ...]}`; no Idea body, timestamps, counts, comments, creator state, recommendation score, or other payload is included.
+- Ordering guarantee: response items follow first occurrence order of requested normalized IDs, excluding nonpublic/nonexistent IDs.
+- Query strategy: one `Idea` queryset filtered by requested IDs + published status, with two correlated SQL `Exists` annotations scoped to the current user for `Spark` and `SavedIdea`. Response order is reconstructed from the normalized request list. Query count is exactly 1 for a one-ID request and exactly 1 for a 100-ID batch in regression tests.
+- Existing mutations remain unchanged: `PUT/DELETE /api/v1/ideas/<id>/spark/` and `PUT/DELETE /api/v1/ideas/<id>/save/` remain authenticated, CSRF-protected for unsafe methods, published-only, idempotent, explicit PUT/DELETE operations returning HTTP 204.
+- Public Idea representation remains unchanged; no viewer-specific fields were added to `IdeaSerializer`.
+- Schema/migrations: none required.
+- Focused regression: engagement + Library + recommendations suite passes 65 tests.
+- Full backend suite: 310/310 tests pass.
+- Quality: `manage.py check` pass; `makemigrations --check --dry-run` reports no changes; `python -m pip check` pass; `git diff --check` pass.
+- Real seeded smoke: demo Reader has 6 Sparks and 6 Saves. Batched request for real IDs 1,3,35,2 returned respectively spark-only, save-only, both, and neither states with HTTP 200 and exactly 1 SQL query.
+- Seed/demo data: unchanged by BE-ENG-STATE-001.
+- Frontend blocker: none identified. FE-007 can consume the new batch viewer-state endpoint while keeping existing optimistic PUT/DELETE mutation contracts.

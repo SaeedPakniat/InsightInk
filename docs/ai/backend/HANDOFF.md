@@ -1,37 +1,30 @@
 # Backend Handoff
 
-- Task ID: BE-LANG-001 — Global Content Language Catalog + Reader Language Preferences + Discovery Filtering
-- Exact base SHA: `7feec5c5e0a8ef345ccf3eaadcba4ff0a8d62075`.
+- Task ID: BE-ENG-STATE-001 — Batched Viewer Spark + Save State
+- Exact base SHA: `d145b2ac8795f21c773233d38fe8816138ada541`.
 - Result: Complete and accepted for checkpoint.
-- Full supported catalog (62): en English/انگلیسی/English; zh Chinese/چینی/中文; hi Hindi/هندی/हिन्दी; es Spanish/اسپانیایی/Español; ar Arabic/عربی/العربية; fr French/فرانسوی/Français; bn Bengali/بنگالی/বাংলা; pt Portuguese/پرتغالی/Português; ru Russian/روسی/Русский; ur Urdu/اردو/اردو; id Indonesian/اندونزیایی/Bahasa Indonesia; de German/آلمانی/Deutsch; ja Japanese/ژاپنی/日本語; sw Swahili/سواحیلی/Kiswahili; mr Marathi/مراتی/मराठी; te Telugu/تلوگو/తెలుగు; tr Turkish/ترکی/Türkçe; ta Tamil/تامیلی/தமிழ்; vi Vietnamese/ویتنامی/Tiếng Việt; ko Korean/کره‌ای/한국어; fa Persian/فارسی/فارسی; it Italian/ایتالیایی/Italiano; th Thai/تایلندی/ไทย; pl Polish/لهستانی/Polski; uk Ukrainian/اوکراینی/Українська; nl Dutch/هلندی/Nederlands; ms Malay/مالایی/Bahasa Melayu; fil Filipino/فیلیپینی/Filipino; he Hebrew/عبری/עברית; el Greek/یونانی/Ελληνικά; cs Czech/چکی/Čeština; ro Romanian/رومانیایی/Română; hu Hungarian/مجاری/Magyar; sv Swedish/سوئدی/Svenska; da Danish/دانمارکی/Dansk; no Norwegian/نروژی/Norsk; fi Finnish/فنلاندی/Suomi; pa Punjabi/پنجابی/ਪੰਜਾਬੀ; gu Gujarati/گجراتی/ગુજરાતી; kn Kannada/کانّادا/ಕನ್ನಡ; ml Malayalam/مالایالم/മലയാളം; ne Nepali/نپالی/नेपाली; si Sinhala/سینهالی/සිංහල; my Burmese/برمه‌ای/မြန်မာဘာသာ; km Khmer/خِمِر/ខ្មែរ; lo Lao/لائوسی/ລາວ; am Amharic/امهری/አማርኛ; so Somali/سومالیایی/Soomaali; ha Hausa/هوسا/Hausa; yo Yoruba/یوروبا/Yorùbá; ig Igbo/ایگبو/Igbo; zu Zulu/زولو/isiZulu; af Afrikaans/آفریکانس/Afrikaans; bg Bulgarian/بلغاری/Български; sr Serbian/صربی/Српски; hr Croatian/کرواتی/Hrvatski; sk Slovak/اسلواکی/Slovenčina; sl Slovenian/اسلوونیایی/Slovenščina; lt Lithuanian/لیتوانیایی/Lietuvių; lv Latvian/لتونیایی/Latviešu; et Estonian/استونیایی/Eesti; ca Catalan/کاتالان/Català.
-- Active language count: 62.
-- Model/schema: `ContentLanguage` uses stable string PK `code` max 35, bilingual display names, native name, active flag, display order. `UserContentLanguage` joins User to ContentLanguage with unique(user, language). Idea/Source language remain string fields max 35 with active-catalog validators; Idea.language keeps its existing DB index.
-- Migrations: `content.0002_contentlanguage_alter_idea_language_and_more`; `content.0003_seed_content_languages`; `accounts.0005_usercontentlanguage`; `accounts.0006_seed_default_content_languages`.
-- Catalog API: `GET /api/v1/languages/` anonymous/read-only, active only, ordered, fields `code,name_en,name_fa,native_name`.
-- Preference API GET: `GET /api/v1/me/languages/` -> `{"languages":[{"code":"en","name_en":"English","name_fa":"انگلیسی","native_name":"English"}, ...]}`.
-- Preference API PUT: `PUT /api/v1/me/languages/` body `{"languages":["en","fa","ko","ja"]}`; authenticated, transactional replacement, duplicate normalization, unknown/inactive rejection, own-user scope, idempotent.
-- Validation examples: `?languages=en,abcxyz` -> 400 `{"languages":["Unknown language code(s): abcxyz."]}`; inactive codes similarly return `Inactive language code(s): <code>.`; Creator Idea language unknown/inactive -> 400 on `language`.
-- Existing-user default: migration adds en+fa without selecting the whole catalog. Real DB verification found no existing non-demo User missing en/fa.
-- New-user default: account post-save hook adds en+fa. Real temporary User probe returned exactly en+fa.
-- Idea validation: CreatorIdeaSerializer + model validator require active ContentLanguage; public field remains a string code.
-- Source validation: model validator requires active ContentLanguage; Source language is original-work language and may differ from Idea language.
-- Feed authenticated: stored reader language preferences filter the SQL queryset by default; explicit `?languages=` overrides; cursor behavior/order/publication rules preserved.
-- Feed anonymous: all active supported languages are eligible.
-- Canonical explicit syntax: comma-separated `?languages=en,fa,ko,ja`; duplicate codes normalize; unknown/inactive codes return 400. Search also retains legacy single `?language=en` alias for compatibility.
-- Search: authenticated default uses stored content languages; anonymous uses all active; explicit overrides. Search text normalization remains unchanged.
-- Recommendations: language eligibility is applied to candidate queryset before scoring. Existing interest/save/Spark/follow/popularity/freshness score math is unchanged.
-- Topic browsing: same default/explicit language eligibility.
-- Related Ideas: authenticated candidate discovery respects languages; anonymous sees all active; explicit override supported; source Idea retrieval itself is public-visibility based.
-- Library: deliberately unaffected by preference filtering. Previously saved excluded-language public Ideas remain visible.
-- Direct Idea detail: deliberately unaffected by preference filtering; public excluded-language URLs remain 200.
-- Demo Reader selected languages: en, fa, es, ar, ko, ja, zh. Turkish/russian not selected.
-- Demo content by language: en 20; fa 20; es 4; ar 4; ko 4; ja 4; zh 4; hi 4; tr 3; total 67.
-- Seed idempotency: first expansion run added 27 new multilingual Ideas, 5 additional language rows beyond en/fa, and 1 Turkish Save; second run added zero. Runtime remains offline/deterministic.
-- Focused tests: 97/97 language/seed/explore/recommendation/library tests passed.
-- Full backend tests: 298/298 passed.
+- Endpoint: `GET /api/v1/me/engagement/?idea_ids=<comma-separated positive IDs>`.
+- Authentication: authenticated viewer only; anonymous -> project-standard 403. GET does not require CSRF.
+- Maximum IDs: 100 request tokens.
+- Duplicate behavior: normalized to one ID, preserving first occurrence order.
+- Missing parameter: 400 `{"idea_ids":["idea_ids query parameter is required."]}`.
+- Empty parameter: 400 `{"idea_ids":["idea_ids query parameter must not be empty."]}`.
+- Malformed IDs: 400 `{"idea_ids":["idea_ids must be a comma-separated list of positive integers."]}`.
+- Over-limit: 400 `{"idea_ids":["At most 100 Idea IDs may be requested."]}`.
+- Visibility: only published Ideas produce response items; draft/hidden/nonexistent IDs are omitted without distinguishing why.
+- Successful response: `{"items":[{"idea_id":40,"sparked":true,"saved":false}]}`.
+- False state: a requested published Idea with no Spark/Save still returns `sparked:false, saved:false`.
+- Ordering: first-occurrence request order after deduplication, with omitted nonpublic IDs removed.
+- Query strategy: one published-Idea DB query with two current-user `Exists` annotations for Spark and SavedIdea. Regression test proves 1 SQL query for 1 ID and 1 SQL query for 100 IDs.
+- Existing mutation endpoints unchanged: `PUT/DELETE /api/v1/ideas/<idea_id>/spark/`; `PUT/DELETE /api/v1/ideas/<idea_id>/save/`; still explicit, idempotent, published-only, auth + CSRF for unsafe requests, and 204.
+- Public Idea serializer unchanged.
+- Schema migration: none.
+- Files changed: `backend/engagement/selectors.py`, `backend/engagement/serializers.py`, `backend/engagement/views.py`, `backend/engagement/urls.py`, `backend/engagement/tests.py`, `docs/ai/backend/STATE.md`, `docs/ai/backend/HANDOFF.md`.
+- Focused tests: 65/65 engagement + Library + recommendation tests passed.
+- Full backend suite: 310/310 passed.
 - `manage.py check`: PASS.
 - `makemigrations --check --dry-run`: no changes.
 - `pip check`: no broken requirements.
 - `git diff --check`: PASS.
-- Real smoke: catalog 200/62; demo preferences 200/7; auth Feed excludes tr/ru; anonymous Feed includes tr; explicit tr Feed returns 3; invalid code 400; default Turkish Search 0; explicit Turkish Search returns result; Recommendations only selected languages; Topic/Related filters behave correctly; Library retains Turkish Save; direct Turkish Idea 200.
-- Frontend blocker/API contract issue: none. FE-006 working tree must remain untouched; frontend can resume by consuming catalog/preferences and using `?languages=`.
+- Real seeded smoke: demo Reader count = 6 Sparks / 6 Saves. Request IDs `1,3,35,2` returned `true/false`, `false/true`, `true/true`, `false/false` respectively; HTTP 200; query count = 1.
+- Frontend blocker: none. FE-007 can now hydrate Spark/Save pressed state in one request for a Feed batch.

@@ -1,11 +1,18 @@
 from django.urls import path
 
-from .views import CommentDetailView, IdeaCommentsView, SaveView, SparkView
+from .views import (
+    CommentDetailView,
+    IdeaCommentsView,
+    SaveView,
+    SparkView,
+    ViewerEngagementStateView,
+)
 
 
 app_name = "engagement"
 
 urlpatterns = [
+    path("me/engagement/", ViewerEngagementStateView.as_view(), name="me-engagement"),
     path("ideas/<int:idea_id>/spark/", SparkView.as_view(), name="idea-spark"),
     path("ideas/<int:idea_id>/save/", SaveView.as_view(), name="idea-save"),
     path(
