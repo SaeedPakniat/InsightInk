@@ -499,6 +499,182 @@ IDEAS = [
         "body": "موضوع‌هایی مثل آینده فناوری، سلامت یا خلاقیت معمولاً با یک پاسخ کوتاه تمام نمی‌شوند. کنار هم گذاشتن دیدگاه‌های مختلف کمک می‌کند هم نقاط مشترک را ببینیم و هم اختلاف‌ها را حفظ کنیم. جمع‌بندی خوب یعنی تفاوت‌ها را پاک نکنیم؛ مشخص کنیم هر دیدگاه کدام بخش مسئله را بهتر روشن می‌کند.",
         "seconds": 80, "topics": ["creativity", "science", "society"], "published_at": "2026-10-29T08:00:00+00:00",
     },
+
+]
+
+IDEAS += [
+    {
+        "creator": "demo-curator-persian@example.com", "source": "book-meditations", "language": "es",
+        "title": "La calma empieza por distinguir lo controlable",
+        "body": "Una parte importante de la serenidad consiste en separar lo que podemos decidir de lo que solo podemos observar. Eso no elimina la responsabilidad ni la planificación; evita gastar toda la energía en resultados que dependen de otras personas, del azar o del pasado. La pregunta práctica es sencilla: ¿qué acción concreta sí depende de mí ahora?",
+        "seconds": 75, "topics": ["philosophy", "psychology"], "published_at": "2026-10-30T08:00:00+00:00",
+    },
+    {
+        "creator": "demo-curator-lens@example.com", "source": "movie-inside-out", "language": "es",
+        "title": "Una emoción incómoda también puede orientar",
+        "body": "Sentirse mal no significa automáticamente que algo esté funcionando mal. El miedo puede señalar riesgo, la tristeza una pérdida importante y el enfado un límite cruzado. Regular una emoción no exige borrarla: primero conviene entender qué información trae y después decidir cómo actuar.",
+        "seconds": 70, "topics": ["psychology", "health", "cinema"], "published_at": "2026-10-30T10:00:00+00:00",
+    },
+    {
+        "creator": "demo-curator-systems@example.com", "source": "article-attention", "language": "es",
+        "title": "Cambiar la arquitectura puede cambiar el límite",
+        "body": "A veces un salto técnico no viene de acelerar el mismo mecanismo, sino de cuestionar si ese mecanismo sigue siendo necesario. Cambiar la estructura puede abrir paralelismo, reducir dependencias y volver simple una tarea que antes parecía inevitablemente secuencial. Antes de optimizar un cuello de botella, vale la pena preguntar si la arquitectura puede eliminarlo.",
+        "seconds": 80, "topics": ["artificial-intelligence", "technology", "science"], "published_at": "2026-10-30T12:00:00+00:00",
+    },
+    {
+        "creator": "demo-curator-systems@example.com", "source": "podcast-planet-money", "language": "es",
+        "title": "Un precio resume muchas decisiones invisibles",
+        "body": "El precio que vemos es la salida visible de un sistema mucho mayor. Puede reflejar escasez, expectativas, poder de negociación, regulación y alternativas disponibles. Mirarlo como una señal, y no solo como una cifra, ayuda a entender por qué el mismo producto cambia de comportamiento entre momentos y mercados.",
+        "seconds": 75, "topics": ["economics", "business", "society"], "published_at": "2026-10-30T14:00:00+00:00",
+    },
+    {
+        "creator": "demo-curator-persian@example.com", "source": "book-republic", "language": "ar",
+        "title": "العدالة تحتاج إلى النظر في الحوافز لا النوايا فقط",
+        "body": "قد تكون النوايا حسنة، لكن النظام يمكن أن يكافئ سلوكاً يقود إلى نتيجة مختلفة تماماً. لذلك من المفيد أن نسأل: من يملك القرار، وما الذي يحصل على المكافأة، وما السلوك الذي يصبح عادياً مع الوقت؟ فهم العدالة يتطلب النظر إلى البنية كما يتطلب النظر إلى الأشخاص.",
+        "seconds": 80, "topics": ["philosophy", "society"], "published_at": "2026-10-31T08:00:00+00:00",
+    },
+    {
+        "creator": "demo-curator-lens@example.com", "source": "movie-soul", "language": "ar",
+        "title": "المعنى لا يختصر في إنجاز واحد",
+        "body": "يمكن لهدف مهني كبير أن يمنح الحياة اتجاهاً، لكنه يصبح هشاً عندما يتحول إلى الدليل الوحيد على أن أيامنا ذات قيمة. المعنى قد يظهر أيضاً في الانتباه للتفاصيل، والعلاقات، وممارسة مهارة نحبها. الأفضل أن يكون الطموح بوصلة، لا ميزاناً وحيداً لكل لحظة.",
+        "seconds": 75, "topics": ["psychology", "health", "cinema"], "published_at": "2026-10-31T10:00:00+00:00",
+    },
+    {
+        "creator": "demo-curator-curious@example.com", "source": "podcast-99pi", "language": "ar",
+        "title": "التصميم الجيد يختفي داخل العادة",
+        "body": "عندما تعمل اللافتة أو الواجهة أو الطريق جيداً، نتوقف غالباً عن ملاحظتها. لكن هذا الاختفاء لا يعني أن التصميم محايد؛ فكل ترتيب يخدم أشخاصاً ويفترض طريقة معينة للاستخدام. إعادة النظر في الأشياء اليومية تمرين مفيد لفهم الأنظمة والقرارات المختبئة وراءها.",
+        "seconds": 80, "topics": ["creativity", "technology", "society"], "published_at": "2026-10-31T12:00:00+00:00",
+    },
+    {
+        "creator": "demo-curator-lens@example.com", "source": "podcast-hidden-brain", "language": "ar",
+        "title": "السياق يفسر السلوك أكثر مما نظن",
+        "body": "نميل إلى تفسير أفعالنا بقصة منطقية واضحة، بينما تشارك العادة والبيئة والحالة العاطفية ووجود الآخرين في تشكيل القرار. إذا تكرر سلوك ما، فقد يكون فحص الظروف التي تسبقه أكثر فائدة من الاكتفاء بسؤال: لماذا فعلت ذلك؟",
+        "seconds": 70, "topics": ["psychology", "science"], "published_at": "2026-10-31T14:00:00+00:00",
+    },
+    {
+        "creator": "demo-curator-lens@example.com", "source": "movie-wall-e", "language": "ko",
+        "title": "편리함은 행동의 모양도 바꾼다",
+        "body": "기술이 불필요한 마찰을 줄여 주는 것은 큰 장점이다. 하지만 움직임, 선택, 수리, 기억 같은 과정을 모두 대신해 주면 우리가 자연스럽게 연습하던 능력도 줄어들 수 있다. 중요한 질문은 편리함을 거부할지 여부가 아니라, 어떤 노력을 없애도 괜찮은지 의식적으로 선택하는 것이다.",
+        "seconds": 85, "topics": ["technology", "society", "health"], "published_at": "2026-11-01T08:00:00+00:00",
+    },
+    {
+        "creator": "demo-curator-systems@example.com", "source": "article-attention", "language": "ko",
+        "title": "낡은 병목을 최적화하기 전에 구조를 의심하라",
+        "body": "오래된 구조에서 생긴 병목은 더 빠르게 만드는 것만이 답이 아닐 수 있다. 문제를 다른 방식으로 표현하면 이전에는 필수처럼 보였던 순서나 의존성이 사라질 수 있다. 좋은 아키텍처 판단은 최적화보다 먼저 어떤 제약이 진짜인지 묻는 데서 시작한다.",
+        "seconds": 80, "topics": ["artificial-intelligence", "technology"], "published_at": "2026-11-01T10:00:00+00:00",
+    },
+    {
+        "creator": "demo-curator-persian@example.com", "source": "book-meditations", "language": "ko",
+        "title": "통제할 수 있는 것에 주의를 돌리기",
+        "body": "모든 결과를 통제하려고 하면 정작 우리가 선택할 수 있는 행동에 쓸 에너지가 줄어든다. 다른 사람의 반응이나 이미 지나간 사건은 바꿀 수 없지만, 다음 말과 다음 행동은 선택할 수 있다. 통제의 경계를 분명히 하는 것은 포기가 아니라 집중의 기술이다.",
+        "seconds": 75, "topics": ["philosophy", "productivity"], "published_at": "2026-11-01T12:00:00+00:00",
+    },
+    {
+        "creator": "demo-curator-curious@example.com", "source": "podcast-99pi", "language": "ko",
+        "title": "보이지 않는 디자인을 다시 보는 법",
+        "body": "익숙한 표지판, 버튼, 문, 거리의 배치는 대부분 누군가의 설계 결정이다. 잘 작동할수록 우리는 그 결정을 의식하지 않게 된다. 일상적인 물건을 다시 관찰하면 누가 편리함을 얻는지, 어떤 사용자가 가정되었는지, 무엇이 빠져 있는지를 발견할 수 있다.",
+        "seconds": 80, "topics": ["creativity", "technology", "society"], "published_at": "2026-11-01T14:00:00+00:00",
+    },
+    {
+        "creator": "demo-curator-lens@example.com", "source": "movie-soul", "language": "ja",
+        "title": "目的は人生の価値そのものではない",
+        "body": "大きな目標は努力の方向を示してくれる。しかし、その達成だけを人生の価値の証明にすると、途中の時間がすべて待合室のようになってしまう。人との関係、練習そのものの喜び、日常の小さな好奇心にも意味はある。目標は唯一の採点基準ではなく、方角を示すものとして使う方が健全だ。",
+        "seconds": 90, "topics": ["psychology", "health", "cinema"], "published_at": "2026-11-02T08:00:00+00:00",
+    },
+    {
+        "creator": "demo-curator-systems@example.com", "source": "book-art-of-war", "language": "ja",
+        "title": "良い戦略は土壇場の英雄性を減らす",
+        "body": "強い戦略は、最後の瞬間の奇跡に頼る前に条件を整える。情報、順序、位置取り、選択肢を早い段階で改善すれば、危機のたびに誰かが無理をして救う必要は少なくなる。プロジェクトでも、優先順位を先に明確にすることは後の緊急対応を減らす。",
+        "seconds": 80, "topics": ["business", "productivity"], "published_at": "2026-11-02T10:00:00+00:00",
+    },
+    {
+        "creator": "demo-curator-curious@example.com", "source": "article-as-we-may-think", "language": "ja",
+        "title": "知識の道具は記憶のつながり方を変える",
+        "body": "情報ツールは単なる保存場所ではない。どの記録に戻りやすいか、何と何を結び付けやすいかによって、考え方そのものに影響する。優れた道具はすべてを厳密な階層に押し込めるのではなく、以前の発想への道筋を低いコストで再発見できるようにする。",
+        "seconds": 85, "topics": ["technology", "creativity", "productivity"], "published_at": "2026-11-02T12:00:00+00:00",
+    },
+    {
+        "creator": "demo-curator-curious@example.com", "source": "movie-ratatouille", "language": "ja",
+        "title": "創造性は反復と批評で育つ",
+        "body": "好きという気持ちは創作を始める力になるが、それだけで技術は完成しない。何度も試し、違いを観察し、率直な批評を受けて修正することで判断力が育つ。創造的な自信は、間違いを認めてもう一度試せる謙虚さと一緒にあるとき最も強い。",
+        "seconds": 80, "topics": ["creativity", "productivity", "cinema"], "published_at": "2026-11-02T14:00:00+00:00",
+    },
+    {
+        "creator": "demo-curator-systems@example.com", "source": "article-attention", "language": "zh",
+        "title": "真正的突破有时来自改变结构",
+        "body": "工程上的进步不一定来自把旧机制再加速一点。有时更重要的问题是：这个瓶颈为什么必须存在？如果重新组织信息流和依赖关系，原本只能顺序处理的任务可能变得更容易并行。优化之前先检查假设，往往比盲目提升局部性能更有价值。",
+        "seconds": 80, "topics": ["artificial-intelligence", "technology", "science"], "published_at": "2026-11-03T08:00:00+00:00",
+    },
+    {
+        "creator": "demo-curator-systems@example.com", "source": "podcast-planet-money", "language": "zh",
+        "title": "价格是一条压缩后的系统信息",
+        "body": "一个价格看起来只是数字，但背后可能同时包含稀缺程度、预期、监管、议价能力和替代选择。把价格当作信号来读，可以帮助我们理解为什么同一种商品在不同时间和市场中表现完全不同。数字是结果，系统才是故事。",
+        "seconds": 75, "topics": ["economics", "business", "society"], "published_at": "2026-11-03T10:00:00+00:00",
+    },
+    {
+        "creator": "demo-curator-curious@example.com", "source": "book-walden", "language": "zh",
+        "title": "简单不是越少越好，而是有意识地选择",
+        "body": "真正有价值的简化不是把所有复杂事物都删掉。深度的关系、技能和长期项目本来就可能复杂。更值得清理的是那些不断消耗注意力却没有相应价值的承诺、工具和选择。简单是一种关于注意力的设计，而不是物品数量竞赛。",
+        "seconds": 80, "topics": ["productivity", "philosophy"], "published_at": "2026-11-03T12:00:00+00:00",
+    },
+    {
+        "creator": "demo-curator-lens@example.com", "source": "movie-inside-out", "language": "zh",
+        "title": "不舒服的情绪也可能有信息",
+        "body": "悲伤、恐惧或愤怒并不一定是需要立刻删除的故障。它们可能提示损失、风险或被越过的边界。情绪调节更像是先听懂信号，再决定行动，而不是要求自己永远保持积极。理解情绪与服从情绪是两回事。",
+        "seconds": 75, "topics": ["psychology", "health", "cinema"], "published_at": "2026-11-03T14:00:00+00:00",
+    },
+    {
+        "creator": "demo-curator-persian@example.com", "source": "book-meditations", "language": "hi",
+        "title": "ध्यान उस पर लगाएँ जिसे हम बदल सकते हैं",
+        "body": "हर परिणाम को नियंत्रित करने की कोशिश अक्सर उस ऊर्जा को खा जाती है जो हमारे अगले वास्तविक निर्णय के लिए चाहिए। दूसरे लोगों की प्रतिक्रिया या बीती घटना हमारे हाथ में नहीं होती, लेकिन अगला शब्द और अगला कदम हो सकता है। नियंत्रण की सीमा पहचानना हार मानना नहीं, ध्यान को सही जगह लगाना है।",
+        "seconds": 85, "topics": ["philosophy", "productivity"], "published_at": "2026-11-04T08:00:00+00:00",
+    },
+    {
+        "creator": "demo-curator-lens@example.com", "source": "movie-wall-e", "language": "hi",
+        "title": "सुविधा हमारी आदतों को भी बदलती है",
+        "body": "तकनीक जब बेकार की कठिनाई हटाती है तो जीवन बेहतर होता है। लेकिन यदि वह चलना, चुनना, याद रखना या चीज़ों को ठीक करना भी पूरी तरह अपने हाथ में ले ले, तो हम उन क्षमताओं का अभ्यास कम कर सकते हैं। सवाल सुविधा के खिलाफ होना नहीं, बल्कि यह तय करना है कि कौन-सा प्रयास हटाना सच में अच्छा है।",
+        "seconds": 90, "topics": ["technology", "society", "health"], "published_at": "2026-11-04T10:00:00+00:00",
+    },
+    {
+        "creator": "demo-curator-lens@example.com", "source": "podcast-hidden-brain", "language": "hi",
+        "title": "व्यवहार के पीछे संदर्भ को देखना सीखें",
+        "body": "हम अपने फैसलों के लिए अक्सर बाद में एक साफ़ और तार्किक कहानी बना लेते हैं, जबकि आदत, माहौल, भावना और दूसरे लोगों की मौजूदगी भी असर डालती है। यदि कोई व्यवहार बार-बार लौटता है, तो केवल यह पूछना पर्याप्त नहीं कि मैंने ऐसा क्यों किया; यह भी देखना चाहिए कि उससे ठीक पहले कौन-सी परिस्थितियाँ दोहराई गईं।",
+        "seconds": 90, "topics": ["psychology", "science"], "published_at": "2026-11-04T12:00:00+00:00",
+    },
+    {
+        "creator": "demo-curator-systems@example.com", "source": "book-art-of-war", "language": "hi",
+        "title": "अच्छी रणनीति आख़िरी क्षण के चमत्कार पर निर्भर नहीं रहती",
+        "body": "रणनीति का बड़ा हिस्सा कठिन क्षण आने से पहले परिस्थितियाँ बेहतर बनाना है। सही जानकारी, स्पष्ट प्राथमिकताएँ और अधिक विकल्प अंतिम समय की घबराहट को कम करते हैं। किसी टीम को हर बार एक नायक की ज़रूरत पड़ रही हो तो संभव है समस्या लोगों की मेहनत में नहीं, तैयारी और व्यवस्था में हो।",
+        "seconds": 85, "topics": ["business", "productivity"], "published_at": "2026-11-04T14:00:00+00:00",
+    },
+    {
+        "creator": "demo-curator-persian@example.com", "source": "book-republic", "language": "tr",
+        "title": "Bir sistem neyi ödüllendiriyorsa onu çoğaltır",
+        "body": "Bir kurumun söylediği değerlerle gerçekten ödüllendirdiği davranışlar aynı olmayabilir. İnsanların niyetlerine bakmak önemlidir ama teşvikler, yetki dağılımı ve tekrar eden kurallar da sonucu biçimlendirir. Bir sistemi anlamak için yalnızca ne söylediğini değil, hangi davranışın avantaj kazandığını da izlemek gerekir.",
+        "seconds": 80, "topics": ["philosophy", "society"], "published_at": "2026-11-05T08:00:00+00:00",
+    },
+    {
+        "creator": "demo-curator-lens@example.com", "source": "movie-soul", "language": "tr",
+        "title": "Hayatın anlamını tek bir hedefe bağlamak kırılgandır",
+        "body": "Büyük bir hedef yıllarca yön verebilir, fakat hayatın değerini yalnızca o hedefin gerçekleşmesine bağlamak yolu görünmez hâle getirir. İlişkiler, merak, pratik ve sıradan bir günün küçük deneyimleri de anlam taşır. Hedefin pusula olması, tek notlandırma sistemi olmasından daha sağlıklıdır.",
+        "seconds": 80, "topics": ["psychology", "health", "cinema"], "published_at": "2026-11-05T10:00:00+00:00",
+    },
+    {
+        "creator": "demo-curator-systems@example.com", "source": "podcast-planet-money", "language": "tr",
+        "title": "Fiyat yalnızca bir sayı değil, bir sinyaldir",
+        "body": "Bir fiyatın içinde kıtlık, beklentiler, düzenlemeler, pazarlık gücü ve alternatifler gibi birçok etken sıkışmış olabilir. Bu yüzden fiyatı yalnızca ödenecek rakam olarak değil, daha büyük bir sistemin çıktısı olarak okumak faydalıdır. Sayı görünürdür; asıl hikâye onu üreten koşullardadır.",
+        "seconds": 75, "topics": ["economics", "business", "society"], "published_at": "2026-11-05T12:00:00+00:00",
+    },
+]
+
+DEMO_READER_LANGUAGES = [
+    "en",
+    "fa",
+    "es",
+    "ar",
+    "ko",
+    "ja",
+    "zh",
 ]
 
 DEMO_READER_INTERESTS = [
@@ -514,6 +690,7 @@ DEMO_READER_SAVES = [
     "سادگی یعنی انتخاب آگاهانه‌ی پیچیدگی",
     "The best design often disappears into routine",
     "A system reveals what it rewards",
+    "Fiyat yalnızca bir sayı değil, bir sinyaldir",
 ]
 
 DEMO_READER_SPARKS = [

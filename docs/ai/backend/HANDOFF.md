@@ -1,27 +1,37 @@
 # Backend Handoff
 
-- Task ID: BE-DATA-001 — Deterministic InsightInk Demo Dataset
-- Exact base SHA: `0cc9ed84beb90d78a55c1c430903471ee447cee2`.
-- Result: Complete and accepted for checkpoint. Added a repeatable offline Django management command that supplies realistic deterministic content for frontend development.
-- Frontend safety: FE-002 has pre-existing uncommitted changes under `frontend/**` and `docs/ai/frontend/**`. BE-DATA-001 did not edit, reset, stash, discard, or stage any of them. Backend Git staging must remain explicit.
-- Usage from `backend/`: `../.venv/bin/python manage.py seed_demo`. From repo root with environment loaded: `.venv/bin/python backend/manage.py seed_demo`.
-- Command files: `backend/content/management/__init__.py`, `backend/content/management/commands/__init__.py`, `backend/content/management/commands/seed_demo.py`.
-- Static dataset: `backend/content/demo_seed_data.py`.
-- Tests: `backend/content/test_seed_demo.py`.
-- Dataset: 14 active bilingual Topics; 20 Sources (8 book / 4 article / 4 movie / 4 podcast); 40 PUBLISHED Ideas (20 English / 20 Persian); 5 demo Users; 4 demo CreatorProfiles.
-- Demo users: `demo-reader@example.com`; `demo-curator-persian@example.com`; `demo-curator-lens@example.com`; `demo-curator-systems@example.com`; `demo-curator-curious@example.com`. All are fictional development identities.
-- Fixed dev-only password: `InsightInkDemo2026!` for all demo accounts. This is deliberately local/demo-only and must never be repurposed as a production credential.
-- Interaction seed: demo reader has 4 UserInterests, 5 SavedIdeas, 6 Sparks, 2 CreatorFollows, and 3 visible Comments. This makes deterministic recommendations/engagement immediately testable.
-- Source provenance: static metadata contains a private `demo_seed_key` and `provenance_url`. Runtime command is offline. Public-domain/open sources are preferred where practical; modern source records use metadata only and Ideas are original paraphrases.
-- Copyright rule: no long quotation/source text/transcript/dialogue is seeded.
-- Cover/media decision: cover URLs are intentionally blank because the project has no accepted deterministic media strategy; no fake remote image URLs or storage architecture were added.
-- Idempotency: Topic slug; demo User email; one CreatorProfile per demo User; Source private metadata key; stable Idea `creator+source+language+title`; relation-level get/update-or-create for activity. Second real run created zero duplicate domain rows and zero new activity rows.
-- Existing-data safety: no global deletes. A regression test verifies unrelated existing User/Topic rows survive another seed run.
-- Focused tests: 10/10 seed tests passed.
-- Full backend tests: 264/264 passed.
-- Quality: Django check passed; no migration drift; pip check clean; git diff check clean; no schema migration required.
-- Real DB API smoke: Topics 200/14; Feed 200/10 first-page items with next cursor; Ideas 200/40. Serialized Feed item contains realistic creator/source/topics/language/read time.
-- Recommendation smoke: authenticated demo-reader test context returns 4 interests and 20 recommendations; seeded English/Persian search returns results.
-- Backend contract issue: none.
-- Files to checkpoint: only backend content management/data/tests plus `docs/ai/backend/STATE.md` and `docs/ai/backend/HANDOFF.md`.
-- Suggested commit: `feat(dev): add deterministic InsightInk demo data`.
+- Task ID: BE-LANG-001 — Global Content Language Catalog + Reader Language Preferences + Discovery Filtering
+- Exact base SHA: `7feec5c5e0a8ef345ccf3eaadcba4ff0a8d62075`.
+- Result: Complete and accepted for checkpoint.
+- Full supported catalog (62): en English/انگلیسی/English; zh Chinese/چینی/中文; hi Hindi/هندی/हिन्दी; es Spanish/اسپانیایی/Español; ar Arabic/عربی/العربية; fr French/فرانسوی/Français; bn Bengali/بنگالی/বাংলা; pt Portuguese/پرتغالی/Português; ru Russian/روسی/Русский; ur Urdu/اردو/اردو; id Indonesian/اندونزیایی/Bahasa Indonesia; de German/آلمانی/Deutsch; ja Japanese/ژاپنی/日本語; sw Swahili/سواحیلی/Kiswahili; mr Marathi/مراتی/मराठी; te Telugu/تلوگو/తెలుగు; tr Turkish/ترکی/Türkçe; ta Tamil/تامیلی/தமிழ்; vi Vietnamese/ویتنامی/Tiếng Việt; ko Korean/کره‌ای/한국어; fa Persian/فارسی/فارسی; it Italian/ایتالیایی/Italiano; th Thai/تایلندی/ไทย; pl Polish/لهستانی/Polski; uk Ukrainian/اوکراینی/Українська; nl Dutch/هلندی/Nederlands; ms Malay/مالایی/Bahasa Melayu; fil Filipino/فیلیپینی/Filipino; he Hebrew/عبری/עברית; el Greek/یونانی/Ελληνικά; cs Czech/چکی/Čeština; ro Romanian/رومانیایی/Română; hu Hungarian/مجاری/Magyar; sv Swedish/سوئدی/Svenska; da Danish/دانمارکی/Dansk; no Norwegian/نروژی/Norsk; fi Finnish/فنلاندی/Suomi; pa Punjabi/پنجابی/ਪੰਜਾਬੀ; gu Gujarati/گجراتی/ગુજરાતી; kn Kannada/کانّادا/ಕನ್ನಡ; ml Malayalam/مالایالم/മലയാളം; ne Nepali/نپالی/नेपाली; si Sinhala/سینهالی/සිංහල; my Burmese/برمه‌ای/မြန်မာဘာသာ; km Khmer/خِمِر/ខ្មែរ; lo Lao/لائوسی/ລາວ; am Amharic/امهری/አማርኛ; so Somali/سومالیایی/Soomaali; ha Hausa/هوسا/Hausa; yo Yoruba/یوروبا/Yorùbá; ig Igbo/ایگبو/Igbo; zu Zulu/زولو/isiZulu; af Afrikaans/آفریکانس/Afrikaans; bg Bulgarian/بلغاری/Български; sr Serbian/صربی/Српски; hr Croatian/کرواتی/Hrvatski; sk Slovak/اسلواکی/Slovenčina; sl Slovenian/اسلوونیایی/Slovenščina; lt Lithuanian/لیتوانیایی/Lietuvių; lv Latvian/لتونیایی/Latviešu; et Estonian/استونیایی/Eesti; ca Catalan/کاتالان/Català.
+- Active language count: 62.
+- Model/schema: `ContentLanguage` uses stable string PK `code` max 35, bilingual display names, native name, active flag, display order. `UserContentLanguage` joins User to ContentLanguage with unique(user, language). Idea/Source language remain string fields max 35 with active-catalog validators; Idea.language keeps its existing DB index.
+- Migrations: `content.0002_contentlanguage_alter_idea_language_and_more`; `content.0003_seed_content_languages`; `accounts.0005_usercontentlanguage`; `accounts.0006_seed_default_content_languages`.
+- Catalog API: `GET /api/v1/languages/` anonymous/read-only, active only, ordered, fields `code,name_en,name_fa,native_name`.
+- Preference API GET: `GET /api/v1/me/languages/` -> `{"languages":[{"code":"en","name_en":"English","name_fa":"انگلیسی","native_name":"English"}, ...]}`.
+- Preference API PUT: `PUT /api/v1/me/languages/` body `{"languages":["en","fa","ko","ja"]}`; authenticated, transactional replacement, duplicate normalization, unknown/inactive rejection, own-user scope, idempotent.
+- Validation examples: `?languages=en,abcxyz` -> 400 `{"languages":["Unknown language code(s): abcxyz."]}`; inactive codes similarly return `Inactive language code(s): <code>.`; Creator Idea language unknown/inactive -> 400 on `language`.
+- Existing-user default: migration adds en+fa without selecting the whole catalog. Real DB verification found no existing non-demo User missing en/fa.
+- New-user default: account post-save hook adds en+fa. Real temporary User probe returned exactly en+fa.
+- Idea validation: CreatorIdeaSerializer + model validator require active ContentLanguage; public field remains a string code.
+- Source validation: model validator requires active ContentLanguage; Source language is original-work language and may differ from Idea language.
+- Feed authenticated: stored reader language preferences filter the SQL queryset by default; explicit `?languages=` overrides; cursor behavior/order/publication rules preserved.
+- Feed anonymous: all active supported languages are eligible.
+- Canonical explicit syntax: comma-separated `?languages=en,fa,ko,ja`; duplicate codes normalize; unknown/inactive codes return 400. Search also retains legacy single `?language=en` alias for compatibility.
+- Search: authenticated default uses stored content languages; anonymous uses all active; explicit overrides. Search text normalization remains unchanged.
+- Recommendations: language eligibility is applied to candidate queryset before scoring. Existing interest/save/Spark/follow/popularity/freshness score math is unchanged.
+- Topic browsing: same default/explicit language eligibility.
+- Related Ideas: authenticated candidate discovery respects languages; anonymous sees all active; explicit override supported; source Idea retrieval itself is public-visibility based.
+- Library: deliberately unaffected by preference filtering. Previously saved excluded-language public Ideas remain visible.
+- Direct Idea detail: deliberately unaffected by preference filtering; public excluded-language URLs remain 200.
+- Demo Reader selected languages: en, fa, es, ar, ko, ja, zh. Turkish/russian not selected.
+- Demo content by language: en 20; fa 20; es 4; ar 4; ko 4; ja 4; zh 4; hi 4; tr 3; total 67.
+- Seed idempotency: first expansion run added 27 new multilingual Ideas, 5 additional language rows beyond en/fa, and 1 Turkish Save; second run added zero. Runtime remains offline/deterministic.
+- Focused tests: 97/97 language/seed/explore/recommendation/library tests passed.
+- Full backend tests: 298/298 passed.
+- `manage.py check`: PASS.
+- `makemigrations --check --dry-run`: no changes.
+- `pip check`: no broken requirements.
+- `git diff --check`: PASS.
+- Real smoke: catalog 200/62; demo preferences 200/7; auth Feed excludes tr/ru; anonymous Feed includes tr; explicit tr Feed returns 3; invalid code 400; default Turkish Search 0; explicit Turkish Search returns result; Recommendations only selected languages; Topic/Related filters behave correctly; Library retains Turkish Save; direct Turkish Idea 200.
+- Frontend blocker/API contract issue: none. FE-006 working tree must remain untouched; frontend can resume by consuming catalog/preferences and using `?languages=`.

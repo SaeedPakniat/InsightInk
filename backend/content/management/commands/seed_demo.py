@@ -5,7 +5,7 @@ from django.contrib.auth import get_user_model
 from django.core.management.base import BaseCommand
 from django.db import transaction
 
-from accounts.models import UserInterest
+from accounts.models import UserContentLanguage, UserInterest
 from creators.models import CreatorFollow, CreatorProfile
 from engagement.models import Comment, SavedIdea, Spark
 
@@ -14,6 +14,7 @@ from content.demo_seed_data import (
     DEMO_PASSWORD,
     DEMO_READER_FOLLOWS,
     DEMO_READER_INTERESTS,
+    DEMO_READER_LANGUAGES,
     DEMO_READER_SAVES,
     DEMO_READER_SPARKS,
     DEMO_USERS,
@@ -21,7 +22,7 @@ from content.demo_seed_data import (
     SOURCES,
     TOPICS,
 )
-from content.models import Idea, Source, Topic
+from content.models import ContentLanguage, Idea, Source, Topic
 
 
 User = get_user_model()
@@ -73,6 +74,7 @@ class Command(BaseCommand):
         )
         self.stdout.write(
             "Demo activity ensured: "
+            f"{stats['languages']} content languages, "
             f"{stats['interests']} interests, "
             f"{stats['saves']} saves, "
             f"{stats['sparks']} sparks, "
@@ -206,6 +208,33 @@ class Command(BaseCommand):
 
     def _seed_reader_activity(self, stats, topics, users, creators, ideas):
         reader = users["demo-reader@example.com"]
+
+        selected_languages = list(
+            ContentLanguage.objects.filter(
+                code__in=DEMO_READER_LANGUAGES,
+                is_active=True,
+            )
+        )
+        if len(selected_languages) != len(DEMO_READER_LANGUAGES):
+            found = {language.code for language in selected_languages}
+            missing = [
+                code for code in DEMO_READER_LANGUAGES if code not in found
+            ]
+            raise RuntimeError(
+                "Demo reader language catalog entries are missing/inactive: "
+                + ", ".join(missing)
+            )
+
+        UserContentLanguage.objects.filter(user=reader).exclude(
+            language_id__in=DEMO_READER_LANGUAGES
+        ).delete()
+        for language in selected_languages:
+            _, created = UserContentLanguage.objects.get_or_create(
+                user=reader,
+                language=language,
+            )
+            if created:
+                stats["languages"] += 1
 
         for slug in DEMO_READER_INTERESTS:
             _, created = UserInterest.objects.get_or_create(

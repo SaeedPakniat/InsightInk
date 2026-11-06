@@ -5,10 +5,11 @@ from django.db import IntegrityError, transaction
 from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
 
-from content.models import Topic
-from content.serializers import TopicSerializer
+from content.language_filters import validate_active_language_codes
+from content.models import ContentLanguage, Topic
+from content.serializers import ContentLanguageSerializer, TopicSerializer
 
-from .models import UserInterest
+from .models import UserContentLanguage, UserInterest
 
 
 User = get_user_model()
@@ -90,3 +91,22 @@ class InterestSelectionSerializer(serializers.Serializer):
 
 class CurrentInterestsSerializer(serializers.Serializer):
     topics = TopicSerializer(many=True, read_only=True)
+
+
+class ContentLanguageSelectionSerializer(serializers.Serializer):
+    languages = serializers.ListField(
+        child=serializers.CharField(max_length=35),
+        allow_empty=True,
+    )
+
+    def validate_languages(self, codes):
+        validated_codes = validate_active_language_codes(codes)
+        languages = {
+            language.code: language
+            for language in ContentLanguage.objects.filter(code__in=validated_codes)
+        }
+        return [languages[code] for code in validated_codes]
+
+
+class CurrentContentLanguagesSerializer(serializers.Serializer):
+    languages = ContentLanguageSerializer(many=True, read_only=True)

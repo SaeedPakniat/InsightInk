@@ -10,8 +10,10 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .models import UserInterest
+from .models import UserContentLanguage, UserInterest
 from .serializers import (
+    ContentLanguageSelectionSerializer,
+    CurrentContentLanguagesSerializer,
     CurrentInterestsSerializer,
     CurrentUserSerializer,
     InterestSelectionSerializer,
@@ -110,4 +112,42 @@ class UserInterestsView(APIView):
 
         return Response(
             CurrentInterestsSerializer({"topics": topics}).data,
+        )
+
+
+class UserContentLanguagesView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        languages = [
+            preference.language
+            for preference in request.user.content_language_preferences
+            .select_related("language")
+            .filter(language__is_active=True)
+            .order_by("language__display_order", "language__code")
+        ]
+        return Response(CurrentContentLanguagesSerializer({"languages": languages}).data)
+
+    @transaction.atomic
+    def put(self, request):
+        serializer = ContentLanguageSelectionSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        languages = serializer.validated_data["languages"]
+
+        UserContentLanguage.objects.filter(user=request.user).delete()
+        UserContentLanguage.objects.bulk_create(
+            [
+                UserContentLanguage(user=request.user, language=language)
+                for language in languages
+            ]
+        )
+
+        ordered_languages = sorted(
+            languages,
+            key=lambda language: (language.display_order, language.code),
+        )
+        return Response(
+            CurrentContentLanguagesSerializer(
+                {"languages": ordered_languages}
+            ).data
         )

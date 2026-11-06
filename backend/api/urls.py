@@ -2,6 +2,7 @@ from django.urls import include, path
 from rest_framework.routers import DefaultRouter
 
 from content.views import (
+    ContentLanguageViewSet,
     CreatorIdeaViewSet,
     FeedView,
     IdeaViewSet,
@@ -14,6 +15,7 @@ from .views import health
 app_name = "api"
 
 router = DefaultRouter()
+router.register("languages", ContentLanguageViewSet, basename="language")
 router.register("topics", TopicViewSet, basename="topic")
 router.register("sources", SourceViewSet, basename="source")
 router.register("ideas", IdeaViewSet, basename="idea")

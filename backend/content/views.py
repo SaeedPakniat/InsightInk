@@ -7,15 +7,26 @@ from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
 
 from creators.permissions import IsCreator, IsCreatorOwner
 
-from .models import Idea, Source, Topic
+from .language_filters import filter_queryset_by_discovery_languages
+from .models import ContentLanguage, Idea, Source, Topic
 from .pagination import FeedCursorPagination
 from .selectors import public_idea_queryset
 from .serializers import (
+    ContentLanguageSerializer,
     CreatorIdeaSerializer,
     IdeaSerializer,
     SourceSerializer,
     TopicSerializer,
 )
+
+
+class ContentLanguageViewSet(ReadOnlyModelViewSet):
+    queryset = ContentLanguage.objects.filter(is_active=True).order_by(
+        "display_order",
+        "code",
+    )
+    serializer_class = ContentLanguageSerializer
+    permission_classes = [AllowAny]
 
 
 class TopicViewSet(ReadOnlyModelViewSet):
@@ -31,9 +42,14 @@ class SourceViewSet(ReadOnlyModelViewSet):
 
 
 class IdeaViewSet(ReadOnlyModelViewSet):
-    queryset = public_idea_queryset().order_by("-id")
     serializer_class = IdeaSerializer
     permission_classes = [AllowAny]
+
+    def get_queryset(self):
+        queryset = public_idea_queryset().order_by("-id")
+        if self.action == "retrieve":
+            return queryset
+        return filter_queryset_by_discovery_languages(queryset, self.request)
 
 
 class FeedView(ListAPIView):
@@ -42,7 +58,8 @@ class FeedView(ListAPIView):
     pagination_class = FeedCursorPagination
 
     def get_queryset(self):
-        return public_idea_queryset().order_by("-id")
+        queryset = public_idea_queryset().order_by("-id")
+        return filter_queryset_by_discovery_languages(queryset, self.request)
 
 
 class CreatorIdeaViewSet(ModelViewSet):

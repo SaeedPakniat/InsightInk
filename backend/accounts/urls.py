@@ -6,6 +6,7 @@ from .views import (
     LoginView,
     LogoutView,
     RegisterView,
+    UserContentLanguagesView,
     UserInterestsView,
 )
 
@@ -19,4 +20,5 @@ urlpatterns = [
     path("auth/logout/", LogoutView.as_view(), name="logout"),
     path("me/", CurrentUserView.as_view(), name="me"),
     path("me/interests/", UserInterestsView.as_view(), name="me-interests"),
+    path("me/languages/", UserContentLanguagesView.as_view(), name="me-languages"),
 ]

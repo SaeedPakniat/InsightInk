@@ -6,7 +6,13 @@ from content.selectors import public_idea_queryset
 from .normalization import normalize_search_text, normalized_search_expression
 
 
-def search_public_ideas(*, query="", language=None, source_type=None, topic_slug=None):
+def search_public_ideas(
+    *,
+    query="",
+    language_codes=None,
+    source_type=None,
+    topic_slug=None,
+):
     queryset = public_idea_queryset()
 
     normalized_query = normalize_search_text(query)
@@ -33,8 +39,8 @@ def search_public_ideas(*, query="", language=None, source_type=None, topic_slug
             | Q(search_topic_en__icontains=normalized_query)
         )
 
-    if language:
-        queryset = queryset.filter(language=language)
+    if language_codes is not None:
+        queryset = queryset.filter(language__in=language_codes)
 
     if source_type:
         queryset = queryset.filter(source__type=source_type)
@@ -48,15 +54,13 @@ def search_public_ideas(*, query="", language=None, source_type=None, topic_slug
     return queryset.distinct().order_by("-id")
 
 
-def published_ideas_for_active_topic(slug):
+def published_ideas_for_active_topic(slug, *, language_codes=None):
     topic = Topic.objects.filter(slug=slug, is_active=True).first()
     if topic is None:
         return None, public_idea_queryset().none()
 
-    queryset = (
-        public_idea_queryset()
-        .filter(topics=topic)
-        .distinct()
-        .order_by("-id")
-    )
+    queryset = public_idea_queryset().filter(topics=topic)
+    if language_codes is not None:
+        queryset = queryset.filter(language__in=language_codes)
+    queryset = queryset.distinct().order_by("-id")
     return topic, queryset

@@ -2,6 +2,24 @@ from django.db import models
 
 from creators.models import CreatorProfile
 
+from .validators import validate_active_content_language
+
+
+
+class ContentLanguage(models.Model):
+    code = models.CharField(max_length=35, primary_key=True)
+    name_en = models.CharField(max_length=160)
+    name_fa = models.CharField(max_length=160)
+    native_name = models.CharField(max_length=160, blank=True)
+    is_active = models.BooleanField(default=True, db_index=True)
+    display_order = models.PositiveSmallIntegerField(default=0, db_index=True)
+
+    class Meta:
+        ordering = ("display_order", "code")
+
+    def __str__(self):
+        return self.native_name or self.name_en
+
 
 class Topic(models.Model):
     slug = models.SlugField(max_length=80, unique=True)
@@ -27,7 +45,10 @@ class Source(models.Model):
     )
     title = models.CharField(max_length=255)
     original_creator_text = models.CharField(max_length=255, blank=True)
-    language = models.CharField(max_length=16)
+    language = models.CharField(
+        max_length=35,
+        validators=[validate_active_content_language],
+    )
     external_url = models.URLField(max_length=500, blank=True)
     cover = models.URLField(max_length=500, blank=True)
     metadata = models.JSONField(default=dict, blank=True)
@@ -52,7 +73,11 @@ class Idea(models.Model):
         on_delete=models.PROTECT,
         related_name="ideas",
     )
-    language = models.CharField(max_length=16, db_index=True)
+    language = models.CharField(
+        max_length=35,
+        db_index=True,
+        validators=[validate_active_content_language],
+    )
     title = models.CharField(max_length=255)
     body = models.TextField()
     estimated_read_seconds = models.PositiveIntegerField()

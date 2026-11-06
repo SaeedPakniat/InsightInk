@@ -3,7 +3,15 @@ from rest_framework import serializers
 
 from creators.serializers import CreatorSummarySerializer
 
-from .models import Idea, Source, Topic
+from .language_filters import validate_active_language_codes
+from .models import ContentLanguage, Idea, Source, Topic
+
+
+class ContentLanguageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ContentLanguage
+        fields = ("code", "name_en", "name_fa", "native_name")
+        read_only_fields = fields
 
 
 class TopicSerializer(serializers.ModelSerializer):
@@ -80,6 +88,9 @@ class CreatorIdeaSerializer(serializers.ModelSerializer):
         extra_kwargs = {
             "estimated_read_seconds": {"min_value": 1},
         }
+
+    def validate_language(self, value):
+        return validate_active_language_codes([value])[0]
 
     @transaction.atomic
     def create(self, validated_data):

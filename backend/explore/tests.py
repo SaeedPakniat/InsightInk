@@ -274,11 +274,14 @@ class ExploreSearchAPITests(TestCase):
         )
 
     def test_invalid_language_and_type_are_validation_errors(self):
-        bad_language = self.client.get(self.search_url, {"language": "de"})
+        bad_language = self.client.get(
+            self.search_url,
+            {"language": "abcxyz"},
+        )
         bad_type = self.client.get(self.search_url, {"type": "video"})
 
         self.assertEqual(bad_language.status_code, 400)
-        self.assertIn("language", bad_language.json())
+        self.assertIn("languages", bad_language.json())
         self.assertEqual(bad_type.status_code, 400)
         self.assertIn("type", bad_type.json())
 

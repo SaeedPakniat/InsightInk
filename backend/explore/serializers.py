@@ -10,10 +10,6 @@ class SearchQuerySerializer(serializers.Serializer):
         trim_whitespace=True,
         max_length=200,
     )
-    language = serializers.ChoiceField(
-        choices=(("fa", "Persian"), ("en", "English")),
-        required=False,
-    )
     type = serializers.ChoiceField(
         choices=Source.SourceType.choices,
         required=False,

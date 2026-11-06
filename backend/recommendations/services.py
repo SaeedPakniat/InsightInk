@@ -80,7 +80,7 @@ def _dominant_recommendation_signal(
     return max(contributions, key=lambda item: item[1])
 
 
-def recommendations_for_user(user):
+def recommendations_for_user(user, *, language_codes=None):
     interest_ids = interest_topic_ids(user)
     saved_counts = saved_topic_counts(user)
     sparked_counts = sparked_topic_counts(user)
@@ -88,7 +88,7 @@ def recommendations_for_user(user):
     language = user.preferred_ui_language
 
     results = []
-    for idea in recommendation_candidates():
+    for idea in recommendation_candidates(language_codes=language_codes):
         topics = list(idea.active_topics)
         topic_ids = [topic.id for topic in topics]
         published_moment = idea.published_at or idea.created_at
@@ -130,14 +130,17 @@ def recommendations_for_user(user):
     return results[:RECOMMENDATION_LIMIT]
 
 
-def related_ideas_for(idea):
+def related_ideas_for(idea, *, language_codes=None):
     source_topics = list(idea.active_topics)
     source_topic_ids = [topic.id for topic in source_topics]
     if not source_topic_ids:
         return []
 
     results = []
-    for candidate in related_candidates(idea):
+    for candidate in related_candidates(
+        idea,
+        language_codes=language_codes,
+    ):
         candidate_topics = list(candidate.active_topics)
         candidate_topic_ids = [topic.id for topic in candidate_topics]
         shared_ids = set(source_topic_ids) & set(candidate_topic_ids)

@@ -11,23 +11,33 @@ CANDIDATE_LIMIT = 200
 RELATED_CANDIDATE_LIMIT = 100
 
 
-def recommendation_candidates():
+def recommendation_candidates(language_codes=None):
+    queryset = public_idea_queryset()
+    if language_codes is not None:
+        queryset = queryset.filter(language__in=language_codes)
+
     return list(
-        public_idea_queryset()
+        queryset
         .annotate(recommendation_spark_count=Count("sparks", distinct=True))
         .order_by("-id")[:CANDIDATE_LIMIT]
     )
 
 
-def related_candidates(idea):
+def related_candidates(idea, language_codes=None):
     topic_ids = [topic.id for topic in idea.active_topics]
     if not topic_ids:
         return []
 
-    return list(
+    queryset = (
         public_idea_queryset()
         .filter(topics__id__in=topic_ids)
         .exclude(pk=idea.pk)
+    )
+    if language_codes is not None:
+        queryset = queryset.filter(language__in=language_codes)
+
+    return list(
+        queryset
         .annotate(recommendation_spark_count=Count("sparks", distinct=True))
         .distinct()
         .order_by("-id")[:RELATED_CANDIDATE_LIMIT]

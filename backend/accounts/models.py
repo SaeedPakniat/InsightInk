@@ -24,6 +24,29 @@ class User(AbstractUser):
     objects = UserManager()
 
 
+class UserContentLanguage(models.Model):
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name="content_language_preferences",
+    )
+    language = models.ForeignKey(
+        "content.ContentLanguage",
+        on_delete=models.PROTECT,
+        related_name="reader_preferences",
+        db_column="language_code",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=("user", "language"),
+                name="accounts_usercontentlanguage_user_language_unique",
+            ),
+        ]
+
+
 class UserInterest(models.Model):
     user = models.ForeignKey(
         User,

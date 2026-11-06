@@ -6,8 +6,14 @@ from django.urls import reverse
 from rest_framework.test import APIClient
 
 from accounts.models import User
-from content.demo_seed_data import DEMO_USERS, IDEAS, SOURCES, TOPICS
-from content.models import Idea, Source, Topic
+from content.demo_seed_data import (
+    DEMO_READER_LANGUAGES,
+    DEMO_USERS,
+    IDEAS,
+    SOURCES,
+    TOPICS,
+)
+from content.models import ContentLanguage, Idea, Source, Topic
 from creators.models import CreatorProfile
 from engagement.models import Comment, SavedIdea, Spark
 
@@ -73,7 +79,20 @@ class SeedDemoCommandTests(TestCase):
 
         reader = User.objects.get(email="demo-reader@example.com")
         self.assertEqual(reader.interests.count(), 4)
-        self.assertEqual(SavedIdea.objects.filter(user=reader).count(), 5)
+        self.assertEqual(
+            list(
+                reader.content_language_preferences.order_by(
+                    "language__display_order", "language_id"
+                ).values_list("language_id", flat=True)
+            ),
+            [
+                language.code
+                for language in ContentLanguage.objects.filter(
+                    code__in=DEMO_READER_LANGUAGES
+                ).order_by("display_order", "code")
+            ],
+        )
+        self.assertEqual(SavedIdea.objects.filter(user=reader).count(), 6)
         self.assertEqual(Spark.objects.filter(user=reader).count(), 6)
         self.assertEqual(reader.creator_follows.count(), 2)
         self.assertEqual(Comment.objects.filter(author=reader).count(), 3)
@@ -176,16 +195,37 @@ class SeedDemoCommandTests(TestCase):
         self.assertEqual(len(response.json()["results"]), 10)
 
         item = response.json()["results"][0]
-        self.assertIn(item["language"], {"fa", "en"})
+        self.assertTrue(
+            ContentLanguage.objects.filter(
+                code=item["language"],
+                is_active=True,
+            ).exists()
+        )
         self.assertTrue(item["creator"]["display_name"])
         self.assertTrue(item["source"]["title"])
         self.assertTrue(item["topics"])
         self.assertGreater(item["estimated_read_seconds"], 0)
         self.assertGreater(len(item["body"]), 80)
 
-    def test_seeded_language_counts_are_balanced_for_ui_testing(self):
+    def test_seeded_language_counts_cover_representative_multilingual_ui(self):
         seeded_titles = [item["title"] for item in IDEAS]
         seeded = Idea.objects.filter(title__in=seeded_titles)
 
-        self.assertEqual(seeded.filter(language="en").count(), 20)
-        self.assertEqual(seeded.filter(language="fa").count(), 20)
+        expected = {
+            "en": 20,
+            "fa": 20,
+            "es": 4,
+            "ar": 4,
+            "ko": 4,
+            "ja": 4,
+            "zh": 4,
+            "hi": 4,
+            "tr": 3,
+        }
+        self.assertEqual(
+            {
+                code: seeded.filter(language=code).count()
+                for code in expected
+            },
+            expected,
+        )

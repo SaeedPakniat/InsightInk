@@ -2,6 +2,7 @@ from django.http import Http404
 from rest_framework.generics import ListAPIView
 from rest_framework.permissions import AllowAny
 
+from content.language_filters import discovery_language_codes
 from content.pagination import FeedCursorPagination
 from content.serializers import IdeaSerializer
 
@@ -19,9 +20,13 @@ class SearchView(ListAPIView):
         query_serializer.is_valid(raise_exception=True)
         params = query_serializer.validated_data
 
+        language_codes = discovery_language_codes(
+            self.request,
+            allow_legacy_singular=True,
+        )
         return search_public_ideas(
             query=params.get("q", ""),
-            language=params.get("language"),
+            language_codes=language_codes,
             source_type=params.get("type"),
             topic_slug=params.get("topic"),
         )
@@ -33,7 +38,11 @@ class TopicIdeasView(ListAPIView):
     pagination_class = FeedCursorPagination
 
     def get_queryset(self):
-        topic, queryset = published_ideas_for_active_topic(self.kwargs["slug"])
+        language_codes = discovery_language_codes(self.request)
+        topic, queryset = published_ideas_for_active_topic(
+            self.kwargs["slug"],
+            language_codes=language_codes,
+        )
         if topic is None:
             raise Http404
         return queryset
