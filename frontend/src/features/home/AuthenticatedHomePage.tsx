@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { logout } from '../../api/auth'
 import { Button } from '../../components/ui/Button'
 import { SESSION_QUERY_KEY, useSession } from '../auth/session'
-import { FeedModeNav } from '../feed/FeedModeNav'
+import { ReaderNav } from './ReaderNav'
 import { PersonalizedFeed } from '../feed/PersonalizedFeed'
 
 export function AuthenticatedHomePage() {
@@ -61,7 +61,7 @@ export function AuthenticatedHomePage() {
       )}
 
       <div className="reader-home__feed-nav">
-        <FeedModeNav />
+        <ReaderNav />
       </div>
 
       <PersonalizedFeed />

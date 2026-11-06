@@ -1,23 +1,17 @@
 # Frontend Handoff
 
-- Task ID: FE-008 — Idea Detail Comments
-- Base commit: `6f491d757cc5d641898c963eb68caeb79b694ba5`
+- Task ID: FE-009 — Saved Library
+- Base commit: `8a904241ef29a4ba58c705058c2e1398c3f04e3d`
 - Result: accepted by user; ready for checkpoint commit/push.
-- API:
-  - public GET `/ideas/<id>/comments/`
-  - auth POST `/ideas/<id>/comments/`
-  - owner-only auth DELETE `/comments/<comment_id>/`.
-- Comments are linear, visible-only and oldest-first; max body length 4000.
-- UX:
-  - public reading;
-  - authenticated composer;
-  - optimistic create with draft rollback;
-  - owner-only two-step delete confirmation with rollback;
-  - per-comment inferred RTL/LTR;
-  - localized date/character count/loading/error/empty states.
-- No replies, editing, reactions or feed-card comment controls.
-- Real seeded visual/data review used Ideas 25, 18 and 37.
-- Final checks: typecheck PASS; lint PASS; 25 test files / 74 tests PASS; production build PASS; formatting PASS; runtime npm audit 0 vulnerabilities. Bundle ~147.38 KB JS gzip / ~7.99 KB CSS gzip.
+- Route: authenticated `/library`.
+- API: authenticated `GET /library/saved/`, unpaginated, newest-saved first.
+- Navigation: ReaderNav replaces FeedModeNav and exposes For You / Latest / Library.
+- Library reuses IdeaCard and adds subtle saved-date metadata.
+- FE-007 Save integration now removes Library items optimistically and restores them on failed DELETE.
+- Library batch-hydrates viewer state so Save/Spark buttons remain synchronized with Feed and Idea Detail.
+- Content-language discovery preferences do not hide historical saved Ideas; confirmed with real Turkish saved Idea in seeded demo account.
+- Real seeded smoke: 6 saved Ideas; ordering and multilingual rendering verified.
+- Final checks: typecheck PASS; lint PASS; 27 test files / 79 tests PASS; production build PASS; formatting PASS; runtime npm audit 0 vulnerabilities. Bundle ~148.12 KB JS gzip / ~8.06 KB CSS gzip.
 - No backend implementation changes.
-- Do not commit/push until user validates real posting/deleting in browser.
-- Next likely task: FE-009 Saved Library.
+- Do not commit/push until user validates real Library navigation and unsave/resave behavior.
+- Next likely task: FE-010 Search & Discovery.

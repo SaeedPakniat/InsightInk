@@ -4,11 +4,11 @@ import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { setSaved, setSparked } from '../../api/engagement'
-import type { CurrentUser, ViewerEngagementItem } from '../../api/types'
+import type { CurrentUser, SavedLibraryItem, ViewerEngagementItem } from '../../api/types'
 import { changeUiLanguage } from '../../i18n'
 import { SESSION_QUERY_KEY } from '../auth/session'
 import { IdeaEngagementActions } from './IdeaEngagementActions'
-import { viewerEngagementKey } from './viewerEngagement'
+import { SAVED_LIBRARY_QUERY_KEY, viewerEngagementKey } from './viewerEngagement'
 
 vi.mock('../../api/engagement', () => ({
   getViewerEngagement: vi.fn(),
@@ -21,6 +21,34 @@ const user: CurrentUser = {
   email: 'reader@example.com',
   display_name: 'Reader',
   preferred_ui_language: 'en',
+}
+
+const savedLibraryItem: SavedLibraryItem = {
+  saved_at: '2026-11-06T10:00:00Z',
+  idea: {
+    id: 40,
+    language: 'en',
+    title: 'Saved idea',
+    body: 'Body',
+    estimated_read_seconds: 60,
+    published_at: '2026-11-01T08:00:00Z',
+    creator: {
+      id: 1,
+      display_name: 'Creator',
+      avatar: null,
+      is_verified: false,
+    },
+    source: {
+      id: 1,
+      type: 'article',
+      title: 'Source',
+      original_creator_text: 'Author',
+      language: 'en',
+      external_url: '',
+      cover: '',
+    },
+    topics: [],
+  },
 }
 
 function renderActions(
@@ -125,6 +153,34 @@ describe('IdeaEngagementActions', () => {
     expect(
       screen.getByText('That action could not be saved. Your previous state was restored.'),
     ).toBeInTheDocument()
+  })
+
+  it('optimistically removes an unsaved Idea from Library cache and restores it on failure', async () => {
+    let rejectSave!: (error: Error) => void
+    vi.mocked(setSaved).mockReturnValue(
+      new Promise<void>((_resolve, reject) => {
+        rejectSave = reject
+      }),
+    )
+
+    const { queryClient } = renderActions({
+      idea_id: 40,
+      sparked: false,
+      saved: true,
+    })
+    queryClient.setQueryData(SAVED_LIBRARY_QUERY_KEY, [savedLibraryItem])
+
+    fireEvent.click(screen.getByRole('button', { name: 'Remove from saved' }))
+
+    await waitFor(() => {
+      expect(queryClient.getQueryData(SAVED_LIBRARY_QUERY_KEY)).toEqual([])
+    })
+
+    rejectSave(new Error('network failed'))
+
+    await waitFor(() => {
+      expect(queryClient.getQueryData(SAVED_LIBRARY_QUERY_KEY)).toEqual([savedLibraryItem])
+    })
   })
 
   it('disables both controls while either mutation is pending', async () => {

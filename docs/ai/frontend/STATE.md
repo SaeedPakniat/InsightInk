@@ -1,46 +1,51 @@
 # Frontend State
 
-- Task: FE-008 — Idea Detail Comments.
-- Status: Accepted by user; FE-008 ready for checkpoint commit/push.
-- Base commit: `6f491d757cc5d641898c963eb68caeb79b694ba5` (`feat(frontend): add spark and save engagement`).
+- Task: FE-009 — Saved Library.
+- Status: Accepted by user; FE-009 ready for checkpoint commit/push.
+- Base commit: `8a904241ef29a4ba58c705058c2e1398c3f04e3d` (`feat(frontend): add idea comments`).
 - Frontend root: `frontend/`.
-- Backend comment contract verified from actual source:
-  - public GET `/api/v1/ideas/<idea_id>/comments/`;
-  - authenticated POST on same route;
-  - owner-only authenticated DELETE `/api/v1/comments/<comment_id>/`;
-  - visible comments only, ordered by ascending ID;
-  - body trimmed, nonblank, max length 4000;
-  - serializer fields: id, author{id,display_name}, body, created_at, updated_at.
-- New frontend types: `CommentAuthor`, `IdeaComment`, `CreateCommentPayload`.
-- New API client: `getIdeaComments`, `createIdeaComment`, `deleteComment`.
-- Query key: `['comments','idea',ideaId]`; public query stale time 30 seconds.
-- Idea Detail now renders `CommentsSection` after creator/source context.
-- Anonymous readers can read visible comments; composer is replaced by a Sign in to comment action that returns to the same Idea after login.
-- Authenticated readers get a controlled textarea with maxLength 4000, localized count/help/error, and disabled submit for blank/pending content.
-- Optimistic POST:
-  - temporary comment with ID -1 appended immediately;
-  - textarea clears while posting;
-  - server 201 replaces the temporary comment;
-  - failure restores the previous list and restores the draft text.
-- Optimistic DELETE:
-  - owner-only delete UI;
-  - two-stage Delete -> Confirm delete / Cancel;
-  - confirmed comment removed immediately;
-  - failure restores the previous list and shows an alert.
-- No edit/reply UI was invented because no backend API exists for either.
-- Comment body direction is inferred independently from UI/Idea language using Unicode script detection; no language attribute is invented because the backend does not store comment language.
-- Visual design intentionally resembles reading marginalia: one composer panel, then separated linear comments; no reaction counters or social-feed chrome.
-- Real seeded public comment smoke through Vite:
-  - Idea 25 -> one English comment by Demo Reader;
-  - Idea 18 -> one Persian comment by Demo Reader;
-  - Idea 37 -> one English comment by Demo Reader.
-- Visual review:
-  - authenticated comment composer + owner delete state reviewed at 1440×1100 using real Idea 25 comment;
-  - public full Idea Detail + Persian discussion reviewed at 390×2200 using real Idea 18;
-  - mixed-direction comments remain readable and no horizontal overflow observed.
-- Persian character counter wording changed from slash notation to `{{count}} از ۴۰۰۰` after RTL visual review.
-- Temporary review route/file removed before final validation.
-- Final quality gates: TypeScript PASS; ESLint PASS; Vitest 25 files / 74 tests PASS; production build PASS; Prettier PASS; `npm audit --omit=dev` reports 0 vulnerabilities.
-- FE-008 production bundle: ~147.38 KB JS gzip and ~7.99 KB CSS gzip.
-- Backend implementation files changed by FE-008: none.
-- Next logical task after acceptance: FE-009 — Saved Library using the existing saved-library API and FE-007 shared Save cache behavior.
+- Backend Saved Library contract verified from actual source:
+  - authenticated `GET /api/v1/library/saved/`;
+  - no pagination;
+  - response items are `{saved_at, idea}`;
+  - only current user's SavedIdea rows whose Idea is published;
+  - ordering `-saved_at, -id`;
+  - nested IdeaSerializer includes safe public Idea fields and active Topics only.
+- New frontend type: `SavedLibraryItem`.
+- New API client: `getSavedLibrary()`.
+- New TanStack query: `['library','saved']`, stale 30 seconds.
+- New protected route: `/library`.
+- Navigation architecture improved:
+  - removed old `FeedModeNav` two-feed abstraction;
+  - added `ReaderNav` with For You / Latest / Library;
+  - reused existing compact segmented-control visual language.
+- Saved Library page:
+  - preserves backend ordering exactly;
+  - reuses production `IdeaCard`;
+  - shows localized saved date metadata above each card;
+  - shows count, loading skeletons, retryable error and discovery-oriented empty state.
+- Engagement integration:
+  - Library hydrates viewer engagement for its Idea IDs so Spark/Save controls reflect real server state;
+  - unsaving now optimistically removes the matching `SavedLibraryItem` from `['library','saved']`;
+  - failed unsave restores both the previous per-Idea engagement state and previous Library array;
+  - existing feed/detail state remains shared through `viewerEngagementKey(ideaId)`.
+- Important product behavior confirmed with the real seeded database:
+  - demo reader Library count = 6;
+  - newest saved Idea is Turkish Idea 67;
+  - Turkish is currently excluded from reader discovery languages but remains in Library;
+  - this correctly preserves the distinction between discovery preferences and historical user saves.
+- Real seeded Library first items:
+  - Idea 67, Turkish, `Fiyat yalnızca bir sayı değil, bir sinyaldir`;
+  - Idea 3, English, `A system reveals what it rewards`;
+  - Idea 35, English, `The best design often disappears into routine`;
+  - Idea 8, Persian, `سادگی یعنی انتخاب آگاهانه‌ی پیچیدگی`.
+- Visual review completed with the exact real seeded Library response at 1440×1200 and 390×1000:
+  - three-way Reader navigation fits cleanly;
+  - saved-date metadata remains subordinate;
+  - Turkish/English/Persian content renders correctly;
+  - no observed horizontal overflow.
+- Temporary review route/file and temporary Library JSON/screenshots removed before final validation.
+- Final quality gates: TypeScript PASS; ESLint PASS; Vitest 27 files / 79 tests PASS; production build PASS; Prettier PASS; `npm audit --omit=dev` reports 0 vulnerabilities.
+- FE-009 production bundle: ~148.12 KB JS gzip and ~8.06 KB CSS gzip.
+- Backend implementation files changed by FE-009: none.
+- Next logical task after acceptance: FE-010 — Search & Discovery using the existing backend search contract.

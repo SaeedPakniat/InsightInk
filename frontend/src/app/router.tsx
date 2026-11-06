@@ -7,6 +7,7 @@ import { AuthenticatedHomePage } from '../features/home/AuthenticatedHomePage'
 import { InterestsOnboardingPage } from '../features/onboarding/InterestsOnboardingPage'
 import { ContentLanguagesPage } from '../features/onboarding/languages/ContentLanguagesPage'
 import { LatestFeedPage } from '../features/feed/LatestFeedPage'
+import { SavedLibraryPage } from '../features/library/SavedLibraryPage'
 import { LandingPage } from '../features/home/LandingPage'
 import { IdeaDetailPage } from '../features/ideas/detail/IdeaDetailPage'
 import { NotFoundPage } from '../features/home/NotFoundPage'
@@ -30,6 +31,7 @@ export const router = createBrowserRouter([
         children: [
           { path: 'app', element: <AuthenticatedHomePage /> },
           { path: 'explore', element: <LatestFeedPage /> },
+          { path: 'library', element: <SavedLibraryPage /> },
           { path: 'onboarding/interests', element: <InterestsOnboardingPage /> },
           { path: 'onboarding/languages', element: <ContentLanguagesPage /> },
         ],

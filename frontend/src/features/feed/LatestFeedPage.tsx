@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { Button } from '../../components/ui/Button'
 import { useSession } from '../auth/session'
 import { useHydrateViewerEngagement } from '../engagement/viewerEngagement'
-import { FeedModeNav } from './FeedModeNav'
+import { ReaderNav } from '../home/ReaderNav'
 import { flattenUniqueIdeas, useLatestFeed } from './latestFeed'
 import { IdeaCard } from '../ideas/IdeaCard'
 import { IdeaCardSkeleton } from '../ideas/IdeaCardSkeleton'
@@ -25,7 +25,7 @@ export function LatestFeedPage() {
   return (
     <section className="latest-feed-page">
       <div className="latest-feed-page__rail">
-        <FeedModeNav />
+        <ReaderNav />
 
         <header className="latest-feed-page__header">
           <p className="eyebrow">{t('feed.latestEyebrow')}</p>

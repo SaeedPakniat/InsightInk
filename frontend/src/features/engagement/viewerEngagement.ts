@@ -2,7 +2,7 @@ import { useEffect, useMemo } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
 import { getViewerEngagement, setSaved, setSparked } from '../../api/engagement'
-import type { ViewerEngagementItem } from '../../api/types'
+import type { SavedLibraryItem, ViewerEngagementItem } from '../../api/types'
 import { RECOMMENDATIONS_QUERY_KEY } from '../feed/recommendations'
 
 export const VIEWER_ENGAGEMENT_QUERY_PREFIX = ['viewerEngagement'] as const
@@ -92,6 +92,10 @@ function useEngagementMutation(ideaId: number, kind: EngagementKind) {
 
       const key = viewerEngagementKey(ideaId)
       const previous = queryClient.getQueryData<ViewerEngagementItem>(key)
+      const previousLibrary =
+        kind === 'saved'
+          ? queryClient.getQueryData<SavedLibraryItem[]>(SAVED_LIBRARY_QUERY_KEY)
+          : undefined
       const current = previous ?? defaultViewerState(ideaId)
 
       queryClient.setQueryData<ViewerEngagementItem>(key, {
@@ -99,7 +103,14 @@ function useEngagementMutation(ideaId: number, kind: EngagementKind) {
         [kind]: nextValue,
       })
 
-      return { previous }
+      if (kind === 'saved' && !nextValue && previousLibrary) {
+        queryClient.setQueryData<SavedLibraryItem[]>(
+          SAVED_LIBRARY_QUERY_KEY,
+          previousLibrary.filter((item) => item.idea.id !== ideaId),
+        )
+      }
+
+      return { previous, previousLibrary }
     },
 
     onError: (_error, _nextValue, context) => {
@@ -108,6 +119,10 @@ function useEngagementMutation(ideaId: number, kind: EngagementKind) {
         queryClient.setQueryData(key, context.previous)
       } else {
         queryClient.removeQueries({ queryKey: key, exact: true })
+      }
+
+      if (kind === 'saved' && context?.previousLibrary) {
+        queryClient.setQueryData(SAVED_LIBRARY_QUERY_KEY, context.previousLibrary)
       }
     },
 

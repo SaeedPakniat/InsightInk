@@ -107,6 +107,11 @@ export type CreateCommentPayload = {
   body: string
 }
 
+export type SavedLibraryItem = {
+  saved_at: string
+  idea: Idea
+}
+
 export type LoginPayload = {
   email: string
   password: string
