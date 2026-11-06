@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 
 import type { Idea } from '../../api/types'
+import { IdeaEngagementActions } from '../engagement/IdeaEngagementActions'
 import { ContentLanguageBadge } from '../languages/ContentLanguageBadge'
 import { FormatBadge } from './FormatBadge'
 import { formatUiNumber, getContentDirection, getInitials, getReadMinutes } from './presentation'
@@ -112,10 +113,13 @@ export function IdeaCard({ idea }: IdeaCardProps) {
           </div>
         </div>
 
-        <Link className="idea-card__read-link" to={`/ideas/${idea.id}`}>
-          {t('idea.readFull')}
-          <span aria-hidden="true">{isEnglishUi ? '→' : '←'}</span>
-        </Link>
+        <div className="idea-card__footer-actions">
+          <IdeaEngagementActions ideaId={idea.id} />
+          <Link className="idea-card__read-link" to={`/ideas/${idea.id}`}>
+            {t('idea.readFull')}
+            <span aria-hidden="true">{isEnglishUi ? '→' : '←'}</span>
+          </Link>
+        </div>
       </footer>
     </article>
   )

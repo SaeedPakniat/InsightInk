@@ -2,6 +2,8 @@ import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 
 import { Button } from '../../components/ui/Button'
+import { useSession } from '../auth/session'
+import { useHydrateViewerEngagement } from '../engagement/viewerEngagement'
 import { FeedModeNav } from './FeedModeNav'
 import { flattenUniqueIdeas, useLatestFeed } from './latestFeed'
 import { IdeaCard } from '../ideas/IdeaCard'
@@ -10,9 +12,14 @@ import { IdeaCardSkeleton } from '../ideas/IdeaCardSkeleton'
 export function LatestFeedPage() {
   const { i18n, t } = useTranslation()
   const feed = useLatestFeed()
+  const session = useSession()
   const isEnglishUi = i18n.language.startsWith('en')
 
   const ideas = feed.data ? flattenUniqueIdeas(feed.data.pages) : []
+  useHydrateViewerEngagement(
+    ideas.map((idea) => idea.id),
+    Boolean(session.data),
+  )
   const formattedCount = new Intl.NumberFormat(isEnglishUi ? 'en' : 'fa').format(ideas.length)
 
   return (

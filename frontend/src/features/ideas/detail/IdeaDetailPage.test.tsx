@@ -7,6 +7,8 @@ import { ApiError } from '../../../api/client'
 import { getIdea } from '../../../api/ideas'
 import type { Idea } from '../../../api/types'
 import { changeUiLanguage } from '../../../i18n'
+import { SESSION_QUERY_KEY } from '../../auth/session'
+import { AVAILABLE_LANGUAGES_QUERY_KEY } from '../../languages/languageQueries'
 import { IdeaDetailPage } from './IdeaDetailPage'
 
 vi.mock('../../../api/ideas', () => ({
@@ -47,6 +49,10 @@ function renderDetail(entry = '/ideas/40') {
       queries: { retry: false },
     },
   })
+  queryClient.setQueryData(SESSION_QUERY_KEY, null)
+  queryClient.setQueryData(AVAILABLE_LANGUAGES_QUERY_KEY, [
+    { code: 'fa', name_en: 'Persian', name_fa: 'فارسی', native_name: 'فارسی' },
+  ])
 
   return render(
     <QueryClientProvider client={queryClient}>

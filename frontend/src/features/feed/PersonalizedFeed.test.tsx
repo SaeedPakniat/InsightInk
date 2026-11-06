@@ -6,6 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { getRecommendations } from '../../api/recommendations'
 import type { RecommendationItem } from '../../api/types'
 import { changeUiLanguage } from '../../i18n'
+import { SESSION_QUERY_KEY } from '../auth/session'
 import { PersonalizedFeed } from './PersonalizedFeed'
 
 vi.mock('../../api/recommendations', () => ({
@@ -49,6 +50,7 @@ function renderFeed() {
       queries: { retry: false },
     },
   })
+  queryClient.setQueryData(SESSION_QUERY_KEY, null)
 
   return render(
     <QueryClientProvider client={queryClient}>

@@ -129,6 +129,17 @@ export const en = {
       detailLoadErrorBody: 'InsightInk could not load this idea right now.',
       loadingDetail: 'Loading idea…',
     },
+    engagement: {
+      spark: 'Spark',
+      sparked: 'Sparked',
+      unspark: 'Remove Spark',
+      save: 'Save',
+      saved: 'Saved',
+      unsave: 'Remove from saved',
+      updating: 'Updating engagement…',
+      updateError: 'That action could not be saved. Your previous state was restored.',
+      signIn: 'Sign in to Spark or Save',
+    },
     feed: {
       navLabel: 'Feed views',
       forYou: 'For You',

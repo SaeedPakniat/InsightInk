@@ -130,6 +130,17 @@ export const fa = {
       detailLoadErrorBody: 'InsightInk فعلاً نتوانست این ایده را بارگذاری کند.',
       loadingDetail: 'در حال بارگذاری ایده…',
     },
+    engagement: {
+      spark: 'اسپارک',
+      sparked: 'اسپارک‌شده',
+      unspark: 'حذف اسپارک',
+      save: 'ذخیره',
+      saved: 'ذخیره‌شده',
+      unsave: 'حذف از ذخیره‌ها',
+      updating: 'در حال به‌روزرسانی…',
+      updateError: 'این تغییر ذخیره نشد و وضعیت قبلی برگردانده شد.',
+      signIn: 'برای اسپارک یا ذخیره وارد شوید',
+    },
     feed: {
       navLabel: 'حالت‌های فید',
       forYou: 'برای شما',

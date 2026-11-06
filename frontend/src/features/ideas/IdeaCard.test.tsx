@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 import type { Idea } from '../../api/types'
 import { changeUiLanguage } from '../../i18n'
+import { SESSION_QUERY_KEY } from '../auth/session'
 import { AVAILABLE_LANGUAGES_QUERY_KEY } from '../languages/languageQueries'
 import { IdeaCard } from './IdeaCard'
 
@@ -49,6 +50,7 @@ function renderCard(idea: Idea) {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   })
+  queryClient.setQueryData(SESSION_QUERY_KEY, null)
   queryClient.setQueryData(AVAILABLE_LANGUAGES_QUERY_KEY, [
     { code: 'en', name_en: 'English', name_fa: 'انگلیسی', native_name: 'English' },
     { code: 'fa', name_en: 'Persian', name_fa: 'فارسی', native_name: 'فارسی' },
@@ -130,10 +132,10 @@ describe('IdeaCard', () => {
     expect(screen.getByText('علم')).toBeInTheDocument()
   })
 
-  it('does not invent engagement controls that are absent from the Idea contract', () => {
+  it('does not expose private engagement controls on an anonymous card', () => {
     renderCard(englishIdea)
 
     expect(screen.queryByRole('button', { name: /save/i })).not.toBeInTheDocument()
-    expect(screen.queryByText(/spark/i)).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /spark/i })).not.toBeInTheDocument()
   })
 })

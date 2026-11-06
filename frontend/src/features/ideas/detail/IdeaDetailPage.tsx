@@ -3,6 +3,9 @@ import { useTranslation } from 'react-i18next'
 
 import { ApiError } from '../../../api/client'
 import { ErrorState } from '../../../components/ui/Feedback'
+import { useSession } from '../../auth/session'
+import { IdeaEngagementActions } from '../../engagement/IdeaEngagementActions'
+import { useHydrateViewerEngagement } from '../../engagement/viewerEngagement'
 import { ContentLanguageBadge } from '../../languages/ContentLanguageBadge'
 import { FormatBadge } from '../FormatBadge'
 import { formatUiNumber, getContentDirection, getInitials, getReadMinutes } from '../presentation'
@@ -15,6 +18,12 @@ export function IdeaDetailPage() {
   const ideaId = Number(ideaIdParam)
   const validIdeaId = Number.isInteger(ideaId) && ideaId > 0
   const ideaQuery = useIdea(validIdeaId ? ideaId : 0)
+  const session = useSession()
+
+  useHydrateViewerEngagement(
+    ideaQuery.data ? [ideaQuery.data.id] : [],
+    Boolean(session.data && ideaQuery.data),
+  )
 
   if (!validIdeaId) {
     return <IdeaNotFound />
@@ -89,6 +98,8 @@ export function IdeaDetailPage() {
               ))}
             </div>
           )}
+
+          <IdeaEngagementActions ideaId={idea.id} variant="detail" />
         </header>
 
         <div

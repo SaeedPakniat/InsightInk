@@ -80,6 +80,16 @@ export type RecommendationItem = {
   reason: string
 }
 
+export type ViewerEngagementItem = {
+  idea_id: number
+  sparked: boolean
+  saved: boolean
+}
+
+export type ViewerEngagementResponse = {
+  items: ViewerEngagementItem[]
+}
+
 export type LoginPayload = {
   email: string
   password: string

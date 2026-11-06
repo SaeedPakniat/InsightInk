@@ -6,6 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { getFeedPage } from '../../api/feed'
 import type { FeedPage, Idea } from '../../api/types'
 import { changeUiLanguage } from '../../i18n'
+import { SESSION_QUERY_KEY } from '../auth/session'
 import { LatestFeedPage } from './LatestFeedPage'
 
 vi.mock('../../api/feed', async () => {
@@ -49,6 +50,7 @@ function renderPage() {
       queries: { retry: false },
     },
   })
+  queryClient.setQueryData(SESSION_QUERY_KEY, null)
 
   return render(
     <QueryClientProvider client={queryClient}>

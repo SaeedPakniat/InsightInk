@@ -1,22 +1,20 @@
 # Frontend Handoff
 
-- Task ID: FE-006A — Reader Content Languages
-- Base commit: `19f578f0c301ff6aafa4764cd249938dbab7c0b8`
-- Backend dependency: BE-LANG-001 at `9fd181c1e6d97566c6ef2c90f2fe774b6947fd68`
+- Task ID: FE-007 — Spark + Save Engagement
+- Base backend commit: `84ea6a36be32d2e4ece582196d2920b4daaec5ac`
+- Previous accepted frontend commit: `d145b2ac8795f21c773233d38fe8816138ada541`
 - Result: accepted by user; ready for checkpoint commit/push.
-- Routes:
-  - first-time setup: register -> `/onboarding/interests?setup=1` -> `/onboarding/languages?setup=1` -> `/app`
-  - existing settings: reader-home Edit languages -> `/onboarding/languages`
-- API used exactly:
-  - `GET /api/v1/languages/`
-  - `GET /api/v1/me/languages/`
-  - `PUT /api/v1/me/languages/` with `{languages:string[]}`
-- Picker: 62-language searchable catalog, canonical order, selected count, native names, codes, pressed-state buttons, empty-selection warning, sticky compact Save action.
-- Cache: save updates current-language cache and invalidates personalized recommendations + Latest feed.
-- Content presentation: Idea cards/details show catalog-backed content language; Arabic/Persian/Hebrew/Urdu content gets RTL direction via base language code.
-- Live smoke: demo reader selected `en, zh, es, ar, ja, ko, fa`; authenticated feed/recommendations contain only selected languages; Turkish excluded.
-- Visual review: desktop/mobile picker plus real Arabic Idea detail passed; no observed horizontal overflow.
-- Final checks: typecheck PASS; lint PASS; 19 test files / 51 tests PASS; production build PASS; formatting PASS; runtime npm audit 0 vulnerabilities. Bundle ~143.94 KB JS gzip / ~7.17 KB CSS gzip.
-- No backend implementation changes.
-- Do not commit/push until user accepts the real protected language-preference screen.
-- Next likely task: FE-007 Spark + Save.
+- API:
+  - batch read `GET /me/engagement/?idea_ids=...`
+  - explicit `PUT/DELETE /ideas/<id>/spark/`
+  - explicit `PUT/DELETE /ideas/<id>/save/`.
+- State model: batch fetch at screen level; normalized per-Idea TanStack cache observed by every card/detail instance.
+- Scale: IDs chunked at 100 per batch request.
+- Optimistic behavior: immediate pressed state; rollback on failure; action error message; both controls locked during one mutation.
+- Cache invalidation: engagement refetches for confirmation; recommendations/library marked stale without jarring active recommendation reorder.
+- Auth behavior: authenticated cards/details show controls; anonymous public detail offers sign-in; anonymous cards hide private controls.
+- Visual design: no counts; compact pill controls; amber Spark / teal Save; `aria-pressed`; responsive desktop/mobile.
+- Unit/regression gate before final cleanup: 22 test files / 60 tests pass; typecheck/lint/build/format/runtime audit pass; bundle ~145.33 KB JS gzip / ~7.45 KB CSS gzip.
+- Live read smoke with seeded demo user confirms all four state combinations are represented.
+- Do not commit/push until user validates real account interactions.
+- Next likely task: FE-008 Comments; Library can follow immediately after because Save state/cache is now established.

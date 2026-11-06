@@ -1,41 +1,58 @@
 # Frontend State
 
-- Task: FE-006A — Reader Content Languages.
-- Status: Accepted by user; FE-006A ready for checkpoint commit/push.
-- Base commit: `19f578f0c301ff6aafa4764cd249938dbab7c0b8` (`feat(frontend): add public idea detail`).
-- Backend language contract is merged at `9fd181c1e6d97566c6ef2c90f2fe774b6947fd68`.
+- Task: FE-007 — Spark + Save Engagement.
+- Status: Accepted by user; FE-007 ready for checkpoint commit/push.
+- Base backend commit: `84ea6a36be32d2e4ece582196d2920b4daaec5ac` (`feat(engagement): expose viewer interaction state`).
+- Previous accepted frontend commit: `d145b2ac8795f21c773233d38fe8816138ada541`.
 - Frontend root: `frontend/`.
-- BE-LANG-001 exposes 62 active canonical content languages via `GET /api/v1/languages/`; saved reader choices via `GET/PUT /api/v1/me/languages/`.
-- Architecture separation preserved: UI language (fa/en) is independent from reader content-language preferences, Idea.language and Source.language.
-- New frontend types: `ContentLanguage`, `CurrentContentLanguages`, `UpdateContentLanguagesPayload`.
-- New API client: `getLanguages()`, `getCurrentContentLanguages()`, `updateContentLanguages()`.
-- Shared TanStack language queries:
-  - `['languages']` public catalog, stale 1 hour.
-  - `['me','languages']` reader preferences, stale 60 seconds.
-- New protected route: `/onboarding/languages`.
-- Registration flow now uses `/onboarding/interests?setup=1`; first-time interest save continues to `/onboarding/languages?setup=1`, then language save returns to `/app`.
-- Existing-user interest edits without `setup=1` still return directly to `/app`.
-- Reader home now exposes separate Edit interests and Edit languages actions.
-- Language picker UX: backend canonical ordering, selected/available counts, searchable by code + English/Persian/native names, native names marked with language + auto direction, accessible pressed buttons, zero-selection warning, real loading/error/save states.
-- 62-language catalog usability: compact Save languages control is sticky beneath the site header while browsing; avoids forcing a long scroll to submit.
-- Successful language PUT updates `['me','languages']`, invalidates `['recommendations']` and `['feed','latest']`, then returns to `/app`.
-- Discovery behavior itself remains backend-owned: authenticated For You and Latest automatically reflect stored language preferences; frontend does not duplicate filtering rules.
-- Personalized empty state now links to both interests and content languages. Latest empty state links to language settings and explains that current content-language choices can produce no matches.
-- Idea language is now visible on IdeaCard and Idea Detail through a subtle catalog-backed language badge. Shared catalog observers de-duplicate into one TanStack request/cache entry.
-- Content direction expanded from Persian-only to RTL base codes `ar`, `fa`, `he`, `ur`; future BCP-47 suffixes are handled by base-code extraction.
-- Live integration through current Vite proxy using seeded demo reader:
-  - catalog_count = 62
-  - selected = en, zh, es, ar, ja, ko, fa
-  - authenticated first feed languages = ja, ko, zh
-  - recommendation languages = ar, en, es, fa, ja, ko, zh
-  - Turkish in authenticated feed = false
-  - Turkish in recommendations = false
-- Visual review:
-  - full 62-language picker checked at 1440×1100 and 390×844.
-  - real Arabic Idea 48 checked at 390×844; Arabic title/body render RTL and content-language badge resolves correctly.
-  - sticky save bar was tightened from a wide panel to a compact floating control after visual review.
-- Temporary visual-review route/file was removed before final validation.
-- Final quality gates: TypeScript PASS; ESLint PASS; Vitest 19 files / 51 tests PASS; production build PASS; Prettier PASS; `npm audit --omit=dev` reports 0 vulnerabilities.
-- FE-006A production bundle: ~143.94 KB JS gzip and ~7.17 KB CSS gzip.
-- Backend implementation files changed by FE-006A: none.
-- Next logical task after acceptance: FE-007 — Spark + Save engagement with optimistic UI and recommendation-cache invalidation.
+- Backend contract verified from source and handoff:
+  - authenticated batched `GET /api/v1/me/engagement/?idea_ids=...`;
+  - max 100 requested tokens/request;
+  - explicit false/false returned for public Ideas without interactions;
+  - draft/hidden/missing omitted;
+  - existing Spark/Save PUT/DELETE remain explicit, idempotent, CSRF-protected, 204.
+- New frontend types: `ViewerEngagementItem`, `ViewerEngagementResponse`.
+- New API client:
+  - `getViewerEngagement(ideaIds)`
+  - `setSparked(ideaId, boolean)`
+  - `setSaved(ideaId, boolean)`.
+- Engagement cache architecture:
+  - screen-level `useHydrateViewerEngagement(ids)` fetches viewer state in batches;
+  - each result is normalized into `['viewerEngagement','idea',id]`;
+  - IdeaCard and Idea Detail observe the same normalized cache entry;
+  - hydration chunks at 100 IDs, so >100 loaded Latest cards become bounded batch calls rather than an invalid oversized request or N+1.
+- Personalized For You and Latest hydrate currently rendered Idea IDs only for authenticated sessions.
+- Public Idea Detail hydrates its single Idea only if a session exists.
+- New reusable `IdeaEngagementActions`:
+  - Spark and Save buttons;
+  - `aria-pressed` states;
+  - localized labels;
+  - pressed Spark amber, pressed Save teal;
+  - compact card variant and larger detail variant;
+  - anonymous detail shows Sign in to Spark or Save with login return path;
+  - anonymous card renders no private engagement controls.
+- Optimistic mutation behavior:
+  - cache updates in `onMutate` before PUT/DELETE resolves;
+  - previous state captured;
+  - network failure restores previous state;
+  - accessible error message explains rollback;
+  - both buttons lock while either mutation is pending to prevent cross-mutation rollback races.
+- Mutation cache behavior:
+  - active viewer-engagement batch state is invalidated/refetched after mutation for server confirmation;
+  - recommendations are invalidated with `refetchType:'none'` so the current reading feed does not suddenly reorder after a click, but is stale for the next refresh/navigation;
+  - `['library','saved']` is marked stale on Save changes for future/current Library integration.
+- No Spark counts are invented because no public count contract is part of FE-007.
+- Live backend read smoke through Vite succeeded for demo reader:
+  - Idea 1 -> sparked true / saved false
+  - Idea 2 -> false / false
+  - Idea 3 -> false / true
+  - Idea 35 -> true / true.
+- A first manual curl mutation smoke correctly returned 403 because the script reused a pre-login CSRF token after Django login rotation; this was a smoke-script error, not a product error. Frontend auth already calls `clearCsrfToken()` after login/register so unsafe FE-007 requests bootstrap the rotated token correctly.
+- Visual review completed at 1440×1100 and 390×844 using production IdeaCard:
+  - unpressed/pressed states are visually distinct;
+  - RTL layout remains coherent;
+  - controls remain subordinate to reading content;
+  - no observed horizontal overflow.
+- Temporary visual-review route/file removed before final validation.
+- Backend implementation files changed by FE-007: none.
+- Next logical task after acceptance: FE-008 — Comments on Idea Detail, followed by the saved Library surface.
