@@ -6,6 +6,7 @@ import { logout } from '../../api/auth'
 import { Button } from '../../components/ui/Button'
 import { Card } from '../../components/ui/Card'
 import { SESSION_QUERY_KEY, useSession } from '../auth/session'
+import { FeedPreviewSection } from '../feed/FeedPreviewSection'
 
 export function AuthenticatedHomePage() {
   const { t } = useTranslation()
@@ -67,6 +68,8 @@ export function AuthenticatedHomePage() {
           </Link>
         </Card>
       </div>
+
+      <FeedPreviewSection />
 
       <dl className="account-summary">
         <div>

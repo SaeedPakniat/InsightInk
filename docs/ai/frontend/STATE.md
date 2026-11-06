@@ -1,27 +1,31 @@
 # Frontend State
 
-- Task: FE-002 — Reader Interests Onboarding.
-- Status: Accepted by user after real seeded-data testing; FE-002 ready for commit/push.
-- Base commit: `0cc9ed84beb90d78a55c1c430903471ee447cee2`.
+- Task: FE-003 — Production IdeaCard.
+- Status: Accepted by user after responsive desktop/mobile review; FE-003 ready for commit/push.
+- Base commit: `e516631969f4b4a95babef8a76e98cc451cbdb4a`.
 - Frontend root: `frontend/`.
-- Locked stack remains React + TypeScript + Vite, React Router, TanStack Query, i18next/react-i18next, Vitest/Testing Library, plain CSS design tokens.
-- FE-001/FE-001A checkpoint is committed and pushed on `master`.
+- Stack remains React + TypeScript + Vite, React Router, TanStack Query, i18next/react-i18next, Vitest/Testing Library, plain CSS design tokens.
+- FE-001/FE-001A and FE-002 are committed and pushed on `master`.
 - Auth remains Django session/cookie auth with CSRF for unsafe requests; no JWT/localStorage auth tokens.
-- FE-002 API contract:
-  - `GET /api/v1/topics/` -> array of active topics with `id`, `slug`, `name_fa`, `name_en`.
-  - `GET /api/v1/me/interests/` -> `{topics: Topic[]}`.
-  - `PUT /api/v1/me/interests/` body `{topics: number[]}` -> updated `{topics: Topic[]}`.
-- New route: protected `/onboarding/interests`.
-- Registration now routes directly to interests onboarding after successful account creation. Existing authenticated users can reopen interests from `/app`.
-- Selection behavior: existing saved interests initialize local React draft state; clicking topic tiles changes only local state; Django is updated only on Save and continue.
-- No frontend minimum-selection rule was invented because backend explicitly allows an empty topic list.
-- Bilingual topic tiles show the active UI-language name first and the alternate-language name second with explicit per-label `lang`/`dir`.
-- UI states implemented: loading skeleton, fetch error + retry, empty topic list, selection count, selected/unselected tile feedback, save pending, save failure.
-- Accessibility: topic choices are real buttons with `aria-pressed`; keyboard-native interaction; selected count uses polite live feedback; touch targets are large; existing reduced-motion support applies.
-- Responsive layout: one topic column on small screens, two at 42rem+, three at 52rem+.
-- Quality: TypeScript, ESLint, Prettier and production build pass; 6 test files / 13 tests pass; runtime `npm audit --omit=dev` reports 0 vulnerabilities.
-- FE-002 production bundle: ~137.44 KB JS gzip and ~4.55 KB CSS gzip.
-- BE-DATA-001 is now merged at `062646fe8daee693757d83d7649fd8f598b0eef2` and provides 14 real bilingual Topics plus deterministic feed/demo data. The previous development-data blocker is resolved.
-- Manual acceptance: user loaded the real seeded onboarding screen, selected and saved 3 interests successfully, and confirmed the flow works.
-- Backend implementation files changed by FE-002: none.
-- Next logical frontend task: FE-003 — production IdeaCard component based strictly on the existing Idea API contract and seeded feed data.
+- Seeded backend data is available from BE-DATA-001: 14 bilingual Topics, 20 Sources, 40 published Ideas, demo creator/reader activity.
+- FE-003 public content contract is derived from the real backend serializers/models, not the conceptual Developer Bible type.
+- `Idea` frontend type now exactly represents: `id`, `language`, `title`, `body`, `estimated_read_seconds`, `published_at`, nested creator, nested source, and active topics.
+- Source types are exactly `book | article | movie | podcast`.
+- `GET /api/v1/feed/` is typed as a cursor page with `next`, `previous`, and `results`.
+- Reusable `IdeaCard` implemented under `src/features/ideas/`.
+- Prototype reference was inspected from the supplied `InsightInk_Investor_Prototype.html`: production retains its format badge/read time/title/body/source hierarchy, but does not copy prototype Spark/comment/save UI because those engagement fields are absent from the current public Idea serializer.
+- Bilingual content rule: outer card metadata follows UI language; title/body receive their own `lang` + `dir` derived from `idea.language`. English ideas therefore remain LTR inside Persian UI and Persian ideas remain RTL inside English UI.
+- Read time uses `Intl.NumberFormat`, so Persian UI renders localized digits such as `۲ دقیقه مطالعه`.
+- Card metadata includes localized source-type badge/icon, localized topic chips, separate InsightInk creator attribution and original Source attribution, optional verified marker, external source link, and avatar fallback initials.
+- Long Idea bodies are visually clamped to four lines on the card; full Idea body remains untouched in data for later detail view.
+- `IdeaCardSkeleton` implemented with lightweight CSS animation and existing reduced-motion global behavior.
+- Authenticated `/app` now includes a small real-data `FeedPreviewSection` showing the first two published feed Ideas. This is a preview only; infinite/cursor feed orchestration remains FE-004.
+- Feed preview handles loading skeleton, fetch error/retry, and empty published-feed states.
+- Accessibility: semantic `article`, hidden decorative SVGs, accessible external source label, screen-reader verified text, readable touch/focus behavior, and content direction metadata.
+- Visual review completed with real seeded content at 1440×1100 and 390×844. Mixed Persian/English cards remain coherent with no observed horizontal overflow.
+- Temporary screenshot-only review route was created solely for visual inspection and removed before final validation; no review-only route/file remains.
+- Quality: TypeScript, ESLint, Prettier, production build pass; 8 test files / 18 tests pass; runtime `npm audit --omit=dev` reports 0 vulnerabilities.
+- FE-003 production bundle: ~139.17 KB JS gzip and ~5.67 KB CSS gzip.
+- Backend implementation files changed by FE-003: none.
+- Manual acceptance: user confirmed the IdeaCard design is good and responsive.
+- Next logical task: FE-004 — replace the two-card preview with the real scrolling feed, using cursor pagination and deliberate scrolling behavior. Personalization source (`/feed/` vs `/recommendations/`) must follow the existing backend contract rather than be assumed.
