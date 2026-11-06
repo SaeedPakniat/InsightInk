@@ -59,6 +59,12 @@ export type FeedPage = {
   results: Idea[]
 }
 
+export type RecommendationItem = {
+  idea: Idea
+  score: number
+  reason: string
+}
+
 export type LoginPayload = {
   email: string
   password: string

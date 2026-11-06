@@ -60,15 +60,8 @@ export const en = {
     home: {
       eyebrow: 'InsightInk · Reader space',
       greeting: 'Hello {{name}}',
-      body: 'Your reader space now connects your session, interests and real published ideas.',
-      sessionTitle: 'Active session',
-      sessionBody: 'Authentication uses cookies, while unsafe requests are protected by CSRF.',
-      nextTitle: 'Personalize your future feed',
-      nextBody:
-        'Choose the topics you care about. These interests will become an input to later feed and recommendation work.',
-      interestsAction: 'Choose interests',
-      userEmail: 'Account email',
-      uiLanguage: 'Account language preference',
+      body: 'Your interests and reading signals shape the ideas ranked for you here.',
+      interestsAction: 'Edit interests',
     },
     onboarding: {
       interests: {
@@ -103,14 +96,25 @@ export const en = {
       topicsLabel: 'Idea topics',
     },
     feed: {
-      previewEyebrow: 'Fresh ideas',
-      previewTitle: 'A first taste of your feed',
-      previewBody: 'Real published ideas from the current InsightInk collection.',
       loading: 'Loading ideas…',
       loadErrorTitle: 'Ideas could not be loaded',
       loadErrorBody: 'The latest ideas are unavailable right now.',
       emptyTitle: 'No published ideas yet',
       emptyBody: 'Published ideas will appear here when they become available.',
+    },
+    recommendations: {
+      eyebrow: 'Personalized for you',
+      title: 'For You',
+      body: 'Ranked from your interests, saves, Sparks, followed creators, popularity and freshness.',
+      count: '{{total}} recommendations',
+      loading: 'Building your recommendations…',
+      loadErrorTitle: 'Your recommendations could not be loaded',
+      loadErrorBody: 'InsightInk could not rank your personalized ideas right now.',
+      emptyTitle: 'Your personalized set is empty',
+      emptyBody: 'Choose a few interests to give InsightInk a starting signal.',
+      endTitle: 'That is your current personalized set.',
+      endBody: 'InsightInk keeps this list finite instead of pretending the scroll has no end.',
+      adjustInterests: 'Adjust interests',
     },
     errors: {
       sessionTitle: 'Session check failed',

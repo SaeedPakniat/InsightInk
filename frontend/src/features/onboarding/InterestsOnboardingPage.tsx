@@ -6,6 +6,7 @@ import { updateInterests } from '../../api/interests'
 import { Card } from '../../components/ui/Card'
 import { ErrorState } from '../../components/ui/Feedback'
 import { InterestSelectionForm } from './InterestSelectionForm'
+import { RECOMMENDATIONS_QUERY_KEY } from '../feed/recommendations'
 import { INTERESTS_QUERY_KEY, useInterests, useTopics } from './interests'
 
 export function InterestsOnboardingPage() {
@@ -19,6 +20,7 @@ export function InterestsOnboardingPage() {
     mutationFn: updateInterests,
     onSuccess: (data) => {
       queryClient.setQueryData(INTERESTS_QUERY_KEY, data)
+      void queryClient.invalidateQueries({ queryKey: RECOMMENDATIONS_QUERY_KEY })
       navigate('/app', { replace: true })
     },
   })

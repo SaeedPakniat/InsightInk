@@ -4,9 +4,8 @@ import { useTranslation } from 'react-i18next'
 
 import { logout } from '../../api/auth'
 import { Button } from '../../components/ui/Button'
-import { Card } from '../../components/ui/Card'
 import { SESSION_QUERY_KEY, useSession } from '../auth/session'
-import { FeedPreviewSection } from '../feed/FeedPreviewSection'
+import { PersonalizedFeed } from '../feed/PersonalizedFeed'
 
 export function AuthenticatedHomePage() {
   const { t } = useTranslation()
@@ -19,6 +18,7 @@ export function AuthenticatedHomePage() {
     mutationFn: logout,
     onSuccess: () => {
       queryClient.setQueryData(SESSION_QUERY_KEY, null)
+      queryClient.clear()
       navigate('/', { replace: true })
     },
   })
@@ -29,20 +29,26 @@ export function AuthenticatedHomePage() {
 
   return (
     <section className="app-home">
-      <div className="app-home__hero">
-        <div>
+      <header className="reader-home__header">
+        <div className="reader-home__welcome">
           <p className="eyebrow">{t('home.eyebrow')}</p>
           <h1>{t('home.greeting', { name: displayName })}</h1>
           <p>{t('home.body')}</p>
         </div>
-        <Button
-          variant="secondary"
-          disabled={logoutMutation.isPending}
-          onClick={() => logoutMutation.mutate()}
-        >
-          {logoutMutation.isPending ? t('common.loggingOut') : t('common.logout')}
-        </Button>
-      </div>
+
+        <div className="reader-home__actions">
+          <Link className="button button--secondary" to="/onboarding/interests">
+            {t('home.interestsAction')}
+          </Link>
+          <Button
+            variant="ghost"
+            disabled={logoutMutation.isPending}
+            onClick={() => logoutMutation.mutate()}
+          >
+            {logoutMutation.isPending ? t('common.loggingOut') : t('common.logout')}
+          </Button>
+        </div>
+      </header>
 
       {logoutMutation.isError && (
         <p className="form-error" role="alert">
@@ -50,37 +56,7 @@ export function AuthenticatedHomePage() {
         </p>
       )}
 
-      <div className="foundation-grid">
-        <Card className="foundation-card">
-          <span className="foundation-card__index">01</span>
-          <h2>{t('home.sessionTitle')}</h2>
-          <p>{t('home.sessionBody')}</p>
-        </Card>
-        <Card className="foundation-card">
-          <span className="foundation-card__index">02</span>
-          <h2>{t('home.nextTitle')}</h2>
-          <p>{t('home.nextBody')}</p>
-          <Link
-            className="button button--secondary foundation-card__action"
-            to="/onboarding/interests"
-          >
-            {t('home.interestsAction')}
-          </Link>
-        </Card>
-      </div>
-
-      <FeedPreviewSection />
-
-      <dl className="account-summary">
-        <div>
-          <dt>{t('home.userEmail')}</dt>
-          <dd>{user.email}</dd>
-        </div>
-        <div>
-          <dt>{t('home.uiLanguage')}</dt>
-          <dd>{user.preferred_ui_language.toUpperCase()}</dd>
-        </div>
-      </dl>
+      <PersonalizedFeed />
     </section>
   )
 }

@@ -1,31 +1,29 @@
 # Frontend State
 
-- Task: FE-003 — Production IdeaCard.
-- Status: Accepted by user after responsive desktop/mobile review; FE-003 ready for commit/push.
-- Base commit: `e516631969f4b4a95babef8a76e98cc451cbdb4a`.
+- Task: FE-004 — Personalized For You Feed.
+- Status: Implementation complete; pending user manual/visual acceptance before commit/push.
+- Base commit: `2187510d4bd18214cc4e186bcae8699da0608cce`.
 - Frontend root: `frontend/`.
 - Stack remains React + TypeScript + Vite, React Router, TanStack Query, i18next/react-i18next, Vitest/Testing Library, plain CSS design tokens.
-- FE-001/FE-001A and FE-002 are committed and pushed on `master`.
+- FE-001/FE-001A, FE-002 and FE-003 are committed and pushed on `master`.
 - Auth remains Django session/cookie auth with CSRF for unsafe requests; no JWT/localStorage auth tokens.
-- Seeded backend data is available from BE-DATA-001: 14 bilingual Topics, 20 Sources, 40 published Ideas, demo creator/reader activity.
-- FE-003 public content contract is derived from the real backend serializers/models, not the conceptual Developer Bible type.
-- `Idea` frontend type now exactly represents: `id`, `language`, `title`, `body`, `estimated_read_seconds`, `published_at`, nested creator, nested source, and active topics.
-- Source types are exactly `book | article | movie | podcast`.
-- `GET /api/v1/feed/` is typed as a cursor page with `next`, `previous`, and `results`.
-- Reusable `IdeaCard` implemented under `src/features/ideas/`.
-- Prototype reference was inspected from the supplied `InsightInk_Investor_Prototype.html`: production retains its format badge/read time/title/body/source hierarchy, but does not copy prototype Spark/comment/save UI because those engagement fields are absent from the current public Idea serializer.
-- Bilingual content rule: outer card metadata follows UI language; title/body receive their own `lang` + `dir` derived from `idea.language`. English ideas therefore remain LTR inside Persian UI and Persian ideas remain RTL inside English UI.
-- Read time uses `Intl.NumberFormat`, so Persian UI renders localized digits such as `۲ دقیقه مطالعه`.
-- Card metadata includes localized source-type badge/icon, localized topic chips, separate InsightInk creator attribution and original Source attribution, optional verified marker, external source link, and avatar fallback initials.
-- Long Idea bodies are visually clamped to four lines on the card; full Idea body remains untouched in data for later detail view.
-- `IdeaCardSkeleton` implemented with lightweight CSS animation and existing reduced-motion global behavior.
-- Authenticated `/app` now includes a small real-data `FeedPreviewSection` showing the first two published feed Ideas. This is a preview only; infinite/cursor feed orchestration remains FE-004.
-- Feed preview handles loading skeleton, fetch error/retry, and empty published-feed states.
-- Accessibility: semantic `article`, hidden decorative SVGs, accessible external source label, screen-reader verified text, readable touch/focus behavior, and content direction metadata.
-- Visual review completed with real seeded content at 1440×1100 and 390×844. Mixed Persian/English cards remain coherent with no observed horizontal overflow.
-- Temporary screenshot-only review route was created solely for visual inspection and removed before final validation; no review-only route/file remains.
-- Quality: TypeScript, ESLint, Prettier, production build pass; 8 test files / 18 tests pass; runtime `npm audit --omit=dev` reports 0 vulnerabilities.
-- FE-003 production bundle: ~139.17 KB JS gzip and ~5.67 KB CSS gzip.
-- Backend implementation files changed by FE-003: none.
-- Manual acceptance: user confirmed the IdeaCard design is good and responsive.
-- Next logical task: FE-004 — replace the two-card preview with the real scrolling feed, using cursor pagination and deliberate scrolling behavior. Personalization source (`/feed/` vs `/recommendations/`) must follow the existing backend contract rather than be assumed.
+- FE-004 product decision: authenticated `/app` is now the personalized "For You" reader home using `GET /api/v1/recommendations/`. General `GET /api/v1/feed/` is retained for a future Latest/Explore surface.
+- Recommendation contract: array of `{idea: Idea, score: number, reason: string}`; authenticated; current backend limit is 20 results and there is no recommendation pagination.
+- Backend recommendation ranking signals: explicit interests, saved-topic affinity, Spark-topic affinity, followed creators, popularity, and freshness.
+- New frontend type `RecommendationItem` and typed API client `getRecommendations()`.
+- TanStack Query key: `['recommendations']`; stale time 30 seconds.
+- Interests onboarding now invalidates the recommendation query on successful save so changed interests are reflected when navigating back to `/app`.
+- `AuthenticatedHomePage` no longer renders the foundation/debug dashboard, account summary, or two-card preview. It now has a compact reader welcome, Edit interests, Log out, and the personalized feed.
+- `PersonalizedFeed` renders the complete recommendation array rather than `slice(0, 2)`.
+- Internal recommendation score is deliberately not shown to users. Transparent backend reason is shown above each IdeaCard.
+- Recommendation reasons detect Persian script and receive their own `lang`/`dir`, preventing layout problems when backend reason language differs from the local UI language.
+- KNOWN LANGUAGE CONTRACT NUANCE: backend reason language follows account `preferred_ui_language`; the current frontend language toggle is local-device state and does not PATCH the account preference. A locally switched UI can therefore contain a recommendation-reason line in the account's other language. Layout is correct, but syncing account language requires a future backend profile-update contract.
+- Feed is deliberately finite because the backend recommendation endpoint is finite/unpaginated. After the returned set, UI shows an explicit end marker rather than fake infinite scrolling.
+- Loading state renders three IdeaCard skeletons; error state supports retry; empty state directs the user to choose/edit interests.
+- Live authenticated smoke test through Vite using the seeded demo reader: HTTP 200, 20 recommendations, 20 unique Idea IDs. First reason: `Because you selected Psychology.`.
+- Visual review completed at 1440×1100 and 390×844 using real public IdeaCard content and the exact FE-004 layout/reason treatment; no observed horizontal overflow.
+- Temporary screenshot-only review route/file was removed before final validation.
+- Quality before final cleanup: TypeScript, ESLint, Prettier and production build pass; 11 test files / 23 tests pass; runtime `npm audit --omit=dev` reports 0 vulnerabilities.
+- FE-004 production bundle before final cleanup: ~139.41 KB JS gzip and ~5.78 KB CSS gzip.
+- Backend implementation files changed by FE-004: none.
+- Next logical task after FE-004 acceptance: FE-005 — Latest/Explore feed using the existing cursor-paginated `GET /api/v1/feed/`, with TanStack Infinite Query/load-more behavior and duplicate-safe page flattening.
