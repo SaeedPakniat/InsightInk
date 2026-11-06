@@ -1,51 +1,58 @@
 # Frontend State
 
-- Task: FE-009 — Saved Library.
-- Status: Accepted by user; FE-009 ready for checkpoint commit/push.
-- Base commit: `8a904241ef29a4ba58c705058c2e1398c3f04e3d` (`feat(frontend): add idea comments`).
+- Task: FE-010 — Search & Discovery.
+- Status: Accepted by user; FE-010 ready for checkpoint commit/push.
+- Base commit: `0100cc8e3d969ac834dfdfd28af985cfecb14f56` (`feat(frontend): add saved library`).
 - Frontend root: `frontend/`.
-- Backend Saved Library contract verified from actual source:
-  - authenticated `GET /api/v1/library/saved/`;
-  - no pagination;
-  - response items are `{saved_at, idea}`;
-  - only current user's SavedIdea rows whose Idea is published;
-  - ordering `-saved_at, -id`;
-  - nested IdeaSerializer includes safe public Idea fields and active Topics only.
-- New frontend type: `SavedLibraryItem`.
-- New API client: `getSavedLibrary()`.
-- New TanStack query: `['library','saved']`, stale 30 seconds.
-- New protected route: `/library`.
-- Navigation architecture improved:
-  - removed old `FeedModeNav` two-feed abstraction;
-  - added `ReaderNav` with For You / Latest / Library;
-  - reused existing compact segmented-control visual language.
-- Saved Library page:
-  - preserves backend ordering exactly;
-  - reuses production `IdeaCard`;
-  - shows localized saved date metadata above each card;
-  - shows count, loading skeletons, retryable error and discovery-oriented empty state.
-- Engagement integration:
-  - Library hydrates viewer engagement for its Idea IDs so Spark/Save controls reflect real server state;
-  - unsaving now optimistically removes the matching `SavedLibraryItem` from `['library','saved']`;
-  - failed unsave restores both the previous per-Idea engagement state and previous Library array;
-  - existing feed/detail state remains shared through `viewerEngagementKey(ideaId)`.
-- Important product behavior confirmed with the real seeded database:
-  - demo reader Library count = 6;
-  - newest saved Idea is Turkish Idea 67;
-  - Turkish is currently excluded from reader discovery languages but remains in Library;
-  - this correctly preserves the distinction between discovery preferences and historical user saves.
-- Real seeded Library first items:
-  - Idea 67, Turkish, `Fiyat yalnızca bir sayı değil, bir sinyaldir`;
-  - Idea 3, English, `A system reveals what it rewards`;
-  - Idea 35, English, `The best design often disappears into routine`;
-  - Idea 8, Persian, `سادگی یعنی انتخاب آگاهانه‌ی پیچیدگی`.
-- Visual review completed with the exact real seeded Library response at 1440×1200 and 390×1000:
-  - three-way Reader navigation fits cleanly;
-  - saved-date metadata remains subordinate;
-  - Turkish/English/Persian content renders correctly;
+- Backend search contract verified from actual source:
+  - public `GET /api/v1/search/`;
+  - FeedCursorPagination;
+  - q optional/blank, trimmed, max 200;
+  - type optional SourceType choice;
+  - topic optional slug;
+  - public Ideas only;
+  - normalized search across Idea title/body, Source title/original creator, Creator display name and Topic Persian/English names;
+  - search ordering `-id`;
+  - authenticated discovery defaults to stored reader content languages;
+  - anonymous discovery sees all active supported content languages.
+- New frontend type: `SearchFilters`.
+- New API client: `getSearchPage(filters, cursor)`, `cursorFromSearchUrl(next)`.
+- New TanStack infinite Search query with stable key `['search', q, type, topic]`.
+- New public route: `/search`.
+- Root header now exposes Search globally:
+  - mobile: icon-only to avoid crowding Brand + language toggle;
+  - >=42rem: icon + localized label;
+  - active route state is visually indicated.
+- Search state architecture:
+  - committed search state is URL-based via `useSearchParams`;
+  - query input is an uncontrolled form field keyed by URL q, avoiding React effect synchronization;
+  - typing does not trigger a request;
+  - form submit writes q to URL;
+  - format/topic changes write immediately to URL;
+  - Clear resets q/type/topic and form state.
+- Search filters:
+  - Format: All / Book / Article / Film / Podcast using existing SourceType union and translations;
+  - Topic: existing public Topic catalog, localized name;
+  - Topic failure disables only that filter rather than blocking Search.
+- Search results:
+  - reuse IdeaCard;
+  - cursor pages append with duplicate Idea IDs removed;
+  - authenticated result IDs batch-hydrate viewer Spark/Save state;
+  - anonymous result cards remain public and omit private engagement controls.
+- Search language messaging:
+  - anonymous: explains Search spans all supported content languages;
+  - authenticated: explains results follow selected content languages and links to `/onboarding/languages`.
+- Live backend smoke through Vite:
+  - public q=`Fiyat` -> 1 result: Idea 67, language tr;
+  - authenticated demo reader q=`Fiyat` -> 0 results because Turkish is excluded from stored discovery languages;
+  - public Persian q=`یادگیری` -> real Persian search result returned.
+- Visual review:
+  - desktop 1440×1200 public q=Fiyat: Persian UI + Turkish result rendered correctly;
+  - mobile 390×1000 public q=یادگیری: Persian UI + Persian result/filter layout reviewed;
+  - initial mobile review exposed header crowding; Search label was changed to icon-only below 42rem and re-reviewed successfully;
   - no observed horizontal overflow.
-- Temporary review route/file and temporary Library JSON/screenshots removed before final validation.
-- Final quality gates: TypeScript PASS; ESLint PASS; Vitest 27 files / 79 tests PASS; production build PASS; Prettier PASS; `npm audit --omit=dev` reports 0 vulnerabilities.
-- FE-009 production bundle: ~148.12 KB JS gzip and ~8.06 KB CSS gzip.
-- Backend implementation files changed by FE-009: none.
-- Next logical task after acceptance: FE-010 — Search & Discovery using the existing backend search contract.
+- Review screenshots/logs removed before final validation.
+- Final quality gates: TypeScript PASS; ESLint PASS; Vitest 30 files / 88 tests PASS; production build PASS; Prettier PASS; `npm audit --omit=dev` reports 0 vulnerabilities.
+- FE-010 production bundle: ~150.52 KB JS gzip and ~8.68 KB CSS gzip.
+- Backend implementation files changed by FE-010: none.
+- Next logical task after acceptance: FE-011 — Creator Profiles + Following, after auditing the existing creator/follow APIs.

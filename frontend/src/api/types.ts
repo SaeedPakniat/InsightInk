@@ -74,6 +74,12 @@ export type FeedPage = {
   results: Idea[]
 }
 
+export type SearchFilters = {
+  q?: string
+  type?: SourceType
+  topic?: string
+}
+
 export type RecommendationItem = {
   idea: Idea
   score: number
