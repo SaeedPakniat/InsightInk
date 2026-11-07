@@ -2,16 +2,24 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import type { IdeaComment } from '../../api/types'
+import { CommentReportAction } from '../reporting/CommentReportAction'
 import { inferTextDirection } from './textDirection'
 
 type CommentItemProps = {
   comment: IdeaComment
   canDelete: boolean
+  canReport: boolean
   isDeleting: boolean
   onDelete: (commentId: number) => void
 }
 
-export function CommentItem({ comment, canDelete, isDeleting, onDelete }: CommentItemProps) {
+export function CommentItem({
+  comment,
+  canDelete,
+  canReport,
+  isDeleting,
+  onDelete,
+}: CommentItemProps) {
   const { i18n, t } = useTranslation()
   const [confirmingDelete, setConfirmingDelete] = useState(false)
   const isEnglishUi = i18n.language.startsWith('en')
@@ -31,7 +39,7 @@ export function CommentItem({ comment, canDelete, isDeleting, onDelete }: Commen
           {comment.id < 0 && <span>{t('comments.postingShort')}</span>}
         </div>
 
-        {canDelete && comment.id > 0 && (
+        {comment.id > 0 && canDelete && (
           <div className="comment-item__delete">
             {confirmingDelete ? (
               <>
@@ -68,6 +76,8 @@ export function CommentItem({ comment, canDelete, isDeleting, onDelete }: Commen
       <p className="comment-item__body" dir={direction}>
         {comment.body}
       </p>
+
+      {comment.id > 0 && canReport && <CommentReportAction commentId={comment.id} />}
     </article>
   )
 }

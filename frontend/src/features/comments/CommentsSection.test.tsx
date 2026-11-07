@@ -82,6 +82,7 @@ describe('CommentsSection', () => {
     )
     expect(screen.queryByRole('textbox')).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Delete' })).not.toBeInTheDocument()
+    expect(screen.getAllByRole('button', { name: 'Report' })).toHaveLength(2)
   })
 
   it('shows delete controls only on the current user comment and requires confirmation', async () => {
@@ -93,6 +94,7 @@ describe('CommentsSection', () => {
 
     const deleteButtons = screen.getAllByRole('button', { name: 'Delete' })
     expect(deleteButtons).toHaveLength(1)
+    expect(screen.getAllByRole('button', { name: 'Report' })).toHaveLength(1)
 
     fireEvent.click(deleteButtons[0])
 

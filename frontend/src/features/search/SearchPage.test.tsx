@@ -138,6 +138,7 @@ describe('SearchPage', () => {
     expect(
       screen.getByText('You are searching across all currently supported content languages.'),
     ).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Back home' })).toHaveAttribute('href', '/')
   })
 
   it('submits a new query into the URL instead of searching on every keystroke', async () => {

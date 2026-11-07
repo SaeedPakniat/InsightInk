@@ -1,51 +1,49 @@
 # Frontend State
 
-- Task: FE-011 — Creator Profiles + Following.
-- Status: Accepted by user; FE-011 ready for checkpoint commit/push.
-- Frontend feature started from `aed1a6f27185a9661e5ec18ccf3f9f8d8558b8dc`; repository HEAD now includes backend dependency through `6eb12f69b7501319f83d936b87c3f0cdd8532b20`.
-- Backend viewer follow-state implementation: `7352883676d64da9ac63a4c0f1ed1980601b8dec`.
-- Public Creator route: `/creators/:creatorId`.
-- IdeaCard and Idea Detail creator names link to public profiles.
-- Creator Profile:
-  - avatar/fallback initials;
-  - verified indicator;
-  - bilingual bio preference/fallback with truthful lang/dir;
-  - public published-Idea / follower / Spark counts;
-  - published Idea list using production IdeaCard;
-  - cursor load-more;
-  - loading/error/empty/404 states;
-  - authenticated viewer engagement hydration.
-- Viewer follow state:
-  - authenticated GET `/me/creator-follows/?creator_ids=...`;
-  - explicit `following` and `can_follow`;
-  - self profile handled through `can_follow=false`.
-- Follow UI:
-  - anonymous Sign in to follow with return route;
-  - authenticated Follow / Following with `aria-pressed`;
-  - own profile shows neutral ownership state;
-  - pending/error/retry states localized.
-- Follow mutation:
-  - explicit PUT/DELETE;
-  - optimistic following state;
-  - optimistic follower-count +/-1;
-  - rollback on error;
-  - Creator/follow state refetched after settle;
-  - recommendation cache invalidated because follows influence recommendation.
-- Seed contract confirms demo reader follows Creator 2 Nora Hayes and Creator 3 Arman Daryan, but not 1 or 4.
+- Task: FE-012 — Reader Reporting + Search Return Navigation.
+- Status: Accepted by user; FE-012 ready for checkpoint commit/push.
+- Base commit: `a12ae34c676216bbbece682311f727b683fe7b84` (`feat(frontend): add creator profiles and following`).
+- Search UX fix:
+  - authenticated Search shows localized Back to feed -> `/app`;
+  - anonymous Search shows localized Back home -> `/`;
+  - return action sits above Search heading and follows RTL/LTR direction.
+- Backend moderation/report contract verified from actual source:
+  - reader-facing report endpoint exists only for visible Comments on published Ideas;
+  - `POST /api/v1/comments/<comment_id>/report/`;
+  - authenticated + CSRF;
+  - reasons locked to harassment / spam / inappropriate_content / other;
+  - details optional, trim whitespace, max 2000;
+  - response public fields id/reason/details/status/created_at;
+  - hidden/deleted/draft comments are not reportable.
+- No reader-facing Idea-report endpoint exists; frontend does not invent one.
+- No reader report-history/read endpoint or duplicate-report guard exists.
+- New frontend types:
+  - `ReportReason`
+  - `CreateCommentReportPayload`
+  - `PublicReport`.
+- New API client: `reportComment(commentId,payload)` using shared session/CSRF client.
+- New `CommentReportAction`:
+  - Report trigger under non-owned visible comments;
+  - anonymous sign-in-to-report path;
+  - authenticated inline form;
+  - four locked reasons;
+  - optional max-2000 details;
+  - localized detail-count copy;
+  - backend field errors and generic error state;
+  - local success confirmation after 201.
+- Comment ownership action rules:
+  - own visible persisted Comment -> Delete;
+  - other visible persisted Comment -> Report;
+  - optimistic local Comment -> neither;
+  - while session is pending -> neither, preventing wrong-action flash.
 - Visual review:
-  - public seeded Creator profiles at desktop/mobile;
-  - authenticated Nora Following state at 1440×1050;
-  - authenticated Maya Follow state at 390×900;
-  - no observed horizontal overflow.
-- Final quality gates:
-  - TypeScript PASS;
-  - ESLint PASS;
-  - Vitest 33 files / 102 tests PASS;
-  - production build PASS;
-  - Prettier PASS;
-  - runtime npm audit 0 vulnerabilities;
-  - git diff --check PASS.
-- Bundle: ~152.81 KB JS gzip / ~9.26 KB CSS gzip.
-- Non-blocking Vite warning: raw main JS chunk ~512.12 KB minified. Track route-level code splitting for later hardening.
-- Backend implementation files changed by frontend work: none.
-- Next logical task after FE-011 acceptance: FE-012 — Report / Trust & Safety entry points, after auditing current report/moderation API and product scope.
+  - Search Back to feed reviewed at 1440×950;
+  - expanded Persian report form reviewed with a real seeded public comment at 1440×1100;
+  - comment/report mobile layout reviewed at 390×900;
+  - reporting remains subordinate to reading/discussion and no horizontal overflow observed.
+- Temporary review routes/files/screenshots removed before final validation.
+- Final quality gates: TypeScript PASS; ESLint PASS; Vitest 35 files / 107 tests PASS; production build PASS; Prettier PASS; `npm audit --omit=dev` reports 0 vulnerabilities; `git diff --check` PASS.
+- FE-012 production bundle: ~154.19 KB JS gzip and ~9.52 KB CSS gzip.
+- Non-blocking Vite warning: raw main JS chunk ~517.70 KB minified; route-level code splitting remains tracked for later hardening.
+- Backend implementation files changed by FE-012: none.
+- Next logical task after FE-012 acceptance: FE-013 — Moderator Queue + Report Review Actions, using the already-existing moderator-only backend APIs.

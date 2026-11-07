@@ -77,6 +77,13 @@ export function SearchPage() {
   return (
     <section className="search-page">
       <div className="search-page__rail">
+        <nav className="search-page__back" aria-label={t('search.navigation')}>
+          <Link to={session.data ? '/app' : '/'}>
+            <span aria-hidden="true">{isEnglishUi ? '←' : '→'}</span>
+            {session.data ? t('search.backToFeed') : t('search.backHome')}
+          </Link>
+        </nav>
+
         <header className="search-page__header">
           <p className="eyebrow">{t('search.eyebrow')}</p>
           <h1>{t('search.title')}</h1>

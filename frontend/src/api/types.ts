@@ -131,6 +131,21 @@ export type CreateCommentPayload = {
   body: string
 }
 
+export type ReportReason = 'harassment' | 'spam' | 'inappropriate_content' | 'other'
+
+export type CreateCommentReportPayload = {
+  reason: ReportReason
+  details?: string
+}
+
+export type PublicReport = {
+  id: number
+  reason: ReportReason
+  details: string
+  status: 'open' | 'reviewing' | 'resolved' | 'rejected'
+  created_at: string
+}
+
 export type SavedLibraryItem = {
   saved_at: string
   idea: Idea

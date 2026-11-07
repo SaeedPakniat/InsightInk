@@ -147,7 +147,8 @@ export function CommentsSection({ ideaId }: CommentsSectionProps) {
             <CommentItem
               key={comment.id}
               comment={comment}
-              canDelete={comment.author.id === session.data?.id}
+              canDelete={Boolean(session.data && comment.author.id === session.data.id)}
+              canReport={Boolean(!session.isPending && comment.author.id !== session.data?.id)}
               isDeleting={deleteMutation.isPending && deleteMutation.variables === comment.id}
               onDelete={(commentId) => deleteMutation.mutate(commentId)}
             />
