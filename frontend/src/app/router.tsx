@@ -1,6 +1,6 @@
 import { createBrowserRouter } from 'react-router-dom'
 
-import { AnonymousOnly, RequireAuth } from '../features/auth/RouteGuards'
+import { AnonymousOnly, RequireAuth, RequireModerator } from '../features/auth/RouteGuards'
 import { LoginPage } from '../features/auth/LoginPage'
 import { RegisterPage } from '../features/auth/RegisterPage'
 import { AuthenticatedHomePage } from '../features/home/AuthenticatedHomePage'
@@ -13,6 +13,8 @@ import { CreatorProfilePage } from '../features/creators/CreatorProfilePage'
 import { LandingPage } from '../features/home/LandingPage'
 import { IdeaDetailPage } from '../features/ideas/detail/IdeaDetailPage'
 import { NotFoundPage } from '../features/home/NotFoundPage'
+import { ModerationQueuePage } from '../features/moderation/ModerationQueuePage'
+import { ModerationReportPage } from '../features/moderation/ModerationReportPage'
 import { RootLayout } from '../layouts/RootLayout'
 
 export const router = createBrowserRouter([
@@ -38,6 +40,16 @@ export const router = createBrowserRouter([
           { path: 'library', element: <SavedLibraryPage /> },
           { path: 'onboarding/interests', element: <InterestsOnboardingPage /> },
           { path: 'onboarding/languages', element: <ContentLanguagesPage /> },
+        ],
+      },
+      {
+        element: <RequireModerator />,
+        children: [
+          { path: 'moderation', element: <ModerationQueuePage /> },
+          {
+            path: 'moderation/reports/:reportId',
+            element: <ModerationReportPage />,
+          },
         ],
       },
       { path: '*', element: <NotFoundPage /> },

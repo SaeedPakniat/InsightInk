@@ -1,23 +1,21 @@
 # Frontend Handoff
 
-- Task ID: FE-012 — Reader Reporting + Search Return Navigation
-- Base commit: `a12ae34c676216bbbece682311f727b683fe7b84`.
+- Task ID: FE-013 — Moderator Queue + Report Review Actions
+- Repository base: `6fa963d6265de28c9926f17f145c44edb94e5802`.
+- Backend capability implementation: `933ab208078d57c532b6c6e1c487bdf29e8a33c7`.
 - Result: accepted by user; ready for checkpoint commit/push.
-- Search dead-end fixed:
-  - authenticated -> Back to feed -> /app
-  - anonymous -> Back home -> /
-- Reader reporting:
-  - comments only, matching actual backend scope;
-  - authenticated CSRF POST to `/comments/<id>/report/`;
-  - locked reasons: harassment, spam, inappropriate_content, other;
-  - optional details <=2000;
-  - own Comment keeps Delete; other Comments get Report;
-  - anonymous Report opens sign-in path;
-  - success confirmation is local to current mount because backend exposes no viewer report-history state.
-- No Idea reporting or moderator actions were invented.
-- Final checks: typecheck PASS; lint PASS; 35 test files / 107 tests PASS; production build PASS; formatting PASS; runtime npm audit 0 vulnerabilities; `git diff --check` PASS.
-- Bundle ~154.19 KB JS gzip / ~9.52 KB CSS gzip; non-blocking raw-chunk warning ~517.70 KB remains tracked for later code splitting.
-- Visual review passed on desktop/mobile with real Search and seeded Comment data.
+- Session now consumes product-level can_moderate/can_administer capabilities.
+- Moderator link is capability-gated; moderator routes use RequireModerator.
+- Routes:
+  - /moderation
+  - /moderation/reports/:reportId
+- Queue supports Open/Reviewing/Resolved/Rejected/All and cursor pagination.
+- Detail exposes reported comment, report context, legal state-dependent actions and audit history.
+- Unsafe actions use CSRF and optional <=2000-char moderator note.
+- No admin assignment UI or unbounded moderation capability was added.
+- Final checks: typecheck PASS; lint PASS; 41 test files / 126 tests PASS; production build PASS; formatting PASS; runtime npm audit 0 vulnerabilities; `git diff --check` PASS.
+- Bundle ~158.34 KB JS gzip / ~11.03 KB CSS gzip. Raw main chunk ~540.16 KB minified; FE-014 should implement route-level code splitting.
+- Visual review passed with the actual two development reports plus a non-persisted reviewing-state visual fixture.
 - No backend implementation changes.
-- Do not commit/push until user validates Search return navigation and real report submission flow.
-- Next likely task: FE-013 Moderator Queue + Report Review Actions.
+- Do not commit/push until user validates the console with demo-moderator@example.com.
+- Next likely task: FE-014 route-level code splitting/performance hardening.

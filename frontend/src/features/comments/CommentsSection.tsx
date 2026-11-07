@@ -27,6 +27,7 @@ export function CommentsSection({ ideaId }: CommentsSectionProps) {
       email: '',
       display_name: '',
       preferred_ui_language: 'en',
+      capabilities: { can_moderate: false, can_administer: false },
     },
   )
   const deleteMutation = useDeleteComment(ideaId)

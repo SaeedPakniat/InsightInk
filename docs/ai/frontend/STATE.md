@@ -1,49 +1,57 @@
 # Frontend State
 
-- Task: FE-012 — Reader Reporting + Search Return Navigation.
-- Status: Accepted by user; FE-012 ready for checkpoint commit/push.
-- Base commit: `a12ae34c676216bbbece682311f727b683fe7b84` (`feat(frontend): add creator profiles and following`).
-- Search UX fix:
-  - authenticated Search shows localized Back to feed -> `/app`;
-  - anonymous Search shows localized Back home -> `/`;
-  - return action sits above Search heading and follows RTL/LTR direction.
-- Backend moderation/report contract verified from actual source:
-  - reader-facing report endpoint exists only for visible Comments on published Ideas;
-  - `POST /api/v1/comments/<comment_id>/report/`;
-  - authenticated + CSRF;
-  - reasons locked to harassment / spam / inappropriate_content / other;
-  - details optional, trim whitespace, max 2000;
-  - response public fields id/reason/details/status/created_at;
-  - hidden/deleted/draft comments are not reportable.
-- No reader-facing Idea-report endpoint exists; frontend does not invent one.
-- No reader report-history/read endpoint or duplicate-report guard exists.
-- New frontend types:
-  - `ReportReason`
-  - `CreateCommentReportPayload`
-  - `PublicReport`.
-- New API client: `reportComment(commentId,payload)` using shared session/CSRF client.
-- New `CommentReportAction`:
-  - Report trigger under non-owned visible comments;
-  - anonymous sign-in-to-report path;
-  - authenticated inline form;
-  - four locked reasons;
-  - optional max-2000 details;
-  - localized detail-count copy;
-  - backend field errors and generic error state;
-  - local success confirmation after 201.
-- Comment ownership action rules:
-  - own visible persisted Comment -> Delete;
-  - other visible persisted Comment -> Report;
-  - optimistic local Comment -> neither;
-  - while session is pending -> neither, preventing wrong-action flash.
+- Task: FE-013 — Moderator Queue + Report Review Actions.
+- Status: Accepted by user; FE-013 ready for checkpoint commit/push.
+- Accepted frontend checkpoint before dependency: `962b82810e02b49ec032281145d998cd57d51a6d`.
+- Backend capability dependency implementation: `933ab208078d57c532b6c6e1c487bdf29e8a33c7`.
+- Current repository base from backend docs sync: `6fa963d6265de28c9926f17f145c44edb94e5802`.
+- `CurrentUser` now models product-level capabilities:
+  - can_moderate
+  - can_administer.
+- Capability usage:
+  - frontend navigation/route UX uses can_moderate;
+  - backend permissions remain authoritative.
+- Header:
+  - moderation shield link only for moderation-capable session;
+  - icon-only on small screens, localized label at wider widths;
+  - active state for /moderation routes.
+- New `RequireModerator` guard:
+  - anonymous -> login with return route;
+  - ordinary authenticated -> /app;
+  - moderator/admin -> protected content.
+- Protected routes:
+  - /moderation
+  - /moderation/reports/:reportId.
+- Moderator queue:
+  - cursor-paginated GET /moderation/reports/;
+  - default Open filter;
+  - Reviewing / Resolved / Rejected / All URL filters;
+  - report cards with status/reason/reporter/target/time;
+  - loading/error/empty/load-more/end states.
+- Moderator detail:
+  - GET report detail;
+  - report context + reported Comment + current target status;
+  - missing-target state;
+  - audit trail with moderator/action/note/timestamp.
+- Workflow mirrors backend state machine:
+  - Open -> Start review only;
+  - Reviewing -> optional Hide visible Comment + Resolve or Reject;
+  - Resolved/Rejected -> read-only completed case.
+- All unsafe moderation actions use shared session/CSRF client.
+- Optional moderation note max 2000; localized count and errors.
+- Mutations update/refetch detail and invalidate all queue filters.
+- Backend transition/race failures are intentionally localized generically instead of leaking English service text into Persian UI.
+- Current real development moderation data:
+  - Report 2 Open / spam / target Comment 2 / Persian body;
+  - Report 1 Open / harassment / target Comment 1 / English body.
 - Visual review:
-  - Search Back to feed reviewed at 1440×950;
-  - expanded Persian report form reviewed with a real seeded public comment at 1440×1100;
-  - comment/report mobile layout reviewed at 390×900;
-  - reporting remains subordinate to reading/discussion and no horizontal overflow observed.
-- Temporary review routes/files/screenshots removed before final validation.
-- Final quality gates: TypeScript PASS; ESLint PASS; Vitest 35 files / 107 tests PASS; production build PASS; Prettier PASS; `npm audit --omit=dev` reports 0 vulnerabilities; `git diff --check` PASS.
-- FE-012 production bundle: ~154.19 KB JS gzip and ~9.52 KB CSS gzip.
-- Non-blocking Vite warning: raw main JS chunk ~517.70 KB minified; route-level code splitting remains tracked for later hardening.
-- Backend implementation files changed by FE-012: none.
-- Next logical task after FE-012 acceptance: FE-013 — Moderator Queue + Report Review Actions, using the already-existing moderator-only backend APIs.
+  - queue 1440×1050 Persian UI;
+  - open detail 390×1000;
+  - reviewing action/audit layout 1440×1200;
+  - no horizontal overflow observed.
+- Final quality gates: TypeScript PASS; ESLint PASS; Vitest 41 files / 126 tests PASS; production build PASS; Prettier PASS; `npm audit --omit=dev` reports 0 vulnerabilities; `git diff --check` PASS.
+- FE-013 production bundle: ~158.34 KB JS gzip and ~11.03 KB CSS gzip.
+- Non-blocking Vite warning: raw main JS chunk ~540.16 KB minified; FE-014 should introduce route-level code splitting instead of increasing the warning limit.
+- Temporary visual-review route/file/assets removed before final validation.
+- Backend implementation files changed by FE-013 frontend work: none.
+- Next logical task after acceptance: FE-014 — Frontend Performance Hardening / Route-Level Code Splitting, because the raw Vite main chunk has crossed the warning threshold while the feature set is now broad enough for meaningful route splitting.

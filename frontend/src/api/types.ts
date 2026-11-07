@@ -1,10 +1,16 @@
 export type UiLanguage = 'fa' | 'en'
 
+export type UserCapabilities = {
+  can_moderate: boolean
+  can_administer: boolean
+}
+
 export type CurrentUser = {
   id: number
   email: string
   display_name: string
   preferred_ui_language: UiLanguage
+  capabilities: UserCapabilities
 }
 
 export type Topic = {
@@ -138,12 +144,70 @@ export type CreateCommentReportPayload = {
   details?: string
 }
 
+export type ReportStatus = 'open' | 'reviewing' | 'resolved' | 'rejected'
+
+export type ReportTargetType = 'comment' | 'user' | 'idea' | 'message'
+
 export type PublicReport = {
   id: number
   reason: ReportReason
   details: string
-  status: 'open' | 'reviewing' | 'resolved' | 'rejected'
+  status: ReportStatus
   created_at: string
+}
+
+export type ModeratorUserSummary = {
+  id: number
+  display_name: string
+}
+
+export type ModerationActionType =
+  'review_started' | 'comment_hidden' | 'report_resolved' | 'report_rejected'
+
+export type ModerationAction = {
+  id: number
+  moderator: ModeratorUserSummary
+  action_type: ModerationActionType
+  target_type: ReportTargetType
+  target_id: number
+  note: string
+  created_at: string
+}
+
+export type ModerationTargetComment = {
+  id: number
+  author: ModeratorUserSummary
+  body: string
+  status: 'visible' | 'hidden' | 'deleted'
+  created_at: string
+  updated_at: string
+}
+
+export type ModerationReportListItem = {
+  id: number
+  reporter: ModeratorUserSummary
+  target_type: ReportTargetType
+  target_id: number
+  reason: ReportReason
+  status: ReportStatus
+  created_at: string
+  resolved_at: string | null
+}
+
+export type ModerationReportDetail = ModerationReportListItem & {
+  details: string
+  target_comment: ModerationTargetComment | null
+  actions: ModerationAction[]
+}
+
+export type ModerationReportPage = {
+  next: string | null
+  previous: string | null
+  results: ModerationReportListItem[]
+}
+
+export type ModerationNotePayload = {
+  note?: string
 }
 
 export type SavedLibraryItem = {

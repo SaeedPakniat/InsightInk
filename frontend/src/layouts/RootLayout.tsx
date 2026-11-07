@@ -3,10 +3,12 @@ import { useTranslation } from 'react-i18next'
 
 import { Brand } from '../components/ui/Brand'
 import { LanguageToggle } from '../components/ui/LanguageToggle'
+import { useSession } from '../features/auth/session'
 
 export function RootLayout() {
   const { t } = useTranslation()
   const location = useLocation()
+  const session = useSession()
 
   return (
     <div className="site-shell">
@@ -29,6 +31,20 @@ export function RootLayout() {
               </svg>
               <span>{t('search.headerAction')}</span>
             </Link>
+            {session.data?.capabilities.can_moderate && (
+              <Link
+                className={`site-header__moderation-link${location.pathname.startsWith('/moderation') ? ' site-header__moderation-link--active' : ''}`}
+                to="/moderation"
+                aria-label={t('moderation.headerAction')}
+                title={t('moderation.headerAction')}
+              >
+                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                  <path d="M12 3.5 18.5 6v5.3c0 4.2-2.7 7.3-6.5 9.2-3.8-1.9-6.5-5-6.5-9.2V6L12 3.5Z" />
+                  <path d="m9.2 12 1.8 1.8 3.8-4" />
+                </svg>
+                <span>{t('moderation.headerAction')}</span>
+              </Link>
+            )}
             <LanguageToggle />
           </div>
         </div>

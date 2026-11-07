@@ -26,6 +26,7 @@ const user: CurrentUser = {
   email: 'reader@example.com',
   display_name: 'Reader',
   preferred_ui_language: 'en',
+  capabilities: { can_moderate: false, can_administer: false },
 }
 
 function idea(id: number, title: string): Idea {
