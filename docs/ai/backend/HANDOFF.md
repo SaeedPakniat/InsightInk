@@ -1,34 +1,33 @@
 # Backend Handoff
 
-- Task ID: BE-FOLLOW-STATE-001 — Viewer Creator Follow State
-- Exact implementation commit SHA: `7352883676d64da9ac63a4c0f1ed1980601b8dec`.
-- Exact base SHA: `aed1a6f27185a9661e5ec18ccf3f9f8d8558b8dc`.
-- Result: Complete and accepted; implementation commit recorded exactly for frontend handoff.
-- Endpoint: `GET /api/v1/me/creator-follows/?creator_ids=<comma-separated positive CreatorProfile IDs>`.
-- Authentication: authenticated viewer only; anonymous -> project-standard 403. GET requires no CSRF.
-- Maximum IDs: 100 request tokens.
-- Duplicate behavior: one item per unique requested ID, preserving first occurrence order.
-- Missing parameter: 400 `{"creator_ids":["creator_ids query parameter is required."]}`.
-- Empty parameter: 400 `{"creator_ids":["creator_ids query parameter must not be empty."]}`.
-- Malformed/non-positive IDs: 400 `{"creator_ids":["creator_ids must be a comma-separated list of positive integers."]}`.
-- Over-limit: 400 `{"creator_ids":["At most 100 CreatorProfile IDs may be requested."]}`.
-- Nonexistent CreatorProfile IDs: omitted.
-- Existing unfollowed CreatorProfile: returned with `following:false, can_follow:true`.
-- Existing followed CreatorProfile: returned with `following:true, can_follow:true`.
-- Authenticated User's own CreatorProfile: returned with `following:false, can_follow:false`.
-- Successful response shape: `{"items":[{"creator_id":1,"following":false,"can_follow":true}]}`.
-- Ordering: normalized first-occurrence request order with missing IDs omitted.
-- Query strategy: one CreatorProfile query + correlated current-user CreatorFollow `Exists` annotation; creator `user_id` is selected in the same query for self-follow eligibility. Query count is constant at 1 for 1 ID and 100 IDs.
-- Existing mutation endpoints unchanged: `PUT/DELETE /api/v1/creators/<id>/follow/`; still authenticated, unsafe methods CSRF-protected, explicit, idempotent, successful 204; self-follow PUT rejected with 400.
-- Public Creator serializers/API shapes unchanged.
-- Schema migration: none.
-- Files changed for implementation: `backend/creators/selectors.py`, `backend/creators/serializers.py`, `backend/creators/views.py`, `backend/creators/urls.py`, `backend/creators/tests.py`; backend STATE/HANDOFF updated separately as required.
-- Focused tests: creators suite 36/36 passed.
-- Full backend suite: 322/322 passed.
+- Task ID: BE-AUTH-CAPS-001 — Session Capability Exposure + Deterministic Demo Moderator
+- Exact implementation commit SHA: `933ab208078d57c532b6c6e1c487bdf29e8a33c7`.
+- Exact base SHA: `962b82810e02b49ec032281145d998cd57d51a6d`.
+- Result: Complete and accepted; implementation commit recorded exactly for FE-013 handoff.
+- API shape added to `POST /api/v1/auth/register/`, `POST /api/v1/auth/login/`, and `GET /api/v1/me/`: `"capabilities":{"can_moderate":<bool>,"can_administer":<bool>}`.
+- Capability source of truth: existing `accounts.permissions.is_moderator` and `is_admin`; serializer does not inspect groups/flags independently.
+- Rules:
+  - Reader -> can_moderate=false, can_administer=false.
+  - staff-only non-Moderator -> false/false.
+  - Moderator -> true/false.
+  - Admin/superuser -> true/true.
+- Security boundary: raw `is_staff`, `is_superuser`, groups, permissions, password and last_login remain absent from safe user responses.
+- Existing session/cookie auth and CSRF behavior unchanged; no JWT/token auth.
+- Demo moderator: `demo-moderator@example.com`; display name `Demo Moderator`; preferred UI language `en`; development-only password `InsightInkDemo2026!`.
+- Demo moderator seed state: is_staff=True; member of existing Moderator group via `MODERATOR_GROUP_NAME`; is_superuser=False; no CreatorProfile required.
+- Seed safety: repeatable update_or_create by email; password re-established; only moderator demo account has moderator flags enforced; group add is idempotent; unrelated users/groups are not deleted or rewritten.
+- First real seed after change: Users 1 created / 5 updated; no new topics/creators/sources/ideas/activity.
+- Second real seed: Users 0 created / 6 updated; no duplicate activity/domain rows.
+- Real role verification: one demo moderator, one Moderator membership, staff true, superuser false, moderator helper true, no CreatorProfile; every other demo account remains non-staff and outside Moderator group.
+- Moderation regression unchanged: ordinary authenticated -> 403; staff-only -> 403; Moderator -> allowed; Admin -> allowed; open -> reviewing -> resolved/rejected workflow unchanged.
+- Focused tests: 94/94 accounts + seed_demo + moderation tests passed.
+- Full backend suite: 325/325 passed.
 - `manage.py check`: PASS.
-- `makemigrations --check --dry-run`: no changes.
-- `pip check`: no broken requirements.
+- `makemigrations --check --dry-run`: No changes detected.
+- `pip check`: No broken requirements.
 - `git diff --check`: PASS.
-- Real seeded smoke: authenticated demo Reader + creator_ids=1,2,3,4 -> Creator 1 false/true, Creator 2 true/true, Creator 3 true/true, Creator 4 false/true; HTTP 200; query count = 1.
-- Seed data: unchanged.
-- Frontend blocker: none. FE-011 can proceed.
+- Schema migration: none.
+- Files intended for implementation checkpoint: `backend/accounts/serializers.py`, `backend/accounts/tests.py`, `backend/content/demo_seed_data.py`, `backend/content/management/commands/seed_demo.py`, `backend/content/test_seed_demo.py`.
+- Backend docs: this STATE/HANDOFF pair will record the exact implementation commit SHA in a follow-up documentation-only sync commit.
+- Frontend boundary: no frontend file or frontend AI document is part of this task.
+- Frontend blocker: none. FE-013 may rely on `capabilities.can_moderate` for moderator navigation/UI visibility, but backend permissions remain the security authority.
