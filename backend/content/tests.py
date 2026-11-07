@@ -980,6 +980,202 @@ class CreatorIdeaWorkspaceAPITests(TestCase):
         self.assertEqual(response.status_code, 403)
         self.assertFalse(Idea.objects.filter(creator=self.creator).exists())
 
+
+    def publish_url(self, idea):
+        return reverse("api:creator-idea-publish", args=[idea.id])
+
+    def test_owner_can_publish_draft_with_server_controlled_timestamp(self):
+        idea = self.create_idea()
+        original_title = idea.title
+        original_body = idea.body
+        self.client.force_login(self.creator_user)
+        before = timezone.now()
+
+        response = self.request_with_csrf(
+            "post",
+            self.publish_url(idea),
+            {
+                "status": Idea.IdeaStatus.HIDDEN,
+                "published_at": "2000-01-01T00:00:00Z",
+                "title": "Ignored publish payload title",
+                "body": "Ignored publish payload body",
+                "source": self.source.id,
+                "topics": [self.active_topic.id],
+            },
+        )
+        after = timezone.now()
+
+        self.assertEqual(response.status_code, 200)
+        idea.refresh_from_db()
+        self.assertEqual(idea.status, Idea.IdeaStatus.PUBLISHED)
+        self.assertIsNotNone(idea.published_at)
+        self.assertGreaterEqual(idea.published_at, before)
+        self.assertLessEqual(idea.published_at, after)
+        self.assertEqual(idea.title, original_title)
+        self.assertEqual(idea.body, original_body)
+        self.assertEqual(idea.source, self.source)
+        self.assertFalse(idea.topics.exists())
+        self.assertEqual(response.json()["status"], Idea.IdeaStatus.PUBLISHED)
+        self.assertEqual(
+            response.json()["published_at"],
+            idea.published_at.isoformat().replace("+00:00", "Z"),
+        )
+
+    def test_published_idea_cannot_publish_twice_or_rewrite_timestamp(self):
+        idea = self.create_idea()
+        self.client.force_login(self.creator_user)
+
+        first = self.request_with_csrf("post", self.publish_url(idea))
+        self.assertEqual(first.status_code, 200)
+        idea.refresh_from_db()
+        original_published_at = idea.published_at
+
+        second = self.request_with_csrf("post", self.publish_url(idea))
+
+        self.assertEqual(second.status_code, 400)
+        self.assertEqual(
+            second.json(),
+            {"detail": "Only draft ideas can be published."},
+        )
+        idea.refresh_from_db()
+        self.assertEqual(idea.status, Idea.IdeaStatus.PUBLISHED)
+        self.assertEqual(idea.published_at, original_published_at)
+
+    def test_hidden_idea_cannot_be_republished(self):
+        original_published_at = timezone.now()
+        idea = self.create_idea(
+            status=Idea.IdeaStatus.HIDDEN,
+            published_at=original_published_at,
+        )
+        self.client.force_login(self.creator_user)
+
+        response = self.request_with_csrf("post", self.publish_url(idea))
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(
+            response.json(),
+            {"detail": "Only draft ideas can be published."},
+        )
+        idea.refresh_from_db()
+        self.assertEqual(idea.status, Idea.IdeaStatus.HIDDEN)
+        self.assertEqual(idea.published_at, original_published_at)
+
+    def test_another_creator_cannot_publish_owned_draft(self):
+        idea = self.create_idea()
+        self.client.force_login(self.other_user)
+
+        response = self.request_with_csrf("post", self.publish_url(idea))
+
+        self.assertEqual(response.status_code, 404)
+        idea.refresh_from_db()
+        self.assertEqual(idea.status, Idea.IdeaStatus.DRAFT)
+        self.assertIsNone(idea.published_at)
+
+    def test_reader_without_creator_profile_cannot_publish(self):
+        idea = self.create_idea()
+        self.client.force_login(self.reader)
+
+        response = self.request_with_csrf("post", self.publish_url(idea))
+
+        self.assertEqual(response.status_code, 403)
+        idea.refresh_from_db()
+        self.assertEqual(idea.status, Idea.IdeaStatus.DRAFT)
+        self.assertIsNone(idea.published_at)
+
+    def test_anonymous_cannot_publish(self):
+        idea = self.create_idea()
+
+        response = self.client.post(
+            self.publish_url(idea),
+            data={},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 403)
+        idea.refresh_from_db()
+        self.assertEqual(idea.status, Idea.IdeaStatus.DRAFT)
+
+    def test_publish_requires_csrf(self):
+        idea = self.create_idea()
+        self.client.force_login(self.creator_user)
+
+        response = self.client.post(
+            self.publish_url(idea),
+            data={},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 403)
+        idea.refresh_from_db()
+        self.assertEqual(idea.status, Idea.IdeaStatus.DRAFT)
+        self.assertIsNone(idea.published_at)
+
+    def test_public_surfaces_see_idea_immediately_after_publish(self):
+        idea = self.create_idea(title="Publish visibility")
+        idea.topics.add(self.active_topic)
+        public_detail_url = reverse("api:idea-detail", args=[idea.id])
+        creator_ideas_url = reverse(
+            "api:creators:creator-ideas",
+            args=[self.creator.id],
+        )
+        feed_url = reverse("api:feed")
+        public_client = APIClient()
+
+        self.assertEqual(public_client.get(public_detail_url).status_code, 404)
+        before_creator = public_client.get(creator_ideas_url)
+        self.assertEqual(before_creator.status_code, 200)
+        self.assertNotIn(
+            idea.id,
+            [item["id"] for item in before_creator.json()["results"]],
+        )
+        before_feed = public_client.get(feed_url)
+        self.assertEqual(before_feed.status_code, 200)
+        self.assertNotIn(
+            idea.id,
+            [item["id"] for item in before_feed.json()["results"]],
+        )
+
+        self.client.force_login(self.creator_user)
+        published = self.request_with_csrf("post", self.publish_url(idea))
+        self.assertEqual(published.status_code, 200)
+
+        detail = public_client.get(public_detail_url)
+        creator_response = public_client.get(creator_ideas_url)
+        feed_response = public_client.get(feed_url)
+
+        self.assertEqual(detail.status_code, 200)
+        self.assertEqual(detail.json()["id"], idea.id)
+        self.assertIn(
+            idea.id,
+            [item["id"] for item in creator_response.json()["results"]],
+        )
+        self.assertIn(
+            idea.id,
+            [item["id"] for item in feed_response.json()["results"]],
+        )
+
+    def test_publish_does_not_weaken_post_publication_immutability(self):
+        idea = self.create_idea()
+        self.client.force_login(self.creator_user)
+        published = self.request_with_csrf("post", self.publish_url(idea))
+        self.assertEqual(published.status_code, 200)
+
+        patch = self.request_with_csrf(
+            "patch",
+            reverse("api:creator-idea-detail", args=[idea.id]),
+            {"title": "Forbidden after publish"},
+        )
+        delete = self.request_with_csrf(
+            "delete",
+            reverse("api:creator-idea-detail", args=[idea.id]),
+        )
+
+        self.assertEqual(patch.status_code, 400)
+        self.assertEqual(delete.status_code, 400)
+        idea.refresh_from_db()
+        self.assertEqual(idea.status, Idea.IdeaStatus.PUBLISHED)
+        self.assertNotEqual(idea.title, "Forbidden after publish")
+
     def test_public_idea_api_remains_published_only_and_anonymous(self):
         published = self.create_idea(status=Idea.IdeaStatus.PUBLISHED)
         self.create_idea(status=Idea.IdeaStatus.DRAFT, title="Private draft")

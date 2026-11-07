@@ -1,4 +1,8 @@
+from django.db import transaction
+from django.shortcuts import get_object_or_404
+from django.utils import timezone
 from rest_framework import status
+from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
 from rest_framework.generics import ListAPIView
 from rest_framework.permissions import AllowAny
@@ -90,6 +94,28 @@ class CreatorIdeaViewSet(ModelViewSet):
         if instance.status != Idea.IdeaStatus.DRAFT:
             raise ValidationError({"detail": "Only draft ideas can be edited."})
         return super().partial_update(request, *args, **kwargs)
+
+    @action(detail=True, methods=["post"])
+    def publish(self, request, *args, **kwargs):
+        with transaction.atomic():
+            instance = get_object_or_404(
+                self.get_queryset().select_for_update(),
+                pk=kwargs["pk"],
+            )
+            self.check_object_permissions(request, instance)
+
+            if instance.status != Idea.IdeaStatus.DRAFT:
+                raise ValidationError(
+                    {"detail": "Only draft ideas can be published."}
+                )
+
+            instance.status = Idea.IdeaStatus.PUBLISHED
+            instance.published_at = timezone.now()
+            instance.save(
+                update_fields=("status", "published_at", "updated_at")
+            )
+
+        return Response(self.get_serializer(instance).data)
 
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
