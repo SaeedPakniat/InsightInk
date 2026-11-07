@@ -68,6 +68,13 @@ DEMO_USERS = [
         "bio_en": "Demo curator for creativity, design, productivity, and learning.",
         "is_verified": False,
     },
+    {
+        "email": "demo-moderator@example.com",
+        "display_name": "Demo Moderator",
+        "preferred_ui_language": "en",
+        "is_creator": False,
+        "is_moderator": True,
+    },
 ]
 
 # Each source carries a private metadata.demo_seed_key used only for deterministic

@@ -2,10 +2,12 @@ from collections import Counter
 from datetime import datetime
 
 from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Group
 from django.core.management.base import BaseCommand
 from django.db import transaction
 
 from accounts.models import UserContentLanguage, UserInterest
+from accounts.permissions import MODERATOR_GROUP_NAME
 from creators.models import CreatorFollow, CreatorProfile
 from engagement.models import Comment, SavedIdea, Spark
 
@@ -92,6 +94,12 @@ class Command(BaseCommand):
                 "All demo creator accounts use the same development-only password."
             )
         )
+        self.stdout.write(
+            self.style.WARNING(
+                "Development-only moderator login: demo-moderator@example.com / "
+                f"{DEMO_PASSWORD}"
+            )
+        )
 
     def _seed_topics(self, stats):
         topics = {}
@@ -121,7 +129,21 @@ class Command(BaseCommand):
                 },
             )
             user.set_password(DEMO_PASSWORD)
-            user.save(update_fields=["password"])
+            update_fields = ["password"]
+
+            if spec.get("is_moderator", False):
+                user.is_staff = True
+                user.is_superuser = False
+                update_fields.extend(["is_staff", "is_superuser"])
+
+            user.save(update_fields=update_fields)
+
+            if spec.get("is_moderator", False):
+                moderator_group, _ = Group.objects.get_or_create(
+                    name=MODERATOR_GROUP_NAME
+                )
+                user.groups.add(moderator_group)
+
             users[user.email] = user
             stats["users_created" if created else "users_updated"] += 1
 

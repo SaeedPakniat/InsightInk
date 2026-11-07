@@ -1,11 +1,13 @@
 from io import StringIO
 
+from django.contrib.auth.models import Group
 from django.core.management import call_command
 from django.test import TestCase
 from django.urls import reverse
 from rest_framework.test import APIClient
 
 from accounts.models import User
+from accounts.permissions import MODERATOR_GROUP_NAME, is_moderator
 from content.demo_seed_data import (
     DEMO_READER_LANGUAGES,
     DEMO_USERS,
@@ -96,6 +98,55 @@ class SeedDemoCommandTests(TestCase):
         self.assertEqual(Spark.objects.filter(user=reader).count(), 6)
         self.assertEqual(reader.creator_follows.count(), 2)
         self.assertEqual(Comment.objects.filter(author=reader).count(), 3)
+
+
+
+    def test_seed_creates_deterministic_moderator_only_for_intended_demo_account(self):
+        moderator = User.objects.get(email="demo-moderator@example.com")
+        moderator_group = Group.objects.get(name=MODERATOR_GROUP_NAME)
+
+        self.assertEqual(moderator.display_name, "Demo Moderator")
+        self.assertEqual(moderator.preferred_ui_language, "en")
+        self.assertTrue(moderator.is_staff)
+        self.assertFalse(moderator.is_superuser)
+        self.assertTrue(is_moderator(moderator))
+        self.assertTrue(moderator.groups.filter(pk=moderator_group.pk).exists())
+        self.assertFalse(
+            CreatorProfile.objects.filter(user=moderator).exists()
+        )
+
+        ordinary_demo_users = User.objects.filter(
+            email__in=[
+                item["email"]
+                for item in DEMO_USERS
+                if not item.get("is_moderator", False)
+            ]
+        )
+        self.assertFalse(
+            ordinary_demo_users.filter(is_staff=True).exists()
+        )
+        self.assertFalse(
+            ordinary_demo_users.filter(
+                groups__name=MODERATOR_GROUP_NAME
+            ).exists()
+        )
+
+    def test_repeated_seed_does_not_duplicate_moderator_or_group_membership(self):
+        call_command("seed_demo", stdout=StringIO())
+        call_command("seed_demo", stdout=StringIO())
+
+        moderator = User.objects.get(email="demo-moderator@example.com")
+        self.assertEqual(
+            User.objects.filter(email="demo-moderator@example.com").count(),
+            1,
+        )
+        self.assertEqual(
+            moderator.groups.filter(name=MODERATOR_GROUP_NAME).count(),
+            1,
+        )
+        self.assertTrue(moderator.is_staff)
+        self.assertFalse(moderator.is_superuser)
+        self.assertTrue(is_moderator(moderator))
 
     def test_running_command_twice_does_not_duplicate_demo_records(self):
         before = {

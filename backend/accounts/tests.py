@@ -263,6 +263,10 @@ class RegistrationAPITests(SessionAuthenticationAPITestCase):
                 "email": "new-reader@example.com",
                 "display_name": "New Reader",
                 "preferred_ui_language": "en",
+                "capabilities": {
+                    "can_moderate": False,
+                    "can_administer": False,
+                },
             },
         )
         self.assertEqual(self.client.get(self.me_url).status_code, 200)
@@ -307,7 +311,13 @@ class RegistrationAPITests(SessionAuthenticationAPITestCase):
 
         self.assertEqual(
             set(response.json()),
-            {"id", "email", "display_name", "preferred_ui_language"},
+            {
+                "id",
+                "email",
+                "display_name",
+                "preferred_ui_language",
+                "capabilities",
+            },
         )
 
 
@@ -341,9 +351,22 @@ class LoginAPITests(SessionAuthenticationAPITestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(
             set(response.json()),
-            {"id", "email", "display_name", "preferred_ui_language"},
+            {
+                "id",
+                "email",
+                "display_name",
+                "preferred_ui_language",
+                "capabilities",
+            },
         )
         self.assertNotIn("password", response.json())
+        self.assertEqual(
+            response.json()["capabilities"],
+            {
+                "can_moderate": False,
+                "can_administer": False,
+            },
+        )
         self.assertEqual(self.client.get(self.me_url).status_code, 200)
 
     def test_wrong_password_and_nonexistent_email_share_generic_behavior(self):
@@ -403,6 +426,10 @@ class CurrentUserAPITests(SessionAuthenticationAPITestCase):
                 "email": user.email,
                 "display_name": user.display_name,
                 "preferred_ui_language": user.preferred_ui_language,
+                "capabilities": {
+                    "can_moderate": True,
+                    "can_administer": True,
+                },
             },
         )
         for sensitive_field in (
@@ -414,6 +441,61 @@ class CurrentUserAPITests(SessionAuthenticationAPITestCase):
             "last_login",
         ):
             self.assertNotIn(sensitive_field, response.json())
+
+
+    def test_capabilities_reflect_existing_authorization_helpers(self):
+        moderator_group = Group.objects.get(name=MODERATOR_GROUP_NAME)
+        cases = []
+
+        ordinary = self.create_user(email="caps-ordinary@example.com")
+        cases.append(
+            (
+                ordinary,
+                {"can_moderate": False, "can_administer": False},
+            )
+        )
+
+        staff_only = self.create_user(
+            email="caps-staff-only@example.com",
+            is_staff=True,
+        )
+        cases.append(
+            (
+                staff_only,
+                {"can_moderate": False, "can_administer": False},
+            )
+        )
+
+        moderator = self.create_user(
+            email="caps-moderator@example.com",
+            is_staff=True,
+        )
+        moderator.groups.add(moderator_group)
+        cases.append(
+            (
+                moderator,
+                {"can_moderate": True, "can_administer": False},
+            )
+        )
+
+        admin = User.objects.create_superuser(
+            email="caps-admin@example.com",
+            password=self.password,
+        )
+        cases.append(
+            (
+                admin,
+                {"can_moderate": True, "can_administer": True},
+            )
+        )
+
+        for user, expected in cases:
+            with self.subTest(user=user.email):
+                self.client.force_login(user)
+                response = self.client.get(self.me_url)
+                self.assertEqual(response.status_code, 200)
+                self.assertEqual(response.json()["capabilities"], expected)
+                self.client.logout()
 
 
 class LogoutAPITests(SessionAuthenticationAPITestCase):

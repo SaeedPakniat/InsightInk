@@ -10,16 +10,32 @@ from content.models import ContentLanguage, Topic
 from content.serializers import ContentLanguageSerializer, TopicSerializer
 
 from .models import UserContentLanguage, UserInterest
+from .permissions import is_admin, is_moderator
 
 
 User = get_user_model()
 
 
 class CurrentUserSerializer(serializers.ModelSerializer):
+    capabilities = serializers.SerializerMethodField()
+
     class Meta:
         model = User
-        fields = ("id", "email", "display_name", "preferred_ui_language")
+        fields = (
+            "id",
+            "email",
+            "display_name",
+            "preferred_ui_language",
+            "capabilities",
+        )
         read_only_fields = fields
+
+    def get_capabilities(self, user):
+        admin = is_admin(user)
+        return {
+            "can_moderate": is_moderator(user) or admin,
+            "can_administer": admin,
+        }
 
 
 class RegisterSerializer(serializers.Serializer):
