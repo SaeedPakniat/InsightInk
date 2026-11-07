@@ -1,33 +1,32 @@
 # Backend Handoff
 
-- Task ID: BE-AUTH-CAPS-001 — Session Capability Exposure + Deterministic Demo Moderator
-- Exact implementation commit SHA: `933ab208078d57c532b6c6e1c487bdf29e8a33c7`.
-- Exact base SHA: `962b82810e02b49ec032281145d998cd57d51a6d`.
-- Result: Complete and accepted; implementation commit recorded exactly for FE-013 handoff.
-- API shape added to `POST /api/v1/auth/register/`, `POST /api/v1/auth/login/`, and `GET /api/v1/me/`: `"capabilities":{"can_moderate":<bool>,"can_administer":<bool>}`.
-- Capability source of truth: existing `accounts.permissions.is_moderator` and `is_admin`; serializer does not inspect groups/flags independently.
-- Rules:
-  - Reader -> can_moderate=false, can_administer=false.
-  - staff-only non-Moderator -> false/false.
-  - Moderator -> true/false.
-  - Admin/superuser -> true/true.
-- Security boundary: raw `is_staff`, `is_superuser`, groups, permissions, password and last_login remain absent from safe user responses.
-- Existing session/cookie auth and CSRF behavior unchanged; no JWT/token auth.
-- Demo moderator: `demo-moderator@example.com`; display name `Demo Moderator`; preferred UI language `en`; development-only password `InsightInkDemo2026!`.
-- Demo moderator seed state: is_staff=True; member of existing Moderator group via `MODERATOR_GROUP_NAME`; is_superuser=False; no CreatorProfile required.
-- Seed safety: repeatable update_or_create by email; password re-established; only moderator demo account has moderator flags enforced; group add is idempotent; unrelated users/groups are not deleted or rewritten.
-- First real seed after change: Users 1 created / 5 updated; no new topics/creators/sources/ideas/activity.
-- Second real seed: Users 0 created / 6 updated; no duplicate activity/domain rows.
-- Real role verification: one demo moderator, one Moderator membership, staff true, superuser false, moderator helper true, no CreatorProfile; every other demo account remains non-staff and outside Moderator group.
-- Moderation regression unchanged: ordinary authenticated -> 403; staff-only -> 403; Moderator -> allowed; Admin -> allowed; open -> reviewing -> resolved/rejected workflow unchanged.
-- Focused tests: 94/94 accounts + seed_demo + moderation tests passed.
-- Full backend suite: 325/325 passed.
+- Task ID: BE-CREATOR-PUBLISH-001 — Controlled Creator Idea Publication
+- Exact implementation commit SHA: `959cf0393ec5257cb82e9bfa44ef20a1d1e14296`.
+- Exact base SHA: `a675b86e320493fd273c480acc5871b810fcb43a`.
+- Result: Complete and accepted; implementation commit recorded exactly for FE-015 handoff.
+- Endpoint: `POST /api/v1/me/ideas/<id>/publish/`.
+- Authentication/authorization: authenticated Creator only; owner-only through existing CreatorIdeaViewSet private queryset and permissions; another Creator -> 404; Reader without CreatorProfile -> 403; anonymous -> current session-auth rejection.
+- CSRF: required for authenticated POST through normal SessionAuthentication; missing CSRF -> 403 and no state change.
+- Allowed lifecycle: `draft -> published` only.
+- Successful transition: atomic row lock; status `draft -> published`; published_at `null -> timezone.now()`; HTTP 200; response uses existing CreatorIdeaSerializer.
+- Publish response shape remains private Creator Idea shape: `id, language, title, body, estimated_read_seconds, status, published_at, created_at, updated_at, source, topics`.
+- Publish body: no payload required. Any supplied Idea/lifecycle fields are ignored by the action and cannot alter persisted content.
+- Already published -> 400 `{"detail":"Only draft ideas can be published."}`; original published_at preserved.
+- Hidden -> same 400; no republish/moderation bypass.
+- No unpublish, republish, review_pending/submitted state, editor approval, scheduled publish, or arbitrary status editing.
+- Existing PATCH/DELETE rules unchanged: only draft can edit/delete; published/hidden remain immutable.
+- Existing creation rule unchanged: POST /me/ideas/ always creates draft with published_at null regardless of client lifecycle fields.
+- Public visibility after success: normal public selectors immediately expose it through `GET /api/v1/ideas/<id>/`, `GET /api/v1/feed/`, and `GET /api/v1/creators/<creator_id>/ideas/`; normal recommendation/search rules apply without special-case publish code.
+- Source API remains read-only/curated; no source creation API.
+- Creator profile API unchanged.
+- Schema migration: none.
+- Implementation files intended for focused checkpoint: `backend/content/views.py`, `backend/content/tests.py`.
+- Focused tests: 67/67 Creator workspace + Feed + Creator tests passed.
+- Full backend suite: 334/334 passed.
 - `manage.py check`: PASS.
 - `makemigrations --check --dry-run`: No changes detected.
 - `pip check`: No broken requirements.
 - `git diff --check`: PASS.
-- Schema migration: none.
-- Files intended for implementation checkpoint: `backend/accounts/serializers.py`, `backend/accounts/tests.py`, `backend/content/demo_seed_data.py`, `backend/content/management/commands/seed_demo.py`, `backend/content/test_seed_demo.py`.
-- Backend docs: this STATE/HANDOFF pair will record the exact implementation commit SHA in a follow-up documentation-only sync commit.
-- Frontend boundary: no frontend file or frontend AI document is part of this task.
-- Frontend blocker: none. FE-013 may rely on `capabilities.can_moderate` for moderator navigation/UI visibility, but backend permissions remain the security authority.
+- Real dev smoke: disposable draft ID 68 created via API; public before=404; publish=200; private published=true; published_at present; public detail=200; Creator public Ideas contains=true; Feed contains=true; direct DB cleanup=true.
+- Backend docs: this STATE/HANDOFF pair will record the exact implementation commit SHA in a documentation-only sync commit.
+- Frontend blocker: none. FE-015 may proceed.
