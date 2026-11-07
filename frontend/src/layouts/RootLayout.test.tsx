@@ -1,4 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { lazy, type ReactNode } from 'react'
 import { cleanup, render, screen } from '@testing-library/react'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
@@ -21,7 +22,9 @@ function user(canModerate: boolean): CurrentUser {
   }
 }
 
-function renderLayout(currentUser: CurrentUser | null) {
+const SuspendedPage = lazy(() => new Promise<{ default: () => null }>(() => {}))
+
+function renderLayout(currentUser: CurrentUser | null, child: ReactNode = <div>Page content</div>) {
   const queryClient = new QueryClient({
     defaultOptions: {
       queries: { retry: false },
@@ -34,7 +37,7 @@ function renderLayout(currentUser: CurrentUser | null) {
       <MemoryRouter initialEntries={['/']}>
         <Routes>
           <Route element={<RootLayout />}>
-            <Route index element={<div>Page content</div>} />
+            <Route index element={child} />
           </Route>
         </Routes>
       </MemoryRouter>
@@ -64,5 +67,12 @@ describe('RootLayout moderation navigation', () => {
     renderLayout(user(false))
 
     expect(screen.queryByRole('link', { name: 'Moderation' })).not.toBeInTheDocument()
+  })
+
+  it('keeps the shell mounted and shows localized feedback while a route chunk loads', () => {
+    renderLayout(user(false), <SuspendedPage />)
+
+    expect(screen.getByText('InsightInk')).toBeInTheDocument()
+    expect(screen.getByText('Loading this view…')).toBeInTheDocument()
   })
 })

@@ -1,7 +1,9 @@
+import { Suspense } from 'react'
 import { Link, Outlet, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 
 import { Brand } from '../components/ui/Brand'
+import { RouteLoadingScreen } from '../components/ui/Feedback'
 import { LanguageToggle } from '../components/ui/LanguageToggle'
 import { useSession } from '../features/auth/session'
 
@@ -50,9 +52,11 @@ export function RootLayout() {
         </div>
       </header>
       <main className="site-main">
-        <div className="route-stage" key={location.pathname}>
-          <Outlet />
-        </div>
+        <Suspense fallback={<RouteLoadingScreen />}>
+          <div className="route-stage" key={location.pathname}>
+            <Outlet />
+          </div>
+        </Suspense>
       </main>
     </div>
   )

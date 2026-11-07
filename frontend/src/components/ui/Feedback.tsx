@@ -2,15 +2,23 @@ import { useTranslation } from 'react-i18next'
 
 import { Button } from './Button'
 
-export function LoadingScreen() {
-  const { t } = useTranslation()
-
+function LoadingFeedback({ label }: { label: string }) {
   return (
     <div className="feedback feedback--center" role="status" aria-live="polite">
       <span className="spinner" aria-hidden="true" />
-      <p>{t('common.loadingSession')}</p>
+      <p>{label}</p>
     </div>
   )
+}
+
+export function LoadingScreen() {
+  const { t } = useTranslation()
+  return <LoadingFeedback label={t('common.loadingSession')} />
+}
+
+export function RouteLoadingScreen() {
+  const { t } = useTranslation()
+  return <LoadingFeedback label={t('common.loadingPage')} />
 }
 
 type ErrorStateProps = {

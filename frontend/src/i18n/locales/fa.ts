@@ -16,6 +16,7 @@ export const fa = {
     common: {
       retry: 'تلاش دوباره',
       loadingSession: 'در حال بررسی نشست شما…',
+      loadingPage: 'در حال بارگذاری این بخش…',
       logout: 'خروج',
       loggingOut: 'در حال خروج…',
       optional: 'اختیاری',

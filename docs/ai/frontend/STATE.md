@@ -1,57 +1,39 @@
 # Frontend State
 
-- Task: FE-013 — Moderator Queue + Report Review Actions.
-- Status: Accepted by user; FE-013 ready for checkpoint commit/push.
-- Accepted frontend checkpoint before dependency: `962b82810e02b49ec032281145d998cd57d51a6d`.
-- Backend capability dependency implementation: `933ab208078d57c532b6c6e1c487bdf29e8a33c7`.
-- Current repository base from backend docs sync: `6fa963d6265de28c9926f17f145c44edb94e5802`.
-- `CurrentUser` now models product-level capabilities:
-  - can_moderate
-  - can_administer.
-- Capability usage:
-  - frontend navigation/route UX uses can_moderate;
-  - backend permissions remain authoritative.
-- Header:
-  - moderation shield link only for moderation-capable session;
-  - icon-only on small screens, localized label at wider widths;
-  - active state for /moderation routes.
-- New `RequireModerator` guard:
-  - anonymous -> login with return route;
-  - ordinary authenticated -> /app;
-  - moderator/admin -> protected content.
-- Protected routes:
-  - /moderation
-  - /moderation/reports/:reportId.
-- Moderator queue:
-  - cursor-paginated GET /moderation/reports/;
-  - default Open filter;
-  - Reviewing / Resolved / Rejected / All URL filters;
-  - report cards with status/reason/reporter/target/time;
-  - loading/error/empty/load-more/end states.
-- Moderator detail:
-  - GET report detail;
-  - report context + reported Comment + current target status;
-  - missing-target state;
-  - audit trail with moderator/action/note/timestamp.
-- Workflow mirrors backend state machine:
-  - Open -> Start review only;
-  - Reviewing -> optional Hide visible Comment + Resolve or Reject;
-  - Resolved/Rejected -> read-only completed case.
-- All unsafe moderation actions use shared session/CSRF client.
-- Optional moderation note max 2000; localized count and errors.
-- Mutations update/refetch detail and invalidate all queue filters.
-- Backend transition/race failures are intentionally localized generically instead of leaking English service text into Persian UI.
-- Current real development moderation data:
-  - Report 2 Open / spam / target Comment 2 / Persian body;
-  - Report 1 Open / harassment / target Comment 1 / English body.
-- Visual review:
-  - queue 1440×1050 Persian UI;
-  - open detail 390×1000;
-  - reviewing action/audit layout 1440×1200;
-  - no horizontal overflow observed.
-- Final quality gates: TypeScript PASS; ESLint PASS; Vitest 41 files / 126 tests PASS; production build PASS; Prettier PASS; `npm audit --omit=dev` reports 0 vulnerabilities; `git diff --check` PASS.
-- FE-013 production bundle: ~158.34 KB JS gzip and ~11.03 KB CSS gzip.
-- Non-blocking Vite warning: raw main JS chunk ~540.16 KB minified; FE-014 should introduce route-level code splitting instead of increasing the warning limit.
-- Temporary visual-review route/file/assets removed before final validation.
-- Backend implementation files changed by FE-013 frontend work: none.
-- Next logical task after acceptance: FE-014 — Frontend Performance Hardening / Route-Level Code Splitting, because the raw Vite main chunk has crossed the warning threshold while the feature set is now broad enough for meaningful route splitting.
+- Task: FE-014 — Route-Level Code Splitting + Performance Hardening.
+- Status: Accepted by user; FE-014 ready for checkpoint commit/push.
+- Base commit: `4c49db0762547e2c079c988a6dd9edb0a61f8e39`.
+- All page-level route components now use dynamic imports through React.lazy.
+- Eager core intentionally retained:
+  - RootLayout/header
+  - auth/moderator guards
+  - i18n
+  - Query provider
+  - session/API core.
+- RootLayout wraps Outlet in Suspense so the shell remains stable during chunk fetch.
+- Added dedicated localized route loading copy rather than reusing session-check copy.
+- Lazy route chunks include Landing, auth, Reader home, Latest, Library, Search, Creator, Idea detail, onboarding, moderation queue/detail, and Not Found.
+- FE-013 baseline main JS: ~540.16 KB raw / ~158.34 KB gzip.
+- FE-014 shared entry chunk: ~269.85 KB raw / ~83.42 KB gzip.
+- Actual initial preload graph from generated index.html: ~462.59 KB raw / ~146.62 KB gzip, plus the current route chunk.
+- Approx initial reduction before route chunk: ~14% raw / ~7% gzip.
+- Prior >500 KB Vite main-chunk warning is eliminated without increasing warning thresholds.
+- Representative lazy page chunks:
+  - Search ~2.32 KB gzip
+  - Idea detail ~4.10 KB gzip
+  - Creator profile ~2.83 KB gzip
+  - Moderation queue ~1.32 KB gzip
+  - Moderation detail ~2.20 KB gzip.
+- Direct cold URL smoke passed:
+  - /
+  - /search
+  - /ideas/25
+  - /creators/1
+  - /login
+  - anonymous /moderation -> Login.
+- No Vite transform/error overlay observed.
+- RootLayout Suspense regression verifies shell persistence + localized route-loading state.
+- Final quality gates: TypeScript PASS; ESLint PASS; Vitest 41 files / 127 tests PASS; production build PASS; Prettier PASS; `npm audit --omit=dev` reports 0 vulnerabilities; `git diff --check` PASS.
+- Production build emits route-level chunks and no >500 KB Vite main-chunk warning.
+- Backend implementation files changed by FE-014: none.
+- Next product milestone should return to feature/product scope unless measured performance data identifies another concrete bottleneck.

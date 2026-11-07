@@ -1,21 +1,61 @@
+import { lazy, type ComponentType } from 'react'
 import { createBrowserRouter } from 'react-router-dom'
 
 import { AnonymousOnly, RequireAuth, RequireModerator } from '../features/auth/RouteGuards'
-import { LoginPage } from '../features/auth/LoginPage'
-import { RegisterPage } from '../features/auth/RegisterPage'
-import { AuthenticatedHomePage } from '../features/home/AuthenticatedHomePage'
-import { InterestsOnboardingPage } from '../features/onboarding/InterestsOnboardingPage'
-import { ContentLanguagesPage } from '../features/onboarding/languages/ContentLanguagesPage'
-import { LatestFeedPage } from '../features/feed/LatestFeedPage'
-import { SavedLibraryPage } from '../features/library/SavedLibraryPage'
-import { SearchPage } from '../features/search/SearchPage'
-import { CreatorProfilePage } from '../features/creators/CreatorProfilePage'
-import { LandingPage } from '../features/home/LandingPage'
-import { IdeaDetailPage } from '../features/ideas/detail/IdeaDetailPage'
-import { NotFoundPage } from '../features/home/NotFoundPage'
-import { ModerationQueuePage } from '../features/moderation/ModerationQueuePage'
-import { ModerationReportPage } from '../features/moderation/ModerationReportPage'
 import { RootLayout } from '../layouts/RootLayout'
+
+function lazyPage(load: () => Promise<ComponentType>) {
+  return lazy(async () => ({ default: await load() }))
+}
+
+const LandingPage = lazyPage(() =>
+  import('../features/home/LandingPage').then((module) => module.LandingPage),
+)
+const IdeaDetailPage = lazyPage(() =>
+  import('../features/ideas/detail/IdeaDetailPage').then((module) => module.IdeaDetailPage),
+)
+const SearchPage = lazyPage(() =>
+  import('../features/search/SearchPage').then((module) => module.SearchPage),
+)
+const CreatorProfilePage = lazyPage(() =>
+  import('../features/creators/CreatorProfilePage').then((module) => module.CreatorProfilePage),
+)
+const LoginPage = lazyPage(() =>
+  import('../features/auth/LoginPage').then((module) => module.LoginPage),
+)
+const RegisterPage = lazyPage(() =>
+  import('../features/auth/RegisterPage').then((module) => module.RegisterPage),
+)
+const AuthenticatedHomePage = lazyPage(() =>
+  import('../features/home/AuthenticatedHomePage').then((module) => module.AuthenticatedHomePage),
+)
+const LatestFeedPage = lazyPage(() =>
+  import('../features/feed/LatestFeedPage').then((module) => module.LatestFeedPage),
+)
+const SavedLibraryPage = lazyPage(() =>
+  import('../features/library/SavedLibraryPage').then((module) => module.SavedLibraryPage),
+)
+const InterestsOnboardingPage = lazyPage(() =>
+  import('../features/onboarding/InterestsOnboardingPage').then(
+    (module) => module.InterestsOnboardingPage,
+  ),
+)
+const ContentLanguagesPage = lazyPage(() =>
+  import('../features/onboarding/languages/ContentLanguagesPage').then(
+    (module) => module.ContentLanguagesPage,
+  ),
+)
+const ModerationQueuePage = lazyPage(() =>
+  import('../features/moderation/ModerationQueuePage').then((module) => module.ModerationQueuePage),
+)
+const ModerationReportPage = lazyPage(() =>
+  import('../features/moderation/ModerationReportPage').then(
+    (module) => module.ModerationReportPage,
+  ),
+)
+const NotFoundPage = lazyPage(() =>
+  import('../features/home/NotFoundPage').then((module) => module.NotFoundPage),
+)
 
 export const router = createBrowserRouter([
   {

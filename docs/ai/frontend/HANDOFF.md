@@ -1,21 +1,15 @@
 # Frontend Handoff
 
-- Task ID: FE-013 — Moderator Queue + Report Review Actions
-- Repository base: `6fa963d6265de28c9926f17f145c44edb94e5802`.
-- Backend capability implementation: `933ab208078d57c532b6c6e1c487bdf29e8a33c7`.
+- Task ID: FE-014 — Route-Level Code Splitting + Performance Hardening
+- Base commit: `4c49db0762547e2c079c988a6dd9edb0a61f8e39`.
 - Result: accepted by user; ready for checkpoint commit/push.
-- Session now consumes product-level can_moderate/can_administer capabilities.
-- Moderator link is capability-gated; moderator routes use RequireModerator.
-- Routes:
-  - /moderation
-  - /moderation/reports/:reportId
-- Queue supports Open/Reviewing/Resolved/Rejected/All and cursor pagination.
-- Detail exposes reported comment, report context, legal state-dependent actions and audit history.
-- Unsafe actions use CSRF and optional <=2000-char moderator note.
-- No admin assignment UI or unbounded moderation capability was added.
-- Final checks: typecheck PASS; lint PASS; 41 test files / 126 tests PASS; production build PASS; formatting PASS; runtime npm audit 0 vulnerabilities; `git diff --check` PASS.
-- Bundle ~158.34 KB JS gzip / ~11.03 KB CSS gzip. Raw main chunk ~540.16 KB minified; FE-014 should implement route-level code splitting.
-- Visual review passed with the actual two development reports plus a non-persisted reviewing-state visual fixture.
-- No backend implementation changes.
-- Do not commit/push until user validates the console with demo-moderator@example.com.
-- Next likely task: FE-014 route-level code splitting/performance hardening.
+- Page modules are dynamically imported; persistent shell/guards/core remain eager.
+- RootLayout Suspense provides localized route-loading feedback.
+- FE-013 single JS bundle: ~540.16 KB raw / 158.34 KB gzip.
+- FE-014 initial preload graph: ~462.59 KB raw / 146.62 KB gzip, plus requested route chunk.
+- Main entry chunk itself is ~269.85 KB raw / 83.42 KB gzip.
+- The >500 KB Vite warning is gone without hiding it through configuration.
+- Cold direct routes /, /search, /ideas/25, /creators/1, /login and anonymous /moderation all passed browser smoke.
+- Final checks: typecheck PASS; lint PASS; 41 test files / 127 tests PASS; production build PASS; formatting PASS; runtime npm audit 0 vulnerabilities; `git diff --check` PASS.
+- No backend changes or dependency additions.
+- Do not commit/push until user accepts FE-014.

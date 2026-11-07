@@ -16,6 +16,7 @@ export const en = {
     common: {
       retry: 'Try again',
       loadingSession: 'Checking your session…',
+      loadingPage: 'Loading this view…',
       logout: 'Log out',
       loggingOut: 'Logging out…',
       optional: 'Optional',
