@@ -15,6 +15,7 @@ from .pagination import ReportCursorPagination
 from .permissions import IsModeratorOrAdmin
 from .serializers import (
     CommentReportCreateSerializer,
+    IdeaModerationStateSerializer,
     ModerationNoteSerializer,
     ReportDetailSerializer,
     ReportListSerializer,
@@ -23,9 +24,12 @@ from .serializers import (
 )
 from .services import (
     create_comment_report,
+    create_idea_report,
+    hide_idea_directly,
     hide_reported_comment,
     reject_report,
     resolve_report,
+    restore_idea_directly,
     start_review,
 )
 
@@ -53,6 +57,70 @@ class CommentReportView(APIView):
             ReportPublicSerializer(report).data,
             status=status.HTTP_201_CREATED,
         )
+
+
+class IdeaReportView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, idea_id):
+        idea = get_object_or_404(
+            Idea,
+            pk=idea_id,
+            status=Idea.IdeaStatus.PUBLISHED,
+        )
+        serializer = CommentReportCreateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        report = create_idea_report(
+            reporter=request.user,
+            idea=idea,
+            reason=serializer.validated_data["reason"],
+            details=serializer.validated_data.get("details", ""),
+        )
+        return Response(
+            ReportPublicSerializer(report).data,
+            status=status.HTTP_201_CREATED,
+        )
+
+
+class DirectIdeaModerationView(APIView):
+    permission_classes = [IsModeratorOrAdmin]
+    service = None
+    action_type = None
+
+    def post(self, request, idea_id):
+        get_object_or_404(Idea, pk=idea_id)
+        serializer = ModerationNoteSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        try:
+            idea = self.service(
+                actor=request.user,
+                idea_id=idea_id,
+                note=serializer.validated_data.get("note", ""),
+            )
+        except ModerationTransitionError as exc:
+            raise ValidationError({"detail": str(exc)}) from exc
+
+        return Response(
+            IdeaModerationStateSerializer(
+                {
+                    "idea_id": idea.id,
+                    "status": idea.status,
+                    "action": self.action_type,
+                }
+            ).data
+        )
+
+
+class HideIdeaDirectlyView(DirectIdeaModerationView):
+    service = staticmethod(hide_idea_directly)
+    action_type = "idea_hidden"
+
+
+class RestoreIdeaDirectlyView(DirectIdeaModerationView):
+    service = staticmethod(restore_idea_directly)
+    action_type = "idea_restored"
 
 
 class ReportListView(ListAPIView):

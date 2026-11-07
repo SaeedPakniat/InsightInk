@@ -1,6 +1,7 @@
 from django.db import transaction
 from django.utils import timezone
 
+from content.models import Idea
 from engagement.models import Comment
 
 from .exceptions import ModerationTransitionError
@@ -18,13 +19,37 @@ def create_comment_report(*, reporter, comment, reason, details=""):
     )
 
 
-def _record_action(*, actor, report, action_type, note="", target_type=None, target_id=None):
+def create_idea_report(*, reporter, idea, reason, details=""):
+    return Report.objects.create(
+        reporter=reporter,
+        target_type=Report.TargetType.IDEA,
+        target_id=idea.id,
+        reason=reason,
+        details=details,
+        status=Report.Status.OPEN,
+    )
+
+
+def _record_action(
+    *,
+    actor,
+    report,
+    action_type,
+    note="",
+    target_type=None,
+    target_id=None,
+):
+    if report is None and (target_type is None or target_id is None):
+        raise ValueError(
+            "Direct moderation actions require explicit target_type and target_id."
+        )
+
     return ModerationAction.objects.create(
         moderator=actor,
         report=report,
         action_type=action_type,
-        target_type=target_type or report.target_type,
-        target_id=target_id or report.target_id,
+        target_type=target_type if target_type is not None else report.target_type,
+        target_id=target_id if target_id is not None else report.target_id,
         note=note,
     )
 
@@ -117,3 +142,45 @@ def reject_report(*, actor, report_id, note=""):
         action_type=ModerationAction.ActionType.REPORT_REJECTED,
         note=note,
     )
+
+
+@transaction.atomic
+def hide_idea_directly(*, actor, idea_id, note=""):
+    idea = Idea.objects.select_for_update().get(pk=idea_id)
+    if idea.status != Idea.IdeaStatus.PUBLISHED:
+        raise ModerationTransitionError(
+            "Only published ideas can be hidden."
+        )
+
+    idea.status = Idea.IdeaStatus.HIDDEN
+    idea.save(update_fields=["status", "updated_at"])
+    _record_action(
+        actor=actor,
+        report=None,
+        action_type=ModerationAction.ActionType.IDEA_HIDDEN,
+        note=note,
+        target_type=Report.TargetType.IDEA,
+        target_id=idea.id,
+    )
+    return idea
+
+
+@transaction.atomic
+def restore_idea_directly(*, actor, idea_id, note=""):
+    idea = Idea.objects.select_for_update().get(pk=idea_id)
+    if idea.status != Idea.IdeaStatus.HIDDEN:
+        raise ModerationTransitionError(
+            "Only hidden ideas can be restored."
+        )
+
+    idea.status = Idea.IdeaStatus.PUBLISHED
+    idea.save(update_fields=["status", "updated_at"])
+    _record_action(
+        actor=actor,
+        report=None,
+        action_type=ModerationAction.ActionType.IDEA_RESTORED,
+        note=note,
+        target_type=Report.TargetType.IDEA,
+        target_id=idea.id,
+    )
+    return idea

@@ -8,6 +8,7 @@ from accounts.permissions import MODERATOR_GROUP_NAME
 from content.models import Idea, Source
 from creators.models import CreatorProfile
 from engagement.models import Comment
+from recommendations.selectors import recommendation_candidates
 
 from .models import ModerationAction, Report
 
@@ -540,3 +541,349 @@ class ModerationWorkflowAPITests(ModerationTestCase):
         self.assertIn("note", response.json())
         self.report.refresh_from_db()
         self.assertEqual(self.report.status, Report.Status.OPEN)
+
+
+class IdeaReportAPITests(ModerationTestCase):
+    def report_url(self, idea):
+        return reverse("api:moderation:idea-report", args=[idea.id])
+
+    def test_authenticated_reader_can_report_published_idea(self):
+        self.client.force_login(self.reporter)
+
+        response = self.request_with_csrf(
+            "post",
+            self.report_url(self.published),
+            {
+                "reason": Report.Reason.INAPPROPRIATE_CONTENT,
+                "details": "  Unsafe public content.  ",
+            },
+        )
+
+        self.assertEqual(response.status_code, 201)
+        report = Report.objects.get(pk=response.json()["id"])
+        self.assertEqual(report.reporter, self.reporter)
+        self.assertEqual(report.target_type, Report.TargetType.IDEA)
+        self.assertEqual(report.target_id, self.published.id)
+        self.assertEqual(report.reason, Report.Reason.INAPPROPRIATE_CONTENT)
+        self.assertEqual(report.details, "Unsafe public content.")
+        self.assertEqual(report.status, Report.Status.OPEN)
+
+    def test_nonpublic_ideas_cannot_be_reported(self):
+        hidden = self.create_idea("Hidden report", Idea.IdeaStatus.HIDDEN)
+        withdrawn = self.create_idea(
+            "Withdrawn report",
+            Idea.IdeaStatus.WITHDRAWN,
+        )
+        self.client.force_login(self.reporter)
+
+        for idea in (self.draft, hidden, withdrawn):
+            with self.subTest(status=idea.status):
+                response = self.request_with_csrf(
+                    "post",
+                    self.report_url(idea),
+                    {"reason": Report.Reason.SPAM},
+                )
+                self.assertEqual(response.status_code, 404)
+
+    def test_idea_report_requires_auth_csrf_and_bounded_input(self):
+        url = self.report_url(self.published)
+
+        anonymous = self.client.post(
+            url,
+            {"reason": Report.Reason.SPAM},
+            format="json",
+        )
+        self.assertEqual(anonymous.status_code, 403)
+
+        self.client.force_login(self.reporter)
+        no_csrf = self.client.post(
+            url,
+            {"reason": Report.Reason.SPAM},
+            format="json",
+        )
+        bad_reason = self.request_with_csrf(
+            "post",
+            url,
+            {"reason": "misinformation"},
+        )
+        long_details = self.request_with_csrf(
+            "post",
+            url,
+            {"reason": Report.Reason.OTHER, "details": "x" * 2001},
+        )
+
+        self.assertEqual(no_csrf.status_code, 403)
+        self.assertEqual(bad_reason.status_code, 400)
+        self.assertIn("reason", bad_reason.json())
+        self.assertEqual(long_details.status_code, 400)
+        self.assertIn("details", long_details.json())
+
+    def test_idea_report_enters_queue_and_detail_exposes_safe_target_idea(self):
+        self.client.force_login(self.reporter)
+        created = self.request_with_csrf(
+            "post",
+            self.report_url(self.published),
+            {
+                "reason": Report.Reason.SPAM,
+                "details": "Review this idea.",
+            },
+        )
+        report_id = created.json()["id"]
+
+        self.client.force_login(self.moderator)
+        queue = self.client.get(reverse("api:moderation:report-list"))
+        detail = self.client.get(
+            reverse("api:moderation:report-detail", args=[report_id])
+        )
+
+        self.assertEqual(queue.status_code, 200)
+        self.assertIn(
+            report_id,
+            [item["id"] for item in queue.json()["results"]],
+        )
+        self.assertEqual(detail.status_code, 200)
+        target = detail.json()["target_idea"]
+        self.assertEqual(
+            set(target),
+            {
+                "id",
+                "title",
+                "body",
+                "language",
+                "status",
+                "creator",
+                "source",
+                "published_at",
+            },
+        )
+        self.assertEqual(target["id"], self.published.id)
+        self.assertEqual(target["title"], self.published.title)
+        self.assertEqual(target["status"], Idea.IdeaStatus.PUBLISHED)
+        self.assertEqual(
+            target["creator"],
+            {
+                "id": self.creator.id,
+                "display_name": self.creator.user.display_name,
+                "is_verified": self.creator.is_verified,
+            },
+        )
+        self.assertNotIn("email", target["creator"])
+        self.assertIsNone(detail.json()["target_comment"])
+
+    def test_comment_report_detail_keeps_target_idea_null(self):
+        report = self.create_report()
+        self.client.force_login(self.moderator)
+
+        response = self.client.get(
+            reverse("api:moderation:report-detail", args=[report.id])
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIsNone(response.json()["target_idea"])
+        self.assertIsNotNone(response.json()["target_comment"])
+
+
+class DirectIdeaModerationAPITests(ModerationTestCase):
+    def hide_url(self, idea):
+        return reverse("api:moderation:idea-hide", args=[idea.id])
+
+    def restore_url(self, idea):
+        return reverse("api:moderation:idea-restore", args=[idea.id])
+
+    def test_moderator_hides_published_idea_and_records_independent_audit(self):
+        self.client.force_login(self.moderator)
+
+        response = self.request_with_csrf(
+            "post",
+            self.hide_url(self.published),
+            {"note": "  Directly observed violation.  "},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.json(),
+            {
+                "idea_id": self.published.id,
+                "status": Idea.IdeaStatus.HIDDEN,
+                "action": ModerationAction.ActionType.IDEA_HIDDEN,
+            },
+        )
+        self.published.refresh_from_db()
+        self.assertEqual(self.published.status, Idea.IdeaStatus.HIDDEN)
+
+        action = ModerationAction.objects.get(
+            action_type=ModerationAction.ActionType.IDEA_HIDDEN,
+            target_id=self.published.id,
+        )
+        self.assertEqual(action.moderator, self.moderator)
+        self.assertIsNone(action.report_id)
+        self.assertEqual(action.target_type, Report.TargetType.IDEA)
+        self.assertEqual(action.note, "Directly observed violation.")
+        self.assertIsNotNone(action.created_at)
+
+    def test_hidden_idea_disappears_from_public_surfaces_and_recommendation_candidates(self):
+        self.client.force_login(self.moderator)
+        hidden = self.request_with_csrf(
+            "post",
+            self.hide_url(self.published),
+        )
+        self.assertEqual(hidden.status_code, 200)
+
+        public = APIClient()
+        detail = public.get(
+            reverse("api:idea-detail", args=[self.published.id])
+        )
+        feed = public.get(reverse("api:feed"))
+        search = public.get(
+            reverse("api:explore:search"),
+            {"q": self.published.title},
+        )
+        creator_ideas = public.get(
+            reverse(
+                "api:creators:creator-ideas",
+                args=[self.creator.id],
+            )
+        )
+        candidate_ids = {
+            candidate.id
+            for candidate in recommendation_candidates(
+                language_codes=["en"]
+            )
+        }
+
+        self.assertEqual(detail.status_code, 404)
+        self.assertNotIn(
+            self.published.id,
+            {item["id"] for item in feed.json()["results"]},
+        )
+        self.assertNotIn(
+            self.published.id,
+            {item["id"] for item in search.json()["results"]},
+        )
+        self.assertNotIn(
+            self.published.id,
+            {item["id"] for item in creator_ideas.json()["results"]},
+        )
+        self.assertNotIn(self.published.id, candidate_ids)
+
+    def test_moderator_restores_hidden_idea_and_records_audit(self):
+        self.client.force_login(self.moderator)
+        self.request_with_csrf(
+            "post",
+            self.hide_url(self.published),
+            {"note": "Hide first."},
+        )
+
+        response = self.request_with_csrf(
+            "post",
+            self.restore_url(self.published),
+            {"note": "  Restored after review.  "},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["status"], Idea.IdeaStatus.PUBLISHED)
+        self.assertEqual(
+            response.json()["action"],
+            ModerationAction.ActionType.IDEA_RESTORED,
+        )
+        self.published.refresh_from_db()
+        self.assertEqual(self.published.status, Idea.IdeaStatus.PUBLISHED)
+
+        action = ModerationAction.objects.get(
+            action_type=ModerationAction.ActionType.IDEA_RESTORED,
+            target_id=self.published.id,
+        )
+        self.assertIsNone(action.report_id)
+        self.assertEqual(action.moderator, self.moderator)
+        self.assertEqual(action.note, "Restored after review.")
+
+        public = APIClient().get(
+            reverse("api:idea-detail", args=[self.published.id])
+        )
+        self.assertEqual(public.status_code, 200)
+
+    def test_illegal_hide_and_restore_transitions_are_rejected(self):
+        hidden = self.create_idea("Already hidden", Idea.IdeaStatus.HIDDEN)
+        withdrawn = self.create_idea(
+            "Withdrawn",
+            Idea.IdeaStatus.WITHDRAWN,
+        )
+        self.client.force_login(self.moderator)
+
+        for idea in (self.draft, hidden, withdrawn):
+            with self.subTest(action="hide", state=idea.status):
+                response = self.request_with_csrf(
+                    "post",
+                    self.hide_url(idea),
+                )
+                self.assertEqual(response.status_code, 400)
+
+        for idea in (self.published, self.draft, withdrawn):
+            with self.subTest(action="restore", state=idea.status):
+                response = self.request_with_csrf(
+                    "post",
+                    self.restore_url(idea),
+                )
+                self.assertEqual(response.status_code, 400)
+
+    def test_direct_moderation_permission_matrix_and_unknown_idea(self):
+        actors = [
+            (None, 403),
+            (self.ordinary, 403),
+            (self.creator.user, 403),
+            (self.staff_only, 403),
+            (self.moderator, 200),
+            (self.admin, 200),
+        ]
+
+        for index, (actor, expected) in enumerate(actors):
+            with self.subTest(actor=getattr(actor, "email", "anonymous")):
+                idea = self.create_idea(
+                    f"Permission target {index}",
+                    Idea.IdeaStatus.PUBLISHED,
+                )
+                self.client.logout()
+                if actor is None:
+                    response = self.client.post(
+                        self.hide_url(idea),
+                        {},
+                        format="json",
+                    )
+                else:
+                    self.client.force_login(actor)
+                    response = self.request_with_csrf(
+                        "post",
+                        self.hide_url(idea),
+                    )
+                self.assertEqual(response.status_code, expected)
+
+        self.client.force_login(self.moderator)
+        missing = self.request_with_csrf(
+            "post",
+            reverse("api:moderation:idea-hide", args=[99999999]),
+        )
+        self.assertEqual(missing.status_code, 404)
+
+    def test_direct_moderation_requires_csrf_and_bounds_note(self):
+        idea = self.create_idea(
+            "CSRF moderation",
+            Idea.IdeaStatus.PUBLISHED,
+        )
+        self.client.force_login(self.moderator)
+
+        no_csrf = self.client.post(
+            self.hide_url(idea),
+            {},
+            format="json",
+        )
+        long_note = self.request_with_csrf(
+            "post",
+            self.hide_url(idea),
+            {"note": "x" * 2001},
+        )
+
+        self.assertEqual(no_csrf.status_code, 403)
+        self.assertEqual(long_note.status_code, 400)
+        self.assertIn("note", long_note.json())
+        idea.refresh_from_db()
+        self.assertEqual(idea.status, Idea.IdeaStatus.PUBLISHED)

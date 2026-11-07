@@ -4,7 +4,7 @@ from django.utils import timezone
 from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
-from rest_framework.generics import ListAPIView
+from rest_framework.generics import CreateAPIView, ListAPIView
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
@@ -18,6 +18,7 @@ from .selectors import public_idea_queryset
 from .serializers import (
     ContentLanguageSerializer,
     CreatorIdeaSerializer,
+    CreatorSourceCreateSerializer,
     IdeaSerializer,
     SourceSerializer,
     TopicSerializer,
@@ -64,6 +65,27 @@ class FeedView(ListAPIView):
     def get_queryset(self):
         queryset = public_idea_queryset().order_by("-id")
         return filter_queryset_by_discovery_languages(queryset, self.request)
+
+
+class CreatorSourceCreateView(CreateAPIView):
+    serializer_class = CreatorSourceCreateSerializer
+    permission_classes = [IsCreator]
+
+    def perform_create(self, serializer):
+        serializer.save(
+            created_by=self.request.user,
+            cover="",
+            metadata={},
+        )
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        return Response(
+            SourceSerializer(serializer.instance).data,
+            status=status.HTTP_201_CREATED,
+        )
 
 
 class CreatorIdeaViewSet(ModelViewSet):
@@ -114,6 +136,25 @@ class CreatorIdeaViewSet(ModelViewSet):
             instance.save(
                 update_fields=("status", "published_at", "updated_at")
             )
+
+        return Response(self.get_serializer(instance).data)
+
+    @action(detail=True, methods=["post"])
+    def withdraw(self, request, *args, **kwargs):
+        with transaction.atomic():
+            instance = get_object_or_404(
+                self.get_queryset().select_for_update(),
+                pk=kwargs["pk"],
+            )
+            self.check_object_permissions(request, instance)
+
+            if instance.status != Idea.IdeaStatus.PUBLISHED:
+                raise ValidationError(
+                    {"detail": "Only published ideas can be withdrawn."}
+                )
+
+            instance.status = Idea.IdeaStatus.WITHDRAWN
+            instance.save(update_fields=("status", "updated_at"))
 
         return Response(self.get_serializer(instance).data)
 

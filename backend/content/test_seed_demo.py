@@ -51,7 +51,10 @@ class SeedDemoCommandTests(TestCase):
         self.assertEqual(len(seeded_sources), len(SOURCES))
         self.assertEqual(
             {source.type for source in seeded_sources},
-            set(Source.SourceType.values),
+            {item["type"] for item in SOURCES},
+        )
+        self.assertTrue(
+            all(source.created_by_id is None for source in seeded_sources)
         )
         self.assertTrue(all(source.cover == "" for source in seeded_sources))
         self.assertTrue(

@@ -4,6 +4,7 @@ from rest_framework.routers import DefaultRouter
 from content.views import (
     ContentLanguageViewSet,
     CreatorIdeaViewSet,
+    CreatorSourceCreateView,
     FeedView,
     IdeaViewSet,
     SourceViewSet,
@@ -31,4 +32,9 @@ urlpatterns = [
     path("", include("moderation.urls")),
     path("health/", health, name="health"),
     path("feed/", FeedView.as_view(), name="feed"),
+    path(
+        "me/sources/",
+        CreatorSourceCreateView.as_view(),
+        name="creator-source-create",
+    ),
 ] + router.urls

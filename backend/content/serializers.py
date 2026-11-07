@@ -108,3 +108,48 @@ class CreatorIdeaSerializer(serializers.ModelSerializer):
         if topics is not None:
             instance.topics.set(topics)
         return instance
+
+
+class CreatorSourceCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Source
+        fields = (
+            "type",
+            "title",
+            "original_creator_text",
+            "language",
+            "external_url",
+        )
+        extra_kwargs = {
+            "title": {"trim_whitespace": True},
+            "original_creator_text": {
+                "required": False,
+                "allow_blank": True,
+                "trim_whitespace": True,
+            },
+            "external_url": {
+                "required": False,
+                "allow_blank": True,
+                "trim_whitespace": True,
+            },
+        }
+
+    def validate_title(self, value):
+        value = value.strip()
+        if not value:
+            raise serializers.ValidationError("Title must not be empty.")
+        return value
+
+    def validate_language(self, value):
+        return validate_active_language_codes([value])[0]
+
+    def validate_external_url(self, value):
+        value = value.strip()
+        if not value:
+            return ""
+
+        if Source.objects.filter(external_url=value).exists():
+            raise serializers.ValidationError(
+                "A Source with this external URL already exists."
+            )
+        return value

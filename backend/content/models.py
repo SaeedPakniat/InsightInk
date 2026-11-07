@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.db import models
 
 from creators.models import CreatorProfile
@@ -35,8 +36,13 @@ class Source(models.Model):
     class SourceType(models.TextChoices):
         BOOK = "book", "Book"
         ARTICLE = "article", "Article"
-        MOVIE = "movie", "Movie"
+        PAPER = "paper", "Paper"
+        WEBSITE = "website", "Website"
+        VIDEO = "video", "Video"
         PODCAST = "podcast", "Podcast"
+        MOVIE = "movie", "Movie"
+        COURSE = "course", "Course"
+        OTHER = "other", "Other"
 
     type = models.CharField(
         max_length=20,
@@ -52,6 +58,13 @@ class Source(models.Model):
     external_url = models.URLField(max_length=500, blank=True)
     cover = models.URLField(max_length=500, blank=True)
     metadata = models.JSONField(default=dict, blank=True)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="created_sources",
+    )
 
     def __str__(self):
         return self.title
@@ -62,6 +75,7 @@ class Idea(models.Model):
         DRAFT = "draft", "Draft"
         PUBLISHED = "published", "Published"
         HIDDEN = "hidden", "Hidden"
+        WITHDRAWN = "withdrawn", "Withdrawn"
 
     creator = models.ForeignKey(
         CreatorProfile,

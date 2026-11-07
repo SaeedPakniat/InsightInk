@@ -48,6 +48,8 @@ class ModerationAction(models.Model):
     class ActionType(models.TextChoices):
         REVIEW_STARTED = "review_started", "Review started"
         COMMENT_HIDDEN = "comment_hidden", "Comment hidden"
+        IDEA_HIDDEN = "idea_hidden", "Idea hidden"
+        IDEA_RESTORED = "idea_restored", "Idea restored"
         REPORT_RESOLVED = "report_resolved", "Report resolved"
         REPORT_REJECTED = "report_rejected", "Report rejected"
 

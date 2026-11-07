@@ -278,7 +278,7 @@ class ExploreSearchAPITests(TestCase):
             self.search_url,
             {"language": "abcxyz"},
         )
-        bad_type = self.client.get(self.search_url, {"type": "video"})
+        bad_type = self.client.get(self.search_url, {"type": "livestream"})
 
         self.assertEqual(bad_language.status_code, 400)
         self.assertIn("languages", bad_language.json())

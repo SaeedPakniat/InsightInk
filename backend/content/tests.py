@@ -12,9 +12,11 @@ from rest_framework.test import APIClient
 
 from creators.models import CreatorProfile
 from creators.permissions import IsCreatorOwner
+from engagement.models import Comment, SavedIdea, Spark
+from recommendations.selectors import recommendation_candidates
 from accounts.permissions import MODERATOR_GROUP_NAME
 
-from .models import Idea, Source, Topic
+from .models import ContentLanguage, Idea, Source, Topic
 
 
 class ContentModelTestCase(TestCase):
@@ -176,11 +178,21 @@ class SourceModelTests(ContentModelTestCase):
     def test_source_type_values_are_exact(self):
         self.assertEqual(
             list(Source.SourceType.values),
-            ["book", "article", "movie", "podcast"],
+            [
+                "book",
+                "article",
+                "paper",
+                "website",
+                "video",
+                "podcast",
+                "movie",
+                "course",
+                "other",
+            ],
         )
 
     def test_invalid_source_type_is_rejected_by_model_validation(self):
-        source = Source(type="video", title="Invalid Source", language="en")
+        source = Source(type="livestream", title="Invalid Source", language="en")
 
         with self.assertRaises(ValidationError):
             source.full_clean()
@@ -1320,3 +1332,427 @@ class FeedAPITests(TestCase):
             with self.subTest(method=method):
                 response = getattr(self.client, method)(self.url, data={})
                 self.assertEqual(response.status_code, 405)
+
+
+class CreatorSourceCreationAPITests(TestCase):
+    def setUp(self):
+        self.client = APIClient(enforce_csrf_checks=True)
+        self.creator_user = get_user_model().objects.create_user(
+            email="source-creator@example.com"
+        )
+        self.creator = CreatorProfile.objects.create(user=self.creator_user)
+        self.reader = get_user_model().objects.create_user(
+            email="source-reader@example.com"
+        )
+        self.admin = get_user_model().objects.create_superuser(
+            email="source-admin@example.com",
+            password="Admin-Password-2026!",
+        )
+        self.topic = Topic.objects.create(
+            slug="source-create-topic",
+            name_fa="منبع",
+            name_en="Source",
+        )
+        self.url = reverse("api:creator-source-create")
+        self.csrf_url = reverse("api:accounts:csrf")
+
+    def csrf_token(self):
+        return self.client.get(self.csrf_url).json()["csrfToken"]
+
+    def post_with_csrf(self, payload):
+        return self.client.post(
+            self.url,
+            payload,
+            format="json",
+            HTTP_X_CSRFTOKEN=self.csrf_token(),
+        )
+
+    def valid_payload(self, **overrides):
+        payload = {
+            "type": Source.SourceType.WEBSITE,
+            "title": "  The Bitter Lesson  ",
+            "original_creator_text": "  Rich Sutton  ",
+            "language": "en",
+            "external_url": "  http://www.incompleteideas.net/IncIdeas/BitterLesson.html  ",
+        }
+        payload.update(overrides)
+        return payload
+
+    def test_creator_can_create_source_with_server_owned_provenance(self):
+        self.client.force_login(self.creator_user)
+
+        response = self.post_with_csrf(
+            {
+                **self.valid_payload(),
+                "created_by": self.reader.id,
+                "metadata": {"forbidden": True},
+                "cover": "https://example.com/forbidden.jpg",
+            }
+        )
+
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(
+            set(response.json()),
+            {
+                "id",
+                "type",
+                "title",
+                "original_creator_text",
+                "language",
+                "external_url",
+                "cover",
+            },
+        )
+        self.assertEqual(response.json()["title"], "The Bitter Lesson")
+        self.assertEqual(response.json()["original_creator_text"], "Rich Sutton")
+        self.assertEqual(
+            response.json()["external_url"],
+            "http://www.incompleteideas.net/IncIdeas/BitterLesson.html",
+        )
+        self.assertEqual(response.json()["cover"], "")
+
+        source = Source.objects.get(pk=response.json()["id"])
+        self.assertEqual(source.created_by, self.creator_user)
+        self.assertEqual(source.metadata, {})
+        self.assertEqual(source.cover, "")
+
+    def test_reader_admin_and_anonymous_without_creator_profile_cannot_create_source(self):
+        actors = [None, self.reader, self.admin]
+        for actor in actors:
+            with self.subTest(actor=getattr(actor, "email", "anonymous")):
+                self.client.logout()
+                if actor is not None:
+                    self.client.force_login(actor)
+                    response = self.post_with_csrf(self.valid_payload())
+                else:
+                    response = self.client.post(
+                        self.url,
+                        self.valid_payload(),
+                        format="json",
+                    )
+                self.assertEqual(response.status_code, 403)
+
+    def test_source_creation_requires_csrf(self):
+        self.client.force_login(self.creator_user)
+
+        response = self.client.post(
+            self.url,
+            self.valid_payload(),
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 403)
+        self.assertFalse(
+            Source.objects.filter(title="The Bitter Lesson").exists()
+        )
+
+    def test_title_language_url_and_duplicate_url_validation(self):
+        self.client.force_login(self.creator_user)
+
+        blank_title = self.post_with_csrf(self.valid_payload(title="   "))
+        malformed_url = self.post_with_csrf(
+            self.valid_payload(
+                title="Malformed",
+                external_url="not a valid url",
+            )
+        )
+        ContentLanguage.objects.filter(code="ja").update(is_active=False)
+        inactive_language = self.post_with_csrf(
+            self.valid_payload(
+                title="Inactive language",
+                language="ja",
+                external_url="https://example.com/inactive-language",
+            )
+        )
+
+        self.assertEqual(blank_title.status_code, 400)
+        self.assertIn("title", blank_title.json())
+        self.assertEqual(malformed_url.status_code, 400)
+        self.assertIn("external_url", malformed_url.json())
+        self.assertEqual(inactive_language.status_code, 400)
+        self.assertIn("language", inactive_language.json())
+
+        first = self.post_with_csrf(
+            self.valid_payload(
+                title="Unique URL First",
+                external_url="https://example.com/unique-source",
+            )
+        )
+        second = self.post_with_csrf(
+            self.valid_payload(
+                title="Unique URL Duplicate",
+                external_url="  https://example.com/unique-source  ",
+            )
+        )
+        self.assertEqual(first.status_code, 201)
+        self.assertEqual(second.status_code, 400)
+        self.assertIn("external_url", second.json())
+
+    def test_created_source_is_immediately_usable_by_creator_draft(self):
+        self.client.force_login(self.creator_user)
+        source_response = self.post_with_csrf(
+            self.valid_payload(
+                type=Source.SourceType.PAPER,
+                title="Creator Paper",
+                external_url="https://example.com/creator-paper",
+            )
+        )
+        self.assertEqual(source_response.status_code, 201)
+
+        idea_response = self.client.post(
+            reverse("api:creator-idea-list"),
+            {
+                "language": "en",
+                "title": "Idea using creator source",
+                "body": "Creator-created source integration.",
+                "estimated_read_seconds": 60,
+                "source": source_response.json()["id"],
+                "topics": [self.topic.id],
+            },
+            format="json",
+            HTTP_X_CSRFTOKEN=self.csrf_token(),
+        )
+
+        self.assertEqual(idea_response.status_code, 201)
+        self.assertEqual(
+            idea_response.json()["source"],
+            source_response.json()["id"],
+        )
+
+    def test_public_source_api_remains_read_only_and_hides_created_by(self):
+        source = Source.objects.create(
+            type=Source.SourceType.COURSE,
+            title="Public creator source",
+            language="en",
+            created_by=self.creator_user,
+        )
+
+        detail = APIClient().get(
+            reverse("api:source-detail", args=[source.id])
+        )
+        public_post = APIClient().post(
+            reverse("api:source-list"),
+            {"type": "website", "title": "No", "language": "en"},
+            format="json",
+        )
+
+        self.assertEqual(detail.status_code, 200)
+        self.assertNotIn("created_by", detail.json())
+        self.assertNotIn("metadata", detail.json())
+        self.assertEqual(public_post.status_code, 405)
+
+
+class CreatorIdeaWithdrawalAPITests(TestCase):
+    def setUp(self):
+        self.client = APIClient(enforce_csrf_checks=True)
+        self.owner_user = get_user_model().objects.create_user(
+            email="withdraw-owner@example.com",
+            display_name="Withdraw Owner",
+        )
+        self.owner = CreatorProfile.objects.create(user=self.owner_user)
+        self.other_user = get_user_model().objects.create_user(
+            email="withdraw-other@example.com"
+        )
+        self.other = CreatorProfile.objects.create(user=self.other_user)
+        self.reader = get_user_model().objects.create_user(
+            email="withdraw-reader@example.com"
+        )
+        self.source = Source.objects.create(
+            type=Source.SourceType.ARTICLE,
+            title="Withdrawal Source",
+            language="en",
+        )
+        self.topic = Topic.objects.create(
+            slug="withdraw-topic",
+            name_fa="برداشت",
+            name_en="Withdraw",
+        )
+        self.csrf_url = reverse("api:accounts:csrf")
+
+    def create_idea(self, status=Idea.IdeaStatus.PUBLISHED, **overrides):
+        values = {
+            "creator": self.owner,
+            "source": self.source,
+            "language": "en",
+            "title": "Withdrawal target",
+            "body": "Withdrawal body",
+            "estimated_read_seconds": 70,
+            "status": status,
+            "published_at": timezone.now()
+            if status != Idea.IdeaStatus.DRAFT
+            else None,
+        }
+        values.update(overrides)
+        idea = Idea.objects.create(**values)
+        idea.topics.add(self.topic)
+        return idea
+
+    def csrf_token(self):
+        return self.client.get(self.csrf_url).json()["csrfToken"]
+
+    def post_with_csrf(self, url):
+        return self.client.post(
+            url,
+            {},
+            format="json",
+            HTTP_X_CSRFTOKEN=self.csrf_token(),
+        )
+
+    def test_owner_withdraws_published_idea_preserving_timestamp_and_engagements(self):
+        idea = self.create_idea()
+        original_published_at = idea.published_at
+        Spark.objects.create(user=self.reader, idea=idea)
+        SavedIdea.objects.create(user=self.reader, idea=idea)
+        comment = Comment.objects.create(
+            author=self.reader,
+            idea=idea,
+            body="History survives withdrawal.",
+        )
+        self.client.force_login(self.owner_user)
+
+        response = self.post_with_csrf(
+            reverse("api:creator-idea-withdraw", args=[idea.id])
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["status"], Idea.IdeaStatus.WITHDRAWN)
+        idea.refresh_from_db()
+        self.assertEqual(idea.status, Idea.IdeaStatus.WITHDRAWN)
+        self.assertEqual(idea.published_at, original_published_at)
+        self.assertTrue(Spark.objects.filter(user=self.reader, idea=idea).exists())
+        self.assertTrue(SavedIdea.objects.filter(user=self.reader, idea=idea).exists())
+        self.assertTrue(Comment.objects.filter(pk=comment.id).exists())
+
+        private_detail = self.client.get(
+            reverse("api:creator-idea-detail", args=[idea.id])
+        )
+        self.assertEqual(private_detail.status_code, 200)
+        self.assertEqual(
+            private_detail.json()["status"],
+            Idea.IdeaStatus.WITHDRAWN,
+        )
+
+    def test_withdrawn_idea_disappears_from_all_public_discovery_surfaces(self):
+        idea = self.create_idea(title="withdrawable unique phrase")
+        self.client.force_login(self.owner_user)
+        response = self.post_with_csrf(
+            reverse("api:creator-idea-withdraw", args=[idea.id])
+        )
+        self.assertEqual(response.status_code, 200)
+
+        public = APIClient()
+        detail = public.get(reverse("api:idea-detail", args=[idea.id]))
+        feed = public.get(reverse("api:feed"))
+        search = public.get(
+            reverse("api:explore:search"),
+            {"q": "withdrawable unique phrase"},
+        )
+        creator_ideas = public.get(
+            reverse("api:creators:creator-ideas", args=[self.owner.id])
+        )
+        candidate_ids = {
+            candidate.id
+            for candidate in recommendation_candidates(
+                language_codes=["en"]
+            )
+        }
+
+        self.assertEqual(detail.status_code, 404)
+        self.assertNotIn(
+            idea.id,
+            {item["id"] for item in feed.json()["results"]},
+        )
+        self.assertNotIn(
+            idea.id,
+            {item["id"] for item in search.json()["results"]},
+        )
+        self.assertNotIn(
+            idea.id,
+            {item["id"] for item in creator_ideas.json()["results"]},
+        )
+        self.assertNotIn(idea.id, candidate_ids)
+
+    def test_only_published_owned_idea_can_be_withdrawn(self):
+        self.client.force_login(self.owner_user)
+        for state in (
+            Idea.IdeaStatus.DRAFT,
+            Idea.IdeaStatus.HIDDEN,
+            Idea.IdeaStatus.WITHDRAWN,
+        ):
+            with self.subTest(state=state):
+                idea = self.create_idea(status=state, title=f"{state} target")
+                response = self.post_with_csrf(
+                    reverse("api:creator-idea-withdraw", args=[idea.id])
+                )
+                self.assertEqual(response.status_code, 400)
+                idea.refresh_from_db()
+                self.assertEqual(idea.status, state)
+
+    def test_other_creator_gets_404_reader_gets_403_and_csrf_is_required(self):
+        idea = self.create_idea()
+        url = reverse("api:creator-idea-withdraw", args=[idea.id])
+
+        self.client.force_login(self.other_user)
+        other = self.post_with_csrf(url)
+        self.assertEqual(other.status_code, 404)
+
+        self.client.force_login(self.reader)
+        reader = self.post_with_csrf(url)
+        self.assertEqual(reader.status_code, 403)
+
+        self.client.force_login(self.owner_user)
+        no_csrf = self.client.post(url, {}, format="json")
+        self.assertEqual(no_csrf.status_code, 403)
+
+        idea.refresh_from_db()
+        self.assertEqual(idea.status, Idea.IdeaStatus.PUBLISHED)
+
+    def test_withdrawn_idea_cannot_be_patched_deleted_or_republished(self):
+        idea = self.create_idea(status=Idea.IdeaStatus.WITHDRAWN)
+        self.client.force_login(self.owner_user)
+        detail_url = reverse("api:creator-idea-detail", args=[idea.id])
+
+        patch = self.client.patch(
+            detail_url,
+            {"title": "No"},
+            format="json",
+            HTTP_X_CSRFTOKEN=self.csrf_token(),
+        )
+        delete = self.client.delete(
+            detail_url,
+            HTTP_X_CSRFTOKEN=self.csrf_token(),
+        )
+        publish = self.post_with_csrf(
+            reverse("api:creator-idea-publish", args=[idea.id])
+        )
+
+        self.assertEqual(patch.status_code, 400)
+        self.assertEqual(delete.status_code, 400)
+        self.assertEqual(publish.status_code, 400)
+        self.assertTrue(Idea.objects.filter(pk=idea.id).exists())
+
+    def test_draft_delete_still_works_while_non_drafts_are_rejected(self):
+        self.client.force_login(self.owner_user)
+        draft = self.create_idea(
+            status=Idea.IdeaStatus.DRAFT,
+            title="Delete draft",
+        )
+        draft_delete = self.client.delete(
+            reverse("api:creator-idea-detail", args=[draft.id]),
+            HTTP_X_CSRFTOKEN=self.csrf_token(),
+        )
+        self.assertEqual(draft_delete.status_code, 204)
+
+        for state in (
+            Idea.IdeaStatus.PUBLISHED,
+            Idea.IdeaStatus.HIDDEN,
+            Idea.IdeaStatus.WITHDRAWN,
+        ):
+            with self.subTest(state=state):
+                idea = self.create_idea(status=state, title=f"No delete {state}")
+                response = self.client.delete(
+                    reverse("api:creator-idea-detail", args=[idea.id]),
+                    HTTP_X_CSRFTOKEN=self.csrf_token(),
+                )
+                self.assertEqual(response.status_code, 400)
+                self.assertTrue(Idea.objects.filter(pk=idea.id).exists())

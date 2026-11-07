@@ -2,11 +2,14 @@ from django.urls import path
 
 from .views import (
     CommentReportView,
+    HideIdeaDirectlyView,
     HideReportedCommentView,
+    IdeaReportView,
     RejectReportView,
     ReportDetailView,
     ReportListView,
     ResolveReportView,
+    RestoreIdeaDirectlyView,
     StartReviewView,
 )
 
@@ -18,6 +21,21 @@ urlpatterns = [
         "comments/<int:comment_id>/report/",
         CommentReportView.as_view(),
         name="comment-report",
+    ),
+    path(
+        "ideas/<int:idea_id>/report/",
+        IdeaReportView.as_view(),
+        name="idea-report",
+    ),
+    path(
+        "moderation/ideas/<int:idea_id>/hide/",
+        HideIdeaDirectlyView.as_view(),
+        name="idea-hide",
+    ),
+    path(
+        "moderation/ideas/<int:idea_id>/restore/",
+        RestoreIdeaDirectlyView.as_view(),
+        name="idea-restore",
     ),
     path("moderation/reports/", ReportListView.as_view(), name="report-list"),
     path(
