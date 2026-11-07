@@ -1,29 +1,33 @@
 # Backend State
 
-- BE-CREATOR-PUBLISH-001 status: Complete; implementation checkpoint committed and ready to push with backend documentation sync.
-- Exact implementation commit SHA: `959cf0393ec5257cb82e9bfa44ef20a1d1e14296`.
-- Exact base SHA: `a675b86e320493fd273c480acc5871b810fcb43a`.
-- Frontend boundary: repository working tree was clean at task start. BE-CREATOR-PUBLISH-001 does not modify `frontend/**` or `docs/ai/frontend/**`.
-- New endpoint: authenticated creator-owned `POST /api/v1/me/ideas/<id>/publish/`.
-- Implementation location: custom DRF detail action on the existing `CreatorIdeaViewSet`; no second creator-workspace authorization path was introduced.
-- Lifecycle implemented: only `draft -> published`.
-- Successful publish behavior: status becomes `published`; `published_at` is set by the server with `django.utils.timezone.now()`; response is HTTP 200 using the existing private `CreatorIdeaSerializer`.
-- Atomicity/concurrency: publish executes inside `transaction.atomic()` and retrieves the owned Idea with `select_for_update()`. This prevents concurrent publish requests from both observing draft and rewriting the publication timestamp.
-- Payload behavior: publish conceptually needs no body. Request payload is not deserialized into the Idea; client-supplied status, published_at, title, body, source, topics, language, estimated_read_seconds, or creator cannot alter the persisted draft during publication.
-- Dedicated transition: lifecycle fields remain read-only in CreatorIdeaSerializer. PATCH cannot publish by sending `status=published`; the dedicated publish action is the only creator-controlled publication transition.
-- Already published behavior: POST publish returns 400 `{"detail":"Only draft ideas can be published."}`; original `published_at` remains unchanged.
-- Hidden behavior: POST publish returns the same 400; hidden content cannot be republished to bypass moderation.
-- Ownership/privacy: CreatorIdeaViewSet remains owner-scoped by `creator__user=request.user`; another Creator attempting to publish an owned draft receives 404 and no state changes.
-- Reader behavior: authenticated Reader without CreatorProfile receives existing IsCreator 403.
-- Anonymous behavior: existing session-auth permission rejection remains unchanged (403 in current DRF contract).
-- CSRF: authenticated publish POST without CSRF is rejected 403 by existing SessionAuthentication/CSRF behavior; no JWT/token auth added.
-- Post-publication immutability remains unchanged: published/hidden PATCH and DELETE still return 400; draft PATCH/DELETE rules remain unchanged.
-- Public visibility: publication changes only the normal Idea lifecycle fields. Existing `public_idea_queryset()` then exposes the Idea naturally through public detail, Feed, public Creator Ideas, search/recommendation eligibility as applicable. No special insertion/indexing logic was added.
-- Source policy unchanged: Source remains curated/read-only; no source creation/submission API added.
-- Creator profile behavior unchanged: `GET/POST/PATCH /api/v1/me/creator/` remains the path for optional CreatorProfile creation/editing.
-- Schema/migrations: none required.
-- Focused verification: Creator workspace + Feed + Creator public tests pass 67/67.
-- Full backend suite: 334/334 tests pass.
+- BE-GAPS-001 status: Complete; implementation checkpoint committed and ready to push with backend documentation sync.
+- Exact implementation commit SHA: `7dfcfa4a61288033ba55c2c84a6cb9ed089d2b6c`.
+- Exact base SHA: `32497ec33803e8e8759a9d235273564c310aeda9`.
+- FE-015 preservation: frontend tracked + untracked work existed before this task and was not modified, staged, stashed, reset, cleaned, checked out, or committed.
+- Frontend task-sample hash before/after: `da39d1de973adf16b09056fe7ad5b26d01615385b212ca001f77eca8d9449db2` (the supplied sample pipeline hashes an empty stream in this shell).
+- Robust frontend filename+content hash before/after: `a0677fa95e572927d526ae8a0bf7253dfaa14270633de5d30afc83e2b267ea3d`.
+- Idea lifecycle now distinguishes `draft`, `published`, `hidden`, and `withdrawn`.
+- Creator lifecycle: `draft -> published -> withdrawn`. `withdrawn` is a terminal Creator state in v1; no republish/unpublish added.
+- Moderation lifecycle: `published -> hidden -> published` through Moderator/Admin endpoints only. `hidden` remains moderation-owned and is not reused for Creator withdrawal.
+- Creator withdrawal endpoint: authenticated Creator-only `POST /api/v1/me/ideas/<id>/withdraw/`; owner-only via existing private queryset; other Creator -> 404; Reader without CreatorProfile -> 403; CSRF required; only published -> withdrawn allowed; published_at preserved; engagement/history rows preserved; withdrawn remains visible in private Creator workspace and disappears from public selectors.
+- Draft deletion remains unchanged: only draft Ideas may be DELETEd; published/hidden/withdrawn reject deletion.
+- Direct moderation endpoints: `POST /api/v1/moderation/ideas/<id>/hide/` and `POST /api/v1/moderation/ideas/<id>/restore/`; existing `IsModeratorOrAdmin` boundary; Reader/Creator/staff-only -> 403; Moderator/Admin allowed; unknown Idea -> 404; CSRF required.
+- Direct hide accepts optional trimmed `note` <=2000; only published -> hidden. Direct restore accepts the same note contract; only hidden -> published. Illegal transitions return 400.
+- Direct moderation response: `{"idea_id": <id>, "status": "hidden|published", "action": "idea_hidden|idea_restored"}`.
+- Moderation audit: new action types `idea_hidden` and `idea_restored`; direct actions write `ModerationAction` with `report=null`, `target_type=idea`, target ID, current moderator/admin, optional trimmed note, server timestamp. Existing report-driven moderation remains unchanged.
+- Reader Idea reporting implemented: authenticated+CSRF `POST /api/v1/ideas/<id>/report/`; same reasons as comment reports; details optional/trimmed/max 2000; only published Ideas reportable; draft/hidden/withdrawn -> 404; response uses existing public Report serializer and enters existing moderation queue.
+- Moderator Report detail now adds `target_idea` for Idea reports and returns null for non-Idea reports. Shape: id/title/body/language/status/creator safe summary/source safe summary/published_at. Existing `target_comment` remains unchanged.
+- Source provenance: `Source.created_by` nullable FK to AUTH_USER_MODEL, SET_NULL, related_name `created_sources`. Existing seeded/system Sources remain null; Creator-created Sources store request.user. Public Source serialization does not expose created_by or metadata.
+- Source types after BE-GAPS-001: book, article, paper, website, video, podcast, movie, course, other. Existing values remain stable.
+- Creator Source endpoint: authenticated Creator-only `POST /api/v1/me/sources/`; public `/sources/` remains read-only. Accepted fields: type, title, original_creator_text, language, external_url. Server controls created_by, cover, metadata. Response is existing public Source representation, HTTP 201.
+- Source validation: title trimmed/non-empty; language uses active ContentLanguage registry; external_url optional, trimmed, DRF URL-validated, no network fetch; exact duplicate non-empty URL rejected; no fuzzy duplicate matching.
+- Source integration: newly created Source ID is immediately valid for Creator draft creation.
+- Seed safety: two real `seed_demo` runs after migration created no rows and left all 20 deterministic Sources with `created_by=null`.
+- Public visibility: existing `public_idea_queryset(status=published)` naturally excludes hidden/withdrawn Ideas from public detail, Feed, Search, Recommendations, and public Creator Ideas; restore returns hidden Idea to normal published visibility without manual feed/recommendation writes.
+- Migrations: `content.0004_source_created_by_alter_idea_status_and_more`; `moderation.0002_alter_moderationaction_action_type`; both applied successfully.
+- Focused BE-GAPS-001 suite: 72/72 passed.
+- Explore compatibility suite after Source-type expansion: 24/24 passed.
+- Full backend suite: 357/357 passed.
 - Quality: `manage.py check` PASS; `makemigrations --check --dry-run` -> No changes detected; `python -m pip check` -> No broken requirements; `git diff --check` PASS.
-- Real development smoke: using deterministic demo Creator `demo-curator-systems@example.com`, disposable draft ID 68 was created through POST /me/ideas/, public detail returned 404 before publish, POST /me/ideas/68/publish/ returned 200 with status=published and server timestamp, private detail returned published, public detail returned 200, public Creator Ideas contained the Idea, Feed contained the Idea, then the temporary Idea was deleted directly from the development DB. Cleanup verified true; no demo content pollution remains.
-- Frontend blocker: none. FE-015 Creator Studio can create/edit a draft with existing workspace endpoints and explicitly publish through the new action.
+- Live disposable smoke: custom website Source created 201; draft created 201; publish 200; reader Idea report 201/open; moderator hide 200 and public detail 404; report detail target_idea resolved; restore 200 and public detail 200; Creator withdraw 200 and public detail 404/private detail 200 withdrawn; direct audit rows recorded with report=null; cleanup removed temporary Idea, Source, Report and direct audit rows.
+- Frontend blocker: none identified for FE-015 acceptance gaps covered by this task.

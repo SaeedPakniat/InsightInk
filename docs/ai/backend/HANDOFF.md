@@ -1,32 +1,25 @@
 # Backend Handoff
 
-- Task ID: BE-CREATOR-PUBLISH-001 — Controlled Creator Idea Publication
-- Exact implementation commit SHA: `959cf0393ec5257cb82e9bfa44ef20a1d1e14296`.
-- Exact base SHA: `a675b86e320493fd273c480acc5871b810fcb43a`.
-- Result: Complete and accepted; implementation commit recorded exactly for FE-015 handoff.
-- Endpoint: `POST /api/v1/me/ideas/<id>/publish/`.
-- Authentication/authorization: authenticated Creator only; owner-only through existing CreatorIdeaViewSet private queryset and permissions; another Creator -> 404; Reader without CreatorProfile -> 403; anonymous -> current session-auth rejection.
-- CSRF: required for authenticated POST through normal SessionAuthentication; missing CSRF -> 403 and no state change.
-- Allowed lifecycle: `draft -> published` only.
-- Successful transition: atomic row lock; status `draft -> published`; published_at `null -> timezone.now()`; HTTP 200; response uses existing CreatorIdeaSerializer.
-- Publish response shape remains private Creator Idea shape: `id, language, title, body, estimated_read_seconds, status, published_at, created_at, updated_at, source, topics`.
-- Publish body: no payload required. Any supplied Idea/lifecycle fields are ignored by the action and cannot alter persisted content.
-- Already published -> 400 `{"detail":"Only draft ideas can be published."}`; original published_at preserved.
-- Hidden -> same 400; no republish/moderation bypass.
-- No unpublish, republish, review_pending/submitted state, editor approval, scheduled publish, or arbitrary status editing.
-- Existing PATCH/DELETE rules unchanged: only draft can edit/delete; published/hidden remain immutable.
-- Existing creation rule unchanged: POST /me/ideas/ always creates draft with published_at null regardless of client lifecycle fields.
-- Public visibility after success: normal public selectors immediately expose it through `GET /api/v1/ideas/<id>/`, `GET /api/v1/feed/`, and `GET /api/v1/creators/<creator_id>/ideas/`; normal recommendation/search rules apply without special-case publish code.
-- Source API remains read-only/curated; no source creation API.
-- Creator profile API unchanged.
-- Schema migration: none.
-- Implementation files intended for focused checkpoint: `backend/content/views.py`, `backend/content/tests.py`.
-- Focused tests: 67/67 Creator workspace + Feed + Creator tests passed.
-- Full backend suite: 334/334 passed.
-- `manage.py check`: PASS.
-- `makemigrations --check --dry-run`: No changes detected.
-- `pip check`: No broken requirements.
-- `git diff --check`: PASS.
-- Real dev smoke: disposable draft ID 68 created via API; public before=404; publish=200; private published=true; published_at present; public detail=200; Creator public Ideas contains=true; Feed contains=true; direct DB cleanup=true.
-- Backend docs: this STATE/HANDOFF pair will record the exact implementation commit SHA in a documentation-only sync commit.
-- Frontend blocker: none. FE-015 may proceed.
+- Task ID: BE-GAPS-001 — Close Creator, Source, and Idea Moderation Gaps
+- Exact base SHA: `32497ec33803e8e8759a9d235273564c310aeda9`.
+- Exact implementation commit SHA: `7dfcfa4a61288033ba55c2c84a6cb9ed089d2b6c`.
+- Frontend preservation: robust tracked+untracked filename/content hash before == after == `a0677fa95e572927d526ae8a0bf7253dfaa14270633de5d30afc83e2b267ea3d`. FE-015 status list is unchanged. No frontend path may be staged.
+- Idea statuses: `draft | published | hidden | withdrawn`.
+- Creator withdraw: `POST /api/v1/me/ideas/<id>/withdraw/`; Creator+owner only; CSRF; only published -> withdrawn; response existing private CreatorIdeaSerializer; preserves published_at and engagement/history; other owner 404; Reader 403; draft/hidden/withdrawn 400; no republish.
+- Direct moderation hide: `POST /api/v1/moderation/ideas/<id>/hide/`; IsModeratorOrAdmin; body optional `{"note":"..."}` max 2000/trimmed; published -> hidden; 200 focused state response; invalid state 400; missing Idea 404.
+- Direct moderation restore: `POST /api/v1/moderation/ideas/<id>/restore/`; IsModeratorOrAdmin; hidden -> published only; same note contract; 200 focused state response.
+- Direct moderation audit: `ModerationAction.ActionType.IDEA_HIDDEN` / `IDEA_RESTORED`; report=null; target_type=idea; target_id=Idea ID; moderator=current actor; note; created_at.
+- Idea report: `POST /api/v1/ideas/<id>/report/`; authenticated+CSRF; published only; reasons harassment/spam/inappropriate_content/other; details <=2000 trimmed; 201 public Report response; enters existing queue.
+- Report detail: Idea reports include `target_idea` with id/title/body/language/status/creator{id,display_name,is_verified}/source{public Source fields}/published_at. `target_comment` remains unchanged; non-Idea reports have target_idea=null.
+- Creator Source creation: `POST /api/v1/me/sources/`; Creator only; CSRF; 201. Input: type/title/original_creator_text/language/external_url. Response: existing public Source fields id/type/title/original_creator_text/language/external_url/cover.
+- Source provenance: new nullable `created_by`; system/seeded=null; Creator-created=request.user; not publicly serialized.
+- Source types: book, article, paper, website, video, podcast, movie, course, other.
+- Source validation: trimmed nonblank title; active ContentLanguage; optional valid URL; no fetch/scrape; duplicate normalized non-empty exact URL rejected.
+- Public /sources/ remains read-only. No Source edit/delete added.
+- Migrations: `content/migrations/0004_source_created_by_alter_idea_status_and_more.py`; `moderation/migrations/0002_alter_moderationaction_action_type.py`.
+- Focused tests: 72/72 BE-GAPS-001 adjacent suites; Explore 24/24 after taxonomy update.
+- Full backend tests: 357/357 passed.
+- Checks: Django check PASS; migration drift none; pip check clean; git diff check clean.
+- Seed demo: two runs idempotent; 20/20 deterministic Sources remain created_by=null.
+- Live smoke: Source 201 -> draft 201 -> publish 200 -> Idea report 201 -> hide 200/public404 -> report target_idea 200 -> restore 200/public200 -> withdraw 200/public404/private200; direct audits report=null; cleanup successful.
+- Frontend blocker: none.
