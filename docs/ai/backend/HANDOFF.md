@@ -1,18 +1,17 @@
 # Backend Handoff
 
-- Task ID: BE-ACCOUNT-AVATAR-001 — Universal Account Avatar + Current Account Metadata Editing.
-- Base SHA: `0ae6e5ecdf9e720f5c73b8db77c78fad44d079e9`.
-- Implementation SHA: `c9ad9f67357fdfe4eae43740f31927b2fc0007a0` (`feat(accounts): add universal account avatars`).
-- Model/migration: nullable, blank `accounts.User.avatar` with `upload_to="user_avatars/"`; migration `accounts.0007_user_avatar` applied. CreatorProfile remains independent and no account profile model was added.
-- Dependency/storage: `Pillow==13.0.0`; local `MEDIA_ROOT`/`MEDIA_URL`; DEBUG-only media serving; Django storage APIs remain replaceable by a future object backend.
-- Safe current-user response: registration, login, and GET `/api/v1/me/` include nullable absolute/request-aware `avatar_url`, preserve capabilities, and expose no raw storage filename or Django permission fields.
-- PATCH `/api/v1/me/`: session-authenticated and CSRF-protected; only `display_name` and `preferred_ui_language`; omitted fields remain unchanged; language uses existing choices; response is the complete safe current-user shape.
-- PUT `/api/v1/me/avatar/`: session-authenticated, CSRF-protected, multipart-only `avatar`; JPEG/PNG/WebP content only; 5 MiB maximum; 200 response `{ "avatar_url": ... }`.
-- DELETE `/api/v1/me/avatar/`: session-authenticated, CSRF-protected, idempotent 204; clears the account field.
-- Replacement/removal: old storage name/backend captured before mutation; old object deletion scheduled with `transaction.on_commit()` after the database update. Invalid replacement leaves the existing avatar and file untouched.
-- Rejections covered: anonymous requests, unsafe requests without CSRF, JSON/non-multipart upload, GIF, BMP, corrupt bytes, and >5 MiB uploads.
-- Tests: focused accounts 73/73; full backend 372/372.
-- Checks: Django check passed; no migration drift; pip check clean; diff check clean.
-- Live smoke: complete current-account/avatar lifecycle passed and disposable data/files were cleaned.
-- Frontend: no frontend file staged or task-modified; robust pre/post hash `2531cfb06e78e154006d2d920ea38ff5fe96e1585fff45a1fa978f9b3aa6a05c`.
-- External teaching notes were appended and remain outside Git.
+- Task ID: BE-MOD-HIDDEN-001 — Moderator Hidden-Idea Workspace API.
+- Starting SHA: `9673026596432952b63e6f1438487bd9502271d0`; implementation SHA: `e4ec7914ecae1caeb8affb7d10254e2ac15c8530` (`feat(moderation): add hidden idea workspace`).
+- Route/authority: `GET /api/v1/moderation/ideas/?status=hidden`; the existing `IsModeratorOrAdmin` is unchanged. Moderator and Admin are allowed; ordinary Reader, Creator without moderation authority, staff-only non-Moderator, and anonymous are forbidden.
+- Required filter: `status=hidden` is mandatory and is the sole supported value. Missing and every unsupported status return HTTP 400. The ORM query explicitly uses `status=Idea.IdeaStatus.HIDDEN` rather than reflecting arbitrary query input.
+- Scope: this is a hidden-moderation workspace, not a general private-Idea browser. Published, draft, and withdrawn Ideas are excluded; no role, lifecycle, audit-model, or content-model changes were introduced.
+- Representation: exactly `id`, `title`, `body_excerpt`, `language`, `status`, `creator{id,display_name}`, `source{id,type,title}`, `published_at`, and `updated_at`. Full body and sensitive/broader Creator, Source, report, note, actor, and audit fields are absent.
+- Excerpt rule: body unchanged when `len(body) <= 240`; otherwise `body[:239] + "…"`. Python Unicode character slicing is covered with Persian test content.
+- Data access: current truth comes from `Idea.status`; `ModerationAction` remains historical audit. `select_related("creator", "creator__user", "source")` gives bounded relationship loading without N+1 queries.
+- Pagination: dedicated `HiddenIdeaCursorPagination`, page size 25, ordering `("-updated_at", "-id")`; multi-page tests cover complete, duplicate-free, ordered hidden results while retaining `status=hidden` navigation.
+- Restore: existing CSRF-protected restore endpoint and `idea_restored` audit action remain unchanged. Restore moves `hidden -> published`, after which the Idea is absent from the workspace.
+- Migration: none; dry-run migration check reported no changes.
+- Verification: focused moderation 43/43; full backend 380/380; Django check passed; pip check clean; diff check clean.
+- Live smoke: disposable hide/list/authorization/exclusion/restore/audit lifecycle passed, and created records were removed without resetting the development database.
+- FE-016 preservation: pre/post deterministic frontend hash matched exactly: `2531cfb06e78e154006d2d920ea38ff5fe96e1585fff45a1fa978f9b3aa6a05c`. No frontend or frontend-state file was staged by this task.
+- External teaching notes appended; no remaining blockers; no frontend implementation delivered.
