@@ -144,6 +144,15 @@ A moderation action should record:
 - timestamp;
 - optional reason.
 
+The Moderator/Admin hidden-Idea workspace is a separate, bounded read model over
+the current `Idea.status`. It requires an explicit `status=hidden` filter and
+does not expose Creator drafts or withdrawn Ideas. Its list representation omits
+full bodies, account internals, source metadata, reports, notes, actor details,
+and moderation history. A deterministic 240-character Unicode excerpt is the
+only body preview. `ModerationAction` remains audit history rather than the
+source of current hidden state; restore continues through the audited dedicated
+restore endpoint.
+
 ## 11. Block and mute
 
 NFR-15 requires report/block/mute.

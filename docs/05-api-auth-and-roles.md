@@ -115,6 +115,28 @@ GET    /api/v1/ideas/{id}/related/
 
 There is no chat/completion endpoint because the recommendation system is not an LLM.
 
+### Moderation
+
+```text
+GET  /api/v1/moderation/ideas/?status=hidden
+POST /api/v1/moderation/ideas/{id}/restore/
+```
+
+The hidden-Idea workspace is available only to users accepted by the existing
+`IsModeratorOrAdmin` permission. The `status` query parameter is required and its
+only supported value is `hidden`; missing or unsupported values return HTTP 400.
+It is not a general private-Idea browser and never exposes drafts, published
+Ideas, or creator-withdrawn Ideas.
+
+The list uses DRF cursor pagination with a page size of 25 and deterministic
+ordering by `-updated_at,-id`. Each result is intentionally bounded to
+`id`, `title`, `body_excerpt`, `language`, `status`,
+`creator{id,display_name}`, `source{id,type,title}`, `published_at`, and
+`updated_at`. `body_excerpt` is the complete body up to 240 Unicode characters;
+longer bodies use `body[:239] + "…"`. The existing restore action remains the
+authoritative `hidden -> published` transition, so a restored Idea naturally
+disappears from subsequent hidden-workspace queries.
+
 ## 4. Authentication design
 
 Requirements include account creation and login on another device.

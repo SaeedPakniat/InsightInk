@@ -121,6 +121,22 @@ GET    /api/v1/ideas/{id}/related/
 
 هیچ Completion/Chat endpoint وجود ندارد.
 
+\subsection{Moderation}
+
+\begin{latin}
+\begin{lstlisting}
+GET  /api/v1/moderation/ideas/?status=hidden
+POST /api/v1/moderation/ideas/{id}/restore/
+\end{lstlisting}
+\end{latin}
+
+Workspace محتوای پنهان فقط برای Moderator/Admin است. پارامتر
+\eng{status=hidden} اجباری است و مقدار missing یا unsupported پاسخ 400 می‌گیرد؛
+Draft و Withdrawn در این Endpoint نمایش داده نمی‌شوند. Pagination از نوع Cursor،
+اندازه صفحه 25 و ترتیب قطعی آن \eng{-updated\_at,-id} است. پاسخ فقط خلاصه محدود
+Idea، Creator و Source و یک \eng{body\_excerpt} حداکثر 240 کاراکتری دارد.
+Action موجود Restore مرجع انتقال \eng{hidden -> published} باقی می‌ماند.
+
 \section{Pagination}
 
 Feed برای long-running content بهتر است Cursor-like pagination داشته باشد تا Insert شدن محتوای جدید duplicate/missing کمتری ایجاد کند.

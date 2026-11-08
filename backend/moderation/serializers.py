@@ -1,7 +1,8 @@
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
 
-from content.models import Idea
+from content.models import Idea, Source
+from creators.models import CreatorProfile
 from engagement.models import Comment
 
 from .models import ModerationAction, Report
@@ -15,6 +16,55 @@ class ModeratorUserSummarySerializer(serializers.ModelSerializer):
         model = User
         fields = ("id", "display_name")
         read_only_fields = fields
+
+
+class HiddenIdeaCreatorSummarySerializer(serializers.ModelSerializer):
+    display_name = serializers.CharField(source="user.display_name", read_only=True)
+
+    class Meta:
+        model = CreatorProfile
+        fields = ("id", "display_name")
+        read_only_fields = fields
+
+
+class HiddenIdeaSourceSummarySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Source
+        fields = ("id", "type", "title")
+        read_only_fields = fields
+
+
+class HiddenIdeaListSerializer(serializers.ModelSerializer):
+    body_excerpt = serializers.SerializerMethodField()
+    creator = HiddenIdeaCreatorSummarySerializer(read_only=True)
+    source = HiddenIdeaSourceSummarySerializer(read_only=True)
+
+    class Meta:
+        model = Idea
+        fields = (
+            "id",
+            "title",
+            "body_excerpt",
+            "language",
+            "status",
+            "creator",
+            "source",
+            "published_at",
+            "updated_at",
+        )
+        read_only_fields = fields
+
+    def get_body_excerpt(self, idea):
+        if len(idea.body) <= 240:
+            return idea.body
+        return idea.body[:239] + "…"
+
+
+class HiddenIdeaStatusFilterSerializer(serializers.Serializer):
+    status = serializers.ChoiceField(
+        choices=((Idea.IdeaStatus.HIDDEN, "Hidden"),),
+        required=True,
+    )
 
 
 class CommentReportCreateSerializer(serializers.Serializer):

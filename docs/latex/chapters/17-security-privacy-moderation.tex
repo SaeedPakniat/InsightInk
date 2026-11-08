@@ -162,6 +162,15 @@ Report reasonهای مشخص:
   \item timestamp.
 \end{itemize}
 
+\section{Hidden Idea Workspace}
+
+وضعیت فعلی Idea از \eng{Idea.status} خوانده می‌شود و
+\eng{ModerationAction} فقط تاریخچه Audit است. Workspace مخصوص Moderator/Admin فقط
+\eng{status=hidden} را می‌پذیرد و Draft یا Withdrawn سازنده را نمایش نمی‌دهد.
+Read model آن full body، اطلاعات داخلی حساب، metadata منبع، note و تاریخچه Audit را
+حذف می‌کند و تنها preview قطعی حداکثر 240 کاراکتری ارائه می‌دهد. Restore از Endpoint
+اختصاصی و audited موجود انجام می‌شود.
+
 \section{Moderator Assignment}
 
 \begin{decisionbox}

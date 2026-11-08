@@ -11,10 +11,12 @@ from content.models import Idea
 
 from .exceptions import ModerationTransitionError
 from .models import Report
-from .pagination import ReportCursorPagination
+from .pagination import HiddenIdeaCursorPagination, ReportCursorPagination
 from .permissions import IsModeratorOrAdmin
 from .serializers import (
     CommentReportCreateSerializer,
+    HiddenIdeaListSerializer,
+    HiddenIdeaStatusFilterSerializer,
     IdeaModerationStateSerializer,
     ModerationNoteSerializer,
     ReportDetailSerializer,
@@ -121,6 +123,26 @@ class HideIdeaDirectlyView(DirectIdeaModerationView):
 class RestoreIdeaDirectlyView(DirectIdeaModerationView):
     service = staticmethod(restore_idea_directly)
     action_type = "idea_restored"
+
+
+class HiddenIdeaListView(ListAPIView):
+    serializer_class = HiddenIdeaListSerializer
+    permission_classes = [IsModeratorOrAdmin]
+    pagination_class = HiddenIdeaCursorPagination
+
+    def get_queryset(self):
+        filter_serializer = HiddenIdeaStatusFilterSerializer(
+            data=self.request.query_params
+        )
+        filter_serializer.is_valid(raise_exception=True)
+
+        return Idea.objects.filter(
+            status=Idea.IdeaStatus.HIDDEN,
+        ).select_related(
+            "creator",
+            "creator__user",
+            "source",
+        )
 
 
 class ReportListView(ListAPIView):
