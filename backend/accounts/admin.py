@@ -21,6 +21,7 @@ class CustomUserAdmin(UserAdmin):
                     "first_name",
                     "last_name",
                     "display_name",
+                    "avatar",
                     "preferred_ui_language",
                 )
             },

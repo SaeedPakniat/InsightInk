@@ -54,6 +54,14 @@ Examples:
 
 Frontend validation improves UX but is not the security boundary.
 
+Account avatar uploads are validated server-side with Pillow rather than by file
+extension. Only JPEG, PNG, and WebP content up to 5 MiB is accepted; GIF and other
+formats, corrupt data, and oversized files are rejected. The database stores a
+storage-relative name, while physical files use Django's configured storage.
+Replacement/removal schedules deletion of the previous object after transaction
+commit so a failed validation or database update cannot destroy the current
+avatar.
+
 ## 5. Web security concepts
 
 Django security features should be configured rather than bypassed.

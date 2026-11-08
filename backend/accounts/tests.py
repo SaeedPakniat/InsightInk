@@ -263,6 +263,7 @@ class RegistrationAPITests(SessionAuthenticationAPITestCase):
                 "email": "new-reader@example.com",
                 "display_name": "New Reader",
                 "preferred_ui_language": "en",
+                "avatar_url": None,
                 "capabilities": {
                     "can_moderate": False,
                     "can_administer": False,
@@ -316,6 +317,7 @@ class RegistrationAPITests(SessionAuthenticationAPITestCase):
                 "email",
                 "display_name",
                 "preferred_ui_language",
+                "avatar_url",
                 "capabilities",
             },
         )
@@ -356,6 +358,7 @@ class LoginAPITests(SessionAuthenticationAPITestCase):
                 "email",
                 "display_name",
                 "preferred_ui_language",
+                "avatar_url",
                 "capabilities",
             },
         )
@@ -426,6 +429,7 @@ class CurrentUserAPITests(SessionAuthenticationAPITestCase):
                 "email": user.email,
                 "display_name": user.display_name,
                 "preferred_ui_language": user.preferred_ui_language,
+                "avatar_url": None,
                 "capabilities": {
                     "can_moderate": True,
                     "can_administer": True,

@@ -35,12 +35,23 @@ POST   /api/v1/auth/login/
 POST   /api/v1/auth/logout/
 GET    /api/v1/me/
 PATCH  /api/v1/me/
+PUT    /api/v1/me/avatar/
+DELETE /api/v1/me/avatar/
 GET    /api/v1/me/interests/
 PUT    /api/v1/me/interests/
 ```
 
 These are the canonical auth/account routes. Their HTTP behavior is implemented in
 the authentication API milestone.
+
+`GET /me/` returns the safe current-account representation with a nullable,
+frontend-usable `avatar_url` and bounded capability flags. `PATCH /me/` accepts
+only `display_name` and `preferred_ui_language`, using partial-update semantics.
+Avatar writes are isolated to the multipart `PUT /me/avatar/` endpoint; `DELETE`
+is idempotent. Uploads accept verified JPEG, PNG, or WebP content up to 5 MiB.
+Replacement and removal delete the old object through Django storage only after
+the database transaction commits. All unsafe account routes retain session
+authentication and CSRF protection.
 
 ### Feed and ideas
 

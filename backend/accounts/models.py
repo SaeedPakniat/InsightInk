@@ -12,6 +12,11 @@ class User(AbstractUser):
     username = None
     email = models.EmailField("email address", unique=True)
     display_name = models.CharField(max_length=150, blank=True)
+    avatar = models.ImageField(
+        upload_to="user_avatars/",
+        blank=True,
+        null=True,
+    )
     preferred_ui_language = models.CharField(
         max_length=2,
         choices=Language.choices,

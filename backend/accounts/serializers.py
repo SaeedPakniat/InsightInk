@@ -4,6 +4,7 @@ from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import IntegrityError, transaction
 from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
+from PIL import Image, UnidentifiedImageError
 
 from content.language_filters import validate_active_language_codes
 from content.models import ContentLanguage, Topic
@@ -18,6 +19,7 @@ User = get_user_model()
 
 class CurrentUserSerializer(serializers.ModelSerializer):
     capabilities = serializers.SerializerMethodField()
+    avatar_url = serializers.SerializerMethodField()
 
     class Meta:
         model = User
@@ -26,6 +28,7 @@ class CurrentUserSerializer(serializers.ModelSerializer):
             "email",
             "display_name",
             "preferred_ui_language",
+            "avatar_url",
             "capabilities",
         )
         read_only_fields = fields
@@ -36,6 +39,61 @@ class CurrentUserSerializer(serializers.ModelSerializer):
             "can_moderate": is_moderator(user) or admin,
             "can_administer": admin,
         }
+
+    def get_avatar_url(self, user):
+        if not user.avatar:
+            return None
+        url = user.avatar.url
+        request = self.context.get("request")
+        return request.build_absolute_uri(url) if request is not None else url
+
+
+class CurrentUserUpdateSerializer(serializers.Serializer):
+    display_name = serializers.CharField(
+        max_length=User._meta.get_field("display_name").max_length,
+        allow_blank=True,
+        required=False,
+    )
+    preferred_ui_language = serializers.ChoiceField(
+        choices=User.Language.choices,
+        required=False,
+    )
+
+    def update(self, instance, validated_data):
+        update_fields = []
+        for field, value in validated_data.items():
+            setattr(instance, field, value)
+            update_fields.append(field)
+        if update_fields:
+            instance.save(update_fields=update_fields)
+        return instance
+
+
+class AvatarUploadSerializer(serializers.Serializer):
+    MAX_FILE_SIZE = 5 * 1024 * 1024
+    SUPPORTED_FORMATS = {"JPEG", "PNG", "WEBP"}
+
+    avatar = serializers.ImageField(write_only=True)
+
+    def validate_avatar(self, avatar):
+        if avatar.size > self.MAX_FILE_SIZE:
+            raise serializers.ValidationError("Avatar must not exceed 5 MiB.")
+
+        try:
+            avatar.seek(0)
+            with Image.open(avatar) as image:
+                image_format = image.format
+                image.verify()
+        except (UnidentifiedImageError, OSError, SyntaxError, ValueError) as exc:
+            raise serializers.ValidationError("Upload a valid image.") from exc
+        finally:
+            avatar.seek(0)
+
+        if image_format not in self.SUPPORTED_FORMATS:
+            raise serializers.ValidationError(
+                "Avatar must be a JPEG, PNG, or WebP image."
+            )
+        return avatar
 
 
 class RegisterSerializer(serializers.Serializer):

@@ -7,15 +7,18 @@ from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_protect
 from rest_framework import status
 from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.parsers import MultiPartParser
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .models import UserContentLanguage, UserInterest
 from .serializers import (
+    AvatarUploadSerializer,
     ContentLanguageSelectionSerializer,
     CurrentContentLanguagesSerializer,
     CurrentInterestsSerializer,
     CurrentUserSerializer,
+    CurrentUserUpdateSerializer,
     InterestSelectionSerializer,
     LoginSerializer,
     RegisterSerializer,
@@ -43,7 +46,7 @@ class RegisterView(CsrfProtectedAPIView):
         user = serializer.save()
         django_login(request, user)
         return Response(
-            CurrentUserSerializer(user).data,
+            CurrentUserSerializer(user, context={"request": request}).data,
             status=status.HTTP_201_CREATED,
         )
 
@@ -66,7 +69,9 @@ class LoginView(CsrfProtectedAPIView):
             )
 
         django_login(request, user)
-        return Response(CurrentUserSerializer(user).data)
+        return Response(
+            CurrentUserSerializer(user, context={"request": request}).data
+        )
 
 
 class LogoutView(CsrfProtectedAPIView):
@@ -81,7 +86,66 @@ class CurrentUserView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        return Response(CurrentUserSerializer(request.user).data)
+        return Response(
+            CurrentUserSerializer(
+                request.user,
+                context={"request": request},
+            ).data
+        )
+
+    def patch(self, request):
+        serializer = CurrentUserUpdateSerializer(
+            request.user,
+            data=request.data,
+            partial=True,
+        )
+        serializer.is_valid(raise_exception=True)
+        user = serializer.save()
+        return Response(
+            CurrentUserSerializer(user, context={"request": request}).data
+        )
+
+
+class CurrentUserAvatarView(APIView):
+    permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser]
+
+    @transaction.atomic
+    def put(self, request):
+        serializer = AvatarUploadSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        user = request.user
+        old_name = user.avatar.name if user.avatar else None
+        old_storage = user.avatar.storage if user.avatar else None
+        user.avatar = serializer.validated_data["avatar"]
+        user.save(update_fields=["avatar"])
+
+        if old_name and old_name != user.avatar.name:
+            transaction.on_commit(
+                lambda: old_storage.delete(old_name)
+            )
+
+        avatar_url = CurrentUserSerializer(
+            user,
+            context={"request": request},
+        ).data["avatar_url"]
+        return Response({"avatar_url": avatar_url})
+
+    @transaction.atomic
+    def delete(self, request):
+        user = request.user
+        old_name = user.avatar.name if user.avatar else None
+        old_storage = user.avatar.storage if user.avatar else None
+
+        if old_name:
+            user.avatar = None
+            user.save(update_fields=["avatar"])
+            transaction.on_commit(
+                lambda: old_storage.delete(old_name)
+            )
+
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class UserInterestsView(APIView):

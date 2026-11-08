@@ -16,6 +16,7 @@ User
 - email
 - password hash
 - display_name
+- avatar (optional universal account image)
 - preferred_ui_language (fa/en)
 - is_active
 - is_staff
@@ -23,7 +24,10 @@ User
 - updated_at
 ```
 
-Do not add every possible profile field directly to User.
+Do not add every possible profile field directly to User. The universal account
+avatar is intentionally stored here because it applies to every account. It is
+separate from `CreatorProfile.avatar`, which remains creator-profile presentation
+data and is not used by the account API.
 
 ## 2. Creator profile
 
