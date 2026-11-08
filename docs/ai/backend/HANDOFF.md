@@ -1,25 +1,18 @@
 # Backend Handoff
 
-- Task ID: BE-GAPS-001 — Close Creator, Source, and Idea Moderation Gaps
-- Exact base SHA: `32497ec33803e8e8759a9d235273564c310aeda9`.
-- Exact implementation commit SHA: `7dfcfa4a61288033ba55c2c84a6cb9ed089d2b6c`.
-- Frontend preservation: robust tracked+untracked filename/content hash before == after == `a0677fa95e572927d526ae8a0bf7253dfaa14270633de5d30afc83e2b267ea3d`. FE-015 status list is unchanged. No frontend path may be staged.
-- Idea statuses: `draft | published | hidden | withdrawn`.
-- Creator withdraw: `POST /api/v1/me/ideas/<id>/withdraw/`; Creator+owner only; CSRF; only published -> withdrawn; response existing private CreatorIdeaSerializer; preserves published_at and engagement/history; other owner 404; Reader 403; draft/hidden/withdrawn 400; no republish.
-- Direct moderation hide: `POST /api/v1/moderation/ideas/<id>/hide/`; IsModeratorOrAdmin; body optional `{"note":"..."}` max 2000/trimmed; published -> hidden; 200 focused state response; invalid state 400; missing Idea 404.
-- Direct moderation restore: `POST /api/v1/moderation/ideas/<id>/restore/`; IsModeratorOrAdmin; hidden -> published only; same note contract; 200 focused state response.
-- Direct moderation audit: `ModerationAction.ActionType.IDEA_HIDDEN` / `IDEA_RESTORED`; report=null; target_type=idea; target_id=Idea ID; moderator=current actor; note; created_at.
-- Idea report: `POST /api/v1/ideas/<id>/report/`; authenticated+CSRF; published only; reasons harassment/spam/inappropriate_content/other; details <=2000 trimmed; 201 public Report response; enters existing queue.
-- Report detail: Idea reports include `target_idea` with id/title/body/language/status/creator{id,display_name,is_verified}/source{public Source fields}/published_at. `target_comment` remains unchanged; non-Idea reports have target_idea=null.
-- Creator Source creation: `POST /api/v1/me/sources/`; Creator only; CSRF; 201. Input: type/title/original_creator_text/language/external_url. Response: existing public Source fields id/type/title/original_creator_text/language/external_url/cover.
-- Source provenance: new nullable `created_by`; system/seeded=null; Creator-created=request.user; not publicly serialized.
-- Source types: book, article, paper, website, video, podcast, movie, course, other.
-- Source validation: trimmed nonblank title; active ContentLanguage; optional valid URL; no fetch/scrape; duplicate normalized non-empty exact URL rejected.
-- Public /sources/ remains read-only. No Source edit/delete added.
-- Migrations: `content/migrations/0004_source_created_by_alter_idea_status_and_more.py`; `moderation/migrations/0002_alter_moderationaction_action_type.py`.
-- Focused tests: 72/72 BE-GAPS-001 adjacent suites; Explore 24/24 after taxonomy update.
-- Full backend tests: 357/357 passed.
-- Checks: Django check PASS; migration drift none; pip check clean; git diff check clean.
-- Seed demo: two runs idempotent; 20/20 deterministic Sources remain created_by=null.
-- Live smoke: Source 201 -> draft 201 -> publish 200 -> Idea report 201 -> hide 200/public404 -> report target_idea 200 -> restore 200/public200 -> withdraw 200/public404/private200; direct audits report=null; cleanup successful.
-- Frontend blocker: none.
+- Task ID: BE-ACCOUNT-AVATAR-001 — Universal Account Avatar + Current Account Metadata Editing.
+- Base SHA: `0ae6e5ecdf9e720f5c73b8db77c78fad44d079e9`.
+- Implementation SHA: `c9ad9f67357fdfe4eae43740f31927b2fc0007a0` (`feat(accounts): add universal account avatars`).
+- Model/migration: nullable, blank `accounts.User.avatar` with `upload_to="user_avatars/"`; migration `accounts.0007_user_avatar` applied. CreatorProfile remains independent and no account profile model was added.
+- Dependency/storage: `Pillow==13.0.0`; local `MEDIA_ROOT`/`MEDIA_URL`; DEBUG-only media serving; Django storage APIs remain replaceable by a future object backend.
+- Safe current-user response: registration, login, and GET `/api/v1/me/` include nullable absolute/request-aware `avatar_url`, preserve capabilities, and expose no raw storage filename or Django permission fields.
+- PATCH `/api/v1/me/`: session-authenticated and CSRF-protected; only `display_name` and `preferred_ui_language`; omitted fields remain unchanged; language uses existing choices; response is the complete safe current-user shape.
+- PUT `/api/v1/me/avatar/`: session-authenticated, CSRF-protected, multipart-only `avatar`; JPEG/PNG/WebP content only; 5 MiB maximum; 200 response `{ "avatar_url": ... }`.
+- DELETE `/api/v1/me/avatar/`: session-authenticated, CSRF-protected, idempotent 204; clears the account field.
+- Replacement/removal: old storage name/backend captured before mutation; old object deletion scheduled with `transaction.on_commit()` after the database update. Invalid replacement leaves the existing avatar and file untouched.
+- Rejections covered: anonymous requests, unsafe requests without CSRF, JSON/non-multipart upload, GIF, BMP, corrupt bytes, and >5 MiB uploads.
+- Tests: focused accounts 73/73; full backend 372/372.
+- Checks: Django check passed; no migration drift; pip check clean; diff check clean.
+- Live smoke: complete current-account/avatar lifecycle passed and disposable data/files were cleaned.
+- Frontend: no frontend file staged or task-modified; robust pre/post hash `2531cfb06e78e154006d2d920ea38ff5fe96e1585fff45a1fa978f9b3aa6a05c`.
+- External teaching notes were appended and remain outside Git.
