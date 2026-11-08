@@ -43,7 +43,8 @@ export type UpdateContentLanguagesPayload = {
   languages: string[]
 }
 
-export type SourceType = 'book' | 'article' | 'movie' | 'podcast'
+export type SourceType =
+  'book' | 'article' | 'paper' | 'website' | 'video' | 'podcast' | 'movie' | 'course' | 'other'
 
 export type IdeaCreator = {
   id: number
@@ -58,6 +59,54 @@ export type CreatorPublic = IdeaCreator & {
   follower_count: number
   spark_count: number
   idea_count: number
+}
+
+export type CreatorSelf = {
+  id: number
+  user_id: number
+  bio_fa: string
+  bio_en: string
+  avatar: string
+  is_verified: boolean
+  created_at: string
+}
+
+export type CreatorProfilePayload = {
+  bio_fa: string
+  bio_en: string
+}
+
+export type CreatorIdeaStatus = 'draft' | 'published' | 'hidden' | 'withdrawn'
+
+export type CreatorIdea = {
+  id: number
+  language: string
+  title: string
+  body: string
+  estimated_read_seconds: number
+  status: CreatorIdeaStatus
+  published_at: string | null
+  created_at: string
+  updated_at: string
+  source: number
+  topics: number[]
+}
+
+export type CreatorIdeaPayload = {
+  language: string
+  title: string
+  body: string
+  estimated_read_seconds: number
+  source: number
+  topics: number[]
+}
+
+export type CreatorSourcePayload = {
+  type: SourceType
+  title: string
+  original_creator_text: string
+  language: string
+  external_url: string
 }
 
 export type ViewerCreatorFollowItem = {
@@ -194,10 +243,28 @@ export type ModerationReportListItem = {
   resolved_at: string | null
 }
 
+export type ModerationTargetIdea = {
+  id: number
+  title: string
+  body: string
+  language: string
+  status: CreatorIdeaStatus
+  creator: IdeaCreator
+  source: IdeaSource
+  published_at: string | null
+}
+
 export type ModerationReportDetail = ModerationReportListItem & {
   details: string
   target_comment: ModerationTargetComment | null
+  target_idea: ModerationTargetIdea | null
   actions: ModerationAction[]
+}
+
+export type IdeaModerationState = {
+  idea_id: number
+  status: CreatorIdeaStatus
+  action: 'idea_hidden' | 'idea_restored'
 }
 
 export type ModerationReportPage = {

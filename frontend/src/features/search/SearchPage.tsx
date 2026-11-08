@@ -11,7 +11,17 @@ import { IdeaCardSkeleton } from '../ideas/IdeaCardSkeleton'
 import { useTopics } from '../onboarding/interests'
 import { flattenUniqueSearchResults, useSearchResults } from './searchResults'
 
-const SOURCE_TYPES: SourceType[] = ['book', 'article', 'movie', 'podcast']
+const SOURCE_TYPES: SourceType[] = [
+  'book',
+  'article',
+  'paper',
+  'website',
+  'video',
+  'podcast',
+  'movie',
+  'course',
+  'other',
+]
 
 function parseSourceType(value: string | null): SourceType | undefined {
   return SOURCE_TYPES.find((type) => type === value)

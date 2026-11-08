@@ -1,5 +1,6 @@
 import { apiRequest } from './client'
 import type {
+  IdeaModerationState,
   ModerationNotePayload,
   ModerationReportDetail,
   ModerationReportPage,
@@ -30,6 +31,17 @@ export function actOnModerationReport(
   payload: ModerationNotePayload,
 ): Promise<ModerationReportDetail | void> {
   return apiRequest<ModerationReportDetail | void>(`/moderation/reports/${reportId}/${action}/`, {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
+export function moderateIdeaDirectly(
+  ideaId: number,
+  action: 'hide' | 'restore',
+  payload: ModerationNotePayload = {},
+): Promise<IdeaModerationState> {
+  return apiRequest<IdeaModerationState>(`/moderation/ideas/${ideaId}/${action}/`, {
     method: 'POST',
     body: JSON.stringify(payload),
   })

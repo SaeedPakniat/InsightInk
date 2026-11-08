@@ -38,6 +38,9 @@ export function AuthenticatedHomePage() {
         </div>
 
         <div className="reader-home__actions">
+          <Link className="button button--primary" to="/studio">
+            {t('home.studioAction')}
+          </Link>
           <Link className="button button--secondary" to="/onboarding/interests">
             {t('home.interestsAction')}
           </Link>

@@ -8,6 +8,8 @@ import { CommentsSection } from '../../comments/CommentsSection'
 import { IdeaEngagementActions } from '../../engagement/IdeaEngagementActions'
 import { useHydrateViewerEngagement } from '../../engagement/viewerEngagement'
 import { ContentLanguageBadge } from '../../languages/ContentLanguageBadge'
+import { IdeaModerationControls } from '../../moderation/IdeaModerationControls'
+import { IdeaReportAction } from '../../reporting/IdeaReportAction'
 import { FormatBadge } from '../FormatBadge'
 import { formatUiNumber, getContentDirection, getInitials, getReadMinutes } from '../presentation'
 import { useIdea } from './ideaQuery'
@@ -101,6 +103,12 @@ export function IdeaDetailPage() {
           )}
 
           <IdeaEngagementActions ideaId={idea.id} variant="detail" />
+
+          <div className="idea-detail-page__trust-actions">
+            <IdeaReportAction ideaId={idea.id} />
+          </div>
+
+          <IdeaModerationControls ideaId={idea.id} />
         </header>
 
         <div

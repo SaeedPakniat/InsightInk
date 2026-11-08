@@ -4,8 +4,9 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { actOnModerationReport, getModerationReport } from '../../api/moderation'
-import type { ModerationReportDetail } from '../../api/types'
+import type { CurrentUser, ModerationReportDetail } from '../../api/types'
 import { changeUiLanguage } from '../../i18n'
+import { SESSION_QUERY_KEY } from '../auth/session'
 import { ModerationReportPage } from './ModerationReportPage'
 
 vi.mock('../../api/moderation', async () => {
@@ -29,6 +30,7 @@ function report(status: ModerationReportDetail['status'] = 'open'): ModerationRe
     created_at: '2026-11-07T06:00:00Z',
     resolved_at: status === 'resolved' || status === 'rejected' ? '2026-11-07T07:00:00Z' : null,
     details: 'Repeated personal attacks.',
+    target_idea: null,
     target_comment: {
       id: 5,
       author: { id: 8, display_name: 'Comment Author' },
@@ -54,6 +56,14 @@ function report(status: ModerationReportDetail['status'] = 'open'): ModerationRe
   }
 }
 
+const moderator: CurrentUser = {
+  id: 9,
+  email: 'moderator@example.com',
+  display_name: 'Demo Moderator',
+  preferred_ui_language: 'en',
+  capabilities: { can_moderate: true, can_administer: false },
+}
+
 function renderPage() {
   const queryClient = new QueryClient({
     defaultOptions: {
@@ -61,6 +71,8 @@ function renderPage() {
       mutations: { retry: false },
     },
   })
+
+  queryClient.setQueryData(SESSION_QUERY_KEY, moderator)
 
   return render(
     <QueryClientProvider client={queryClient}>
@@ -127,6 +139,47 @@ describe('ModerationReportPage', () => {
     expect(screen.getByText('Review started')).toBeInTheDocument()
     expect(screen.getByText('Demo Moderator')).toBeInTheDocument()
     expect(screen.getByText('Taking this case.')).toBeInTheDocument()
+  })
+
+  it('renders an Idea report target with source context and direct moderation controls', async () => {
+    const ideaReport: ModerationReportDetail = {
+      ...report('open'),
+      target_type: 'idea',
+      target_id: 25,
+      target_comment: null,
+      target_idea: {
+        id: 25,
+        title: 'Reported Idea',
+        body: 'This is the reported Idea body.',
+        language: 'en',
+        status: 'published',
+        creator: {
+          id: 4,
+          display_name: 'Idea Creator',
+          avatar: null,
+          is_verified: false,
+        },
+        source: {
+          id: 91,
+          type: 'website',
+          title: 'Original Website',
+          original_creator_text: 'Original Author',
+          language: 'en',
+          external_url: 'https://example.com',
+          cover: '',
+        },
+        published_at: '2026-11-07T05:00:00Z',
+      },
+    }
+    vi.mocked(getModerationReport).mockResolvedValue(ideaReport)
+
+    renderPage()
+
+    expect(await screen.findByRole('heading', { name: 'Reported Idea' })).toBeInTheDocument()
+    expect(screen.getByText('This is the reported Idea body.')).toBeInTheDocument()
+    expect(screen.getByText('Original Website')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Hide Idea' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Hide reported comment' })).not.toBeInTheDocument()
   })
 
   it('hides moderation actions after the case reaches a terminal state', async () => {

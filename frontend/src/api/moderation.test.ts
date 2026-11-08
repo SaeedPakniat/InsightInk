@@ -6,6 +6,7 @@ import {
   cursorFromModerationUrl,
   getModerationReport,
   getModerationReportsPage,
+  moderateIdeaDirectly,
 } from './moderation'
 
 describe('moderation API', () => {
@@ -125,6 +126,53 @@ describe('moderation API', () => {
       .mockResolvedValueOnce(new Response(null, { status: 204 }))
 
     await expect(actOnModerationReport(9, 'hide-comment', {})).resolves.toBeNull()
+  })
+
+  it('posts direct Idea hide/restore actions through the moderator endpoints', async () => {
+    const fetchMock = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ csrfToken: 'idea-mod-csrf' }), {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        }),
+      )
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            idea_id: 25,
+            status: 'hidden',
+            action: 'idea_hidden',
+          }),
+          {
+            status: 200,
+            headers: { 'content-type': 'application/json' },
+          },
+        ),
+      )
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            idea_id: 25,
+            status: 'published',
+            action: 'idea_restored',
+          }),
+          {
+            status: 200,
+            headers: { 'content-type': 'application/json' },
+          },
+        ),
+      )
+
+    await moderateIdeaDirectly(25, 'hide', { note: 'Policy violation.' })
+    await moderateIdeaDirectly(25, 'restore')
+
+    expect(fetchMock.mock.calls[1]?.[0]).toBe('/api/v1/moderation/ideas/25/hide/')
+    expect(fetchMock.mock.calls[1]?.[1]).toMatchObject({
+      method: 'POST',
+      body: JSON.stringify({ note: 'Policy violation.' }),
+    })
+    expect(fetchMock.mock.calls[2]?.[0]).toBe('/api/v1/moderation/ideas/25/restore/')
   })
 
   it('extracts cursor values from report pagination URLs', () => {

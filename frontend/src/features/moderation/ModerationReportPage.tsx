@@ -6,6 +6,7 @@ import { ApiError, firstFieldError } from '../../api/client'
 import type { ModerationAction, ReportStatus } from '../../api/types'
 import { Button } from '../../components/ui/Button'
 import { formatUiNumber } from '../ideas/presentation'
+import { IdeaModerationControls } from './IdeaModerationControls'
 import { ModerationStatusBadge } from './ModerationStatusBadge'
 import { useModerationAction, useModerationReport } from './moderationQueries'
 
@@ -155,6 +156,29 @@ export function ModerationReportPage() {
                 </div>
                 <p dir="auto">{report.target_comment.body}</p>
               </article>
+            ) : report.target_idea ? (
+              <article className="moderation-target-idea">
+                <div className="moderation-target-idea__meta">
+                  <div>
+                    <strong dir="auto">{report.target_idea.creator.display_name}</strong>
+                    <span>{t(`moderation.ideaStatus.${report.target_idea.status}`)}</span>
+                  </div>
+                  <span>{t(`idea.format.${report.target_idea.source.type}`)}</span>
+                </div>
+
+                <h3 dir="auto">{report.target_idea.title}</h3>
+                <p dir="auto">{report.target_idea.body}</p>
+
+                <div className="moderation-target-idea__source">
+                  <span>{t('idea.sourceContext')}</span>
+                  <strong dir="auto">{report.target_idea.source.title}</strong>
+                </div>
+
+                <IdeaModerationControls
+                  ideaId={report.target_idea.id}
+                  initialStatus={report.target_idea.status}
+                />
+              </article>
             ) : (
               <div className="moderation-target-missing">
                 <span aria-hidden="true">∅</span>
@@ -168,7 +192,7 @@ export function ModerationReportPage() {
           <header>
             <p className="eyebrow">{t('moderation.workflowEyebrow')}</p>
             <h2>{t('moderation.workflowTitle')}</h2>
-            <p>{workflowDescription(report.status, t)}</p>
+            <p>{workflowDescription(report.status, report.target_type, t)}</p>
           </header>
 
           {report.status === 'open' || report.status === 'reviewing' ? (
@@ -288,7 +312,15 @@ export function ModerationReportPage() {
   )
 }
 
-function workflowDescription(status: ReportStatus, t: ReturnType<typeof useTranslation>['t']) {
+function workflowDescription(
+  status: ReportStatus,
+  targetType: 'comment' | 'user' | 'idea' | 'message',
+  t: ReturnType<typeof useTranslation>['t'],
+) {
+  if (status === 'reviewing' && targetType === 'idea') {
+    return t('moderation.workflowDescription.ideaReviewing')
+  }
+
   return t(`moderation.workflowDescription.${status}`)
 }
 

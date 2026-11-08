@@ -45,6 +45,12 @@ const ContentLanguagesPage = lazyPage(() =>
     (module) => module.ContentLanguagesPage,
   ),
 )
+const CreatorStudioPage = lazyPage(() =>
+  import('../features/studio/CreatorStudioPage').then((module) => module.CreatorStudioPage),
+)
+const StudioIdeaEditorPage = lazyPage(() =>
+  import('../features/studio/StudioIdeaEditorPage').then((module) => module.StudioIdeaEditorPage),
+)
 const ModerationQueuePage = lazyPage(() =>
   import('../features/moderation/ModerationQueuePage').then((module) => module.ModerationQueuePage),
 )
@@ -80,6 +86,12 @@ export const router = createBrowserRouter([
           { path: 'library', element: <SavedLibraryPage /> },
           { path: 'onboarding/interests', element: <InterestsOnboardingPage /> },
           { path: 'onboarding/languages', element: <ContentLanguagesPage /> },
+          { path: 'studio', element: <CreatorStudioPage /> },
+          { path: 'studio/ideas/new', element: <StudioIdeaEditorPage /> },
+          {
+            path: 'studio/ideas/:ideaId/edit',
+            element: <StudioIdeaEditorPage />,
+          },
         ],
       },
       {

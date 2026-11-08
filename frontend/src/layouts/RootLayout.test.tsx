@@ -45,13 +45,28 @@ function renderLayout(currentUser: CurrentUser | null, child: ReactNode = <div>P
   )
 }
 
-describe('RootLayout moderation navigation', () => {
+describe('RootLayout authenticated workspace navigation', () => {
   beforeEach(async () => {
     await changeUiLanguage('en')
   })
 
   afterEach(() => {
     cleanup()
+  })
+
+  it('shows Creator Studio to every authenticated user', async () => {
+    renderLayout(user(false))
+
+    expect(await screen.findByRole('link', { name: 'Creator Studio' })).toHaveAttribute(
+      'href',
+      '/studio',
+    )
+  })
+
+  it('does not expose Creator Studio to anonymous visitors', () => {
+    renderLayout(null)
+
+    expect(screen.queryByRole('link', { name: 'Creator Studio' })).not.toBeInTheDocument()
   })
 
   it('shows moderation navigation only to users with the capability', async () => {

@@ -33,6 +33,20 @@ export function RootLayout() {
               </svg>
               <span>{t('search.headerAction')}</span>
             </Link>
+            {session.data && (
+              <Link
+                className={`site-header__studio-link${location.pathname.startsWith('/studio') ? ' site-header__studio-link--active' : ''}`}
+                to="/studio"
+                aria-label={t('studio.headerAction')}
+                title={t('studio.headerAction')}
+              >
+                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                  <path d="m4 16.5-.7 4.2 4.2-.7L18.8 8.7a2.1 2.1 0 0 0 0-3l-.5-.5a2.1 2.1 0 0 0-3 0L4 16.5Z" />
+                  <path d="m13.8 6.7 3.5 3.5" />
+                </svg>
+                <span>{t('studio.headerAction')}</span>
+              </Link>
+            )}
             {session.data?.capabilities.can_moderate && (
               <Link
                 className={`site-header__moderation-link${location.pathname.startsWith('/moderation') ? ' site-header__moderation-link--active' : ''}`}

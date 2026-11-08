@@ -10,3 +10,13 @@ export function reportComment(
     body: JSON.stringify(payload),
   })
 }
+
+export function reportIdea(
+  ideaId: number,
+  payload: CreateCommentReportPayload,
+): Promise<PublicReport> {
+  return apiRequest<PublicReport>(`/ideas/${ideaId}/report/`, {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
