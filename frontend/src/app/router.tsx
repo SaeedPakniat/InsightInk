@@ -57,6 +57,9 @@ const StudioIdeaEditorPage = lazyPage(() =>
 const ModerationQueuePage = lazyPage(() =>
   import('../features/moderation/ModerationQueuePage').then((module) => module.ModerationQueuePage),
 )
+const HiddenIdeasPage = lazyPage(() =>
+  import('../features/moderation/HiddenIdeasPage').then((module) => module.HiddenIdeasPage),
+)
 const ModerationReportPage = lazyPage(() =>
   import('../features/moderation/ModerationReportPage').then(
     (module) => module.ModerationReportPage,
@@ -102,6 +105,7 @@ export const router = createBrowserRouter([
         element: <RequireModerator />,
         children: [
           { path: 'moderation', element: <ModerationQueuePage /> },
+          { path: 'moderation/ideas', element: <HiddenIdeasPage /> },
           {
             path: 'moderation/reports/:reportId',
             element: <ModerationReportPage />,

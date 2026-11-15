@@ -5,6 +5,7 @@ import type { ReportStatus } from '../../api/types'
 import { Button } from '../../components/ui/Button'
 import { formatUiNumber } from '../ideas/presentation'
 import { ModerationStatusBadge } from './ModerationStatusBadge'
+import { ModerationWorkspaceNav } from './ModerationWorkspaceNav'
 import { flattenModerationReports, useModerationReports } from './moderationQueries'
 
 const FILTERS: Array<ReportStatus | 'all'> = ['open', 'reviewing', 'resolved', 'rejected', 'all']
@@ -41,6 +42,8 @@ export function ModerationQueuePage() {
             {t('moderation.backToFeed')}
           </Link>
         </header>
+
+        <ModerationWorkspaceNav />
 
         <nav className="moderation-filters" aria-label={t('moderation.filterNavigation')}>
           {FILTERS.map((filter) => (

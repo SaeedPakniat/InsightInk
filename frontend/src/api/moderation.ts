@@ -1,5 +1,6 @@
 import { apiRequest } from './client'
 import type {
+  HiddenModerationIdeaPage,
   IdeaModerationState,
   ModerationNotePayload,
   ModerationReportDetail,
@@ -19,6 +20,15 @@ export function getModerationReportsPage(
   const suffix = params.toString()
 
   return apiRequest<ModerationReportPage>(`/moderation/reports/${suffix ? `?${suffix}` : ''}`)
+}
+
+export function getHiddenModerationIdeasPage(
+  cursor: string | null = null,
+): Promise<HiddenModerationIdeaPage> {
+  const params = new URLSearchParams({ status: 'hidden' })
+  if (cursor) params.set('cursor', cursor)
+
+  return apiRequest<HiddenModerationIdeaPage>(`/moderation/ideas/?${params.toString()}`)
 }
 
 export function getModerationReport(reportId: number): Promise<ModerationReportDetail> {

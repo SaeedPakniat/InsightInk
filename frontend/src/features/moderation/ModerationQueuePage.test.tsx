@@ -76,6 +76,11 @@ describe('ModerationQueuePage', () => {
     renderPage()
 
     expect(await screen.findByRole('heading', { name: 'Report queue' })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Reports' })).toHaveAttribute('aria-current', 'page')
+    expect(screen.getByRole('link', { name: 'Hidden Ideas' })).toHaveAttribute(
+      'href',
+      '/moderation/ideas',
+    )
     expect(getModerationReportsPage).toHaveBeenCalledWith('open', null)
     expect(screen.getByRole('button', { name: 'Open' })).toHaveAttribute('aria-pressed', 'true')
     expect(await screen.findByRole('link', { name: /Report #2/ })).toHaveAttribute(

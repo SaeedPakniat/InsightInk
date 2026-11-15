@@ -1,64 +1,82 @@
 # Frontend State
 
-- Task: FE-017 — Account Profile + Avatar Integration.
-- Status: ACCEPTED by user; checkpointed in the FE-017 commit containing this state.
-- Accepted frontend base: `48e7fbd52b14497bed3d6ca5e32a32b69b15519c`.
+- Task: FE-018 — Moderator Hidden Ideas Workspace.
+- Status: ACCEPTED by user; checkpointed in the FE-018 commit containing this state.
+- Accepted frontend base: `d6a734a47fd9cb6211f25552bc67184546d04483`.
 - Branch: `master`.
 - Scope: frontend and frontend AI documentation only; backend implementation files unchanged.
 
 ## Delivered
 
-- Protected `/account` route under `RequireAuth`.
-- Header account menu now links to `/account`.
-- Display-name editing through `PATCH /api/v1/me/`; email is read-only.
-- Universal account avatar upload/replacement through multipart `PUT /api/v1/me/avatar/`.
-- Universal account avatar removal through `DELETE /api/v1/me/avatar/`.
-- Shared `apiRequest` is FormData-aware: multipart bodies keep CSRF/cookies but do not receive a manual JSON Content-Type.
-- Backend avatar constraints surfaced in UI: JPEG/PNG/WebP, maximum 5 MiB.
-- Client-side early validation for oversize and clearly unsupported MIME; backend validation remains authoritative.
-- Two-step avatar removal confirmation.
-- `SESSION_QUERY_KEY` is updated immediately after profile/avatar mutations, so the persistent header updates without reload.
-- `CurrentUser.avatar_url` now matches the landed backend contract as required `string | null`; legacy fixtures/fallbacks were updated with `null`.
-- FE-016 `AccountAvatar` is reused and extended with a large presentation size.
-- CreatorProfile avatar remains separate and untouched.
-- Language toggle remains directly visible in the persistent header and exists once; it is not duplicated in account/mobile menus or the account page.
-- Narrow-header visual correction: below 30rem the accessible InsightInk brand mark remains while the wordmark hides to prevent crowding with the always-visible language/account/menu controls.
+- New moderator-only `/moderation/ideas` route under the existing `RequireModerator` boundary.
+- Shared Reports / Hidden Ideas moderation workspace navigation.
+- Existing report queue now includes the workspace switcher.
+- Hidden-Idea cursor list consumes only the landed backend safe shape:
+  - id, title, body excerpt, language, hidden status;
+  - creator id/display name;
+  - source id/type/title;
+  - published_at and updated_at.
+- UI deliberately labels `updated_at` as “Last updated”; it does not invent a hidden-at timestamp or hidden-by metadata.
+- Cursor pagination with duplicate-ID protection.
+- Loading, retryable error, empty and end-of-list states.
+- Restore flow:
+  - explicit confirmation;
+  - warning that restoration republishes the Idea;
+  - optional audit note capped at 2000;
+  - trimmed note payload;
+  - pending disabled state;
+  - localized error/success feedback;
+  - restored Idea removed from hidden workspace after refetch.
+- Restore invalidates Idea detail, feed, recommendations, search, creator and library surfaces.
+- English/Persian UI and RTL/LTR-safe mixed-language content.
+- No recoverable hard-delete/trash behavior was invented; moderator lifecycle remains hidden -> published.
 
 ## Verification
 
 - TypeScript: PASS.
 - ESLint: PASS.
-- Focused FE-017 tests: 5 files / 38 tests PASS.
-- Full Vitest: 49 files / 187 tests PASS.
-- Production build: PASS — 189 modules.
+- Focused FE-018 tests: 4 files / 19 tests PASS.
+- Full Vitest: 50 files / 195 tests PASS.
+- Production build: PASS — 191 modules.
 - Prettier: PASS.
-- `npm audit --omit=dev`: PASS — 0 vulnerabilities.
+- `npm audit --omit=dev`: PASS on retry — 0 vulnerabilities.
 - `git diff --check`: PASS.
+- Backend `moderation.test_hidden_ideas`: 8/8 PASS using the normal project environment.
 - No dependency or lockfile changes.
-- AccountPage lazy chunk: 6.01 KB / 1.91 KB gzip.
+- HiddenIdeasPage lazy chunk: 5.93 KB / 1.67 KB gzip.
 - No Vite chunk-size warning and no chunk over 500 KB.
 
 ## Browser review
 
-Real Chromium rendering through the existing Vite dev server passed using DevTools interception only for session/account API responses, avoiding changes to real database users.
+Real Chromium rendering through the existing Vite server passed using interception only for session/moderation API responses, so no real moderator content was changed.
 
 Verified:
-- English desktop account view;
-- sticky header and account-menu route;
-- display-name save reflected in header;
-- avatar file upload/replacement surface;
-- removal confirmation and initials fallback;
-- blank display-name email fallback;
+- desktop English moderator workspace;
+- persistent header moderation destination active;
+- Hidden Ideas workspace tab active;
+- hidden cards and safe metadata;
+- restore confirmation;
+- trimmed restore note payload;
+- post-restore removal and success state;
 - Persian RTL;
 - 390px compact layout;
-- single visible header language control;
+- full-width workspace tabs;
+- one-column compact metadata;
+- sticky header;
+- single visible language toggle;
 - no horizontal overflow.
 
-An initial 390px RTL review exposed brand-wordmark crowding; the narrow brand treatment was fixed and reverified.
+## Product boundary
+
+FE-018 covers moderator-hidden Ideas only.
+
+- Moderator removal remains non-destructive `hidden`.
+- Moderator restore is `hidden -> published`.
+- Creator draft hard deletion remains permanent and is not represented in this workspace.
+- A future trash/recoverable-delete requirement would require a new backend lifecycle/data-retention contract.
 
 ## Next
 
-1. FE-018 — Moderator Hidden Ideas workspace.
-2. Frontend completeness audit.
-3. Motion/interaction polish.
-4. PWA.
+1. Frontend completeness audit.
+2. Bounded motion/interaction polish.
+3. PWA.

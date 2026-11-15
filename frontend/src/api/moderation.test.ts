@@ -4,6 +4,7 @@ import { clearCsrfToken } from './client'
 import {
   actOnModerationReport,
   cursorFromModerationUrl,
+  getHiddenModerationIdeasPage,
   getModerationReport,
   getModerationReportsPage,
   moderateIdeaDirectly,
@@ -34,6 +35,25 @@ describe('moderation API', () => {
 
     expect(fetchMock.mock.calls[0]?.[0]).toBe(
       '/api/v1/moderation/reports/?status=reviewing&cursor=next-token',
+    )
+    expect(fetchMock.mock.calls[0]?.[1]).toMatchObject({
+      method: 'GET',
+      credentials: 'include',
+    })
+  })
+
+  it('loads hidden Ideas from the exact moderator workspace endpoint', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(
+      new Response(JSON.stringify({ next: null, previous: null, results: [] }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      }),
+    )
+
+    await getHiddenModerationIdeasPage('hidden-next')
+
+    expect(fetchMock.mock.calls[0]?.[0]).toBe(
+      '/api/v1/moderation/ideas/?status=hidden&cursor=hidden-next',
     )
     expect(fetchMock.mock.calls[0]?.[1]).toMatchObject({
       method: 'GET',

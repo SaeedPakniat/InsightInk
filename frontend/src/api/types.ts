@@ -274,6 +274,31 @@ export type ModerationReportPage = {
   results: ModerationReportListItem[]
 }
 
+export type HiddenModerationIdea = {
+  id: number
+  title: string
+  body_excerpt: string
+  language: string
+  status: 'hidden'
+  creator: {
+    id: number
+    display_name: string
+  }
+  source: {
+    id: number
+    type: SourceType
+    title: string
+  }
+  published_at: string | null
+  updated_at: string
+}
+
+export type HiddenModerationIdeaPage = {
+  next: string | null
+  previous: string | null
+  results: HiddenModerationIdea[]
+}
+
 export type ModerationNotePayload = {
   note?: string
 }
