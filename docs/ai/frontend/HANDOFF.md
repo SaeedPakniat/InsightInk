@@ -1,84 +1,112 @@
 # Frontend Handoff
 
-- Task: FE-025 — Installable PWA and Safe Offline Fallback.
-- Accepted base: `5c6352d70d1db329e544361f832074fd6e509f93`.
-- Result: ACCEPTED by user; checkpointed in the FE-025 commit containing this handoff.
-- Backend implementation unchanged.
-- No dependency addition.
+- Final frontend audit: FE-026.
+- Audited implementation checkpoint: `212c6b7078aec8e7066d000ebc8865679abd7c66`.
+- Decision: **GO for first core frontend MVP deployment/integration handoff**.
+- FE-026 production-code changes: none.
+- Final audit accepted by user; this handoff is checkpointed.
 
-## PWA implementation
+## What is complete
 
-Added:
+Core frontend MVP:
 
-- manifest;
-- install icons;
-- Apple touch icon;
-- production-only service-worker registration;
-- service worker;
-- bilingual offline page;
-- deterministic Chromium PWA smoke.
+- auth/onboarding;
+- personalized/latest feeds;
+- public Idea + Source;
+- Spark/Save/comment;
+- Saved Library;
+- creator profile/follow;
+- search/topic/format exploration;
+- recommendations + Related Ideas;
+- Persian/English + RTL/LTR.
 
-## Cache policy
+Additional completed frontend scope:
 
-Precache:
+- Creator Studio;
+- custom Sources;
+- CreatorProfile editing;
+- account display-name/avatar;
+- reports;
+- moderator workspace;
+- hidden-Idea restore;
+- responsive sticky shell;
+- Share;
+- route/render recovery;
+- browser hardening;
+- reduced motion;
+- installable PWA/offline fallback.
 
-- manifest/icons/favicon/offline page.
+## Final quality evidence
 
-Runtime cache:
+Fresh checkpoint verification:
 
-- same-origin `/assets/` only;
-- maximum 40 entries.
-
-Network-only:
-
-- all `/api/`;
-- personalized account/content data.
-
-Navigation:
-
-- online network-first;
-- network failure -> cached `offline.html`.
-
-No stale personalized API replay is implemented.
-
-## PWA browser evidence
-
-Chromium 157 production smoke PASS:
-
-- manifest errors 0;
-- installability errors 0;
-- service worker activated at root scope;
-- 7 precache entries;
-- 14 runtime hashed assets observed;
-- 0 cached API paths;
-- Persian/English offline fallback and retry control verified.
-
-## Unit and regression evidence
-
-- service-worker registration: 4 focused tests PASS.
-- full Vitest: 54 files / 221 tests PASS.
 - TypeScript PASS.
 - ESLint PASS.
-- build PASS.
-- FE-023/024 hardening PASS.
-- PWA smoke PASS.
+- 54 Vitest files / 221 tests PASS.
+- production build PASS — 196 modules.
+- Chromium critical-flow/accessibility/keyboard/motion PASS.
+- Firefox 160 desktop + compact render PASS.
+- Chromium PWA installability/offline PASS.
 - Prettier PASS.
 - runtime audit: 0 vulnerabilities.
 - git diff check PASS.
-- package-lock unchanged.
 
-## Platform evidence
+## No current frontend blocker
 
-- Chromium 157 desktop installability PASS.
-- Firefox 160 production render remains PASS.
-- physical Android/iOS PWA installation remains unverified and must not be claimed.
+Blocker: none.
 
-## Deployment note
+High: none.
 
-Production needs HTTPS and root-served `service-worker.js`.
+Medium core defects: none.
 
-Prefer revalidation/no-cache semantics for the service-worker script so updates are detected promptly.
+Optional low item:
 
-## Pending
+- direct Creator directory.
 
-- Next: FE-026 final frontend completion/release-readiness audit and handoff.
+Do not block first-MVP handoff on it.
+
+## Evidence caveats
+
+Do not overclaim:
+
+- WCAG 2.1 AA is a target, not formally certified.
+- exact UI/feed latency NFR numbers are not benchmark-certified.
+- old iOS/Android and physical Android/WebView remain unverified.
+- current build target is es2018 + Safari 14.
+
+Full npm audit has a moderate dev-only typescript-eslint/minimatch advisory; shipped runtime audit is clean.
+
+## Deployment contract
+
+Deployment/integration must supply:
+
+- HTTPS;
+- SPA history fallback;
+- root `service-worker.js` with update-friendly cache headers;
+- manifest/icons;
+- same-origin API where practical;
+- secure session/cookie/CSRF backend settings;
+- static/media strategy.
+
+Frontend `.env.example` already defaults to `/api/v1`.
+
+## Product scope deliberately deferred
+
+- realtime sync;
+- messaging;
+- notifications;
+- TTS;
+- membership/eBooks/payment;
+- push/background sync;
+- privacy export/deletion UX;
+- social auth.
+
+## Next owner
+
+Deployment/integration/staging.
+
+Frontend should be reopened only for:
+
+- a staging-discovered defect;
+- a deployment-specific frontend incompatibility;
+- an explicit new product-scope decision.

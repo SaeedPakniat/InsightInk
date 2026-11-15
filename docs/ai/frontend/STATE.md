@@ -1,95 +1,107 @@
 # Frontend State
 
-- Task: FE-025 — Installable PWA and Safe Offline Fallback.
-- Status: ACCEPTED by user; checkpointed in the FE-025 commit containing this state.
-- Accepted frontend base: `5c6352d70d1db329e544361f832074fd6e509f93`.
-- Branch: `master`.
-- Scope: frontend PWA assets/registration/service worker, PWA browser smoke and compatibility documentation.
-- Backend implementation files unchanged.
-- No new npm dependencies.
+- Task: FE-026 — Final Frontend Completion and Release-Readiness Audit.
+- Status: ACCEPTED by user; final frontend handoff checkpointed.
+- Audited frontend checkpoint: `212c6b7078aec8e7066d000ebc8865679abd7c66`.
+- Branch: `master`, aligned with `origin/master` before audit docs.
+- Production frontend implementation changed by FE-026: none.
 
-## FE-025 delivered
+## Final decision
 
-- Web App Manifest.
-- 192/512 standard install icons.
-- 512 maskable icon.
-- 180 Apple touch icon.
-- install/mobile metadata in `index.html`.
-- production-only root service-worker registration.
-- bounded runtime caching for hashed `/assets/`.
-- dedicated install/offline precache.
-- bilingual standalone offline fallback.
-- `npm run test:pwa` production smoke.
+**GO for core frontend MVP handoff to deployment/integration.**
 
-## Privacy/cache boundary
+No remaining:
 
-FE-025 never caches:
+- Blocker core-frontend defects;
+- High core-frontend defects;
+- Medium core-frontend defects.
 
-- `/api/` responses;
-- account/session responses;
-- personalized feed responses;
-- arbitrary media.
+One optional Low product enhancement remains:
 
-Observed PWA smoke CacheStorage:
+- direct Creator directory.
 
-- precache entries: 7;
-- runtime asset entries: 14;
-- API entries: 0.
+It is not required by the documented first MVP.
 
-Runtime asset cache is capped at 40 entries.
+## Core MVP
 
-## Chromium PWA evidence
+All 10 documented first-MVP user capabilities are represented and accepted:
 
-Chromium 157:
+- register/login;
+- interests;
+- feed;
+- Idea + Source;
+- Spark/Save/comment;
+- Library;
+- creator profile/follow;
+- search/explore;
+- algorithmic recommendations;
+- Persian/English UI.
 
-- manifest errors: 0;
-- installability errors: 0;
-- root service worker activated;
-- manifest standalone/start URL/icons PASS;
-- runtime static caching PASS;
-- bilingual offline fallback PASS.
+The frontend additionally includes Creator Studio, account/avatar management, reporting/moderation, responsive shell, Share, recovery, hardening, motion/reduced-motion and installable PWA.
 
-## Compatibility
+## Fresh final verification
 
-- Desktop Chromium 157 installability: PASS.
-- Physical Android install: not verified.
-- Old Android install: not verified.
-- Old iOS/Safari install: not verified.
-- Firefox desktop production rendering remains PASS; desktop install is not claimed.
-
-## Verification
+At `212c6b7`:
 
 - TypeScript PASS.
 - ESLint PASS.
 - Vitest PASS — 54 files / 221 tests.
 - build PASS — 196 modules.
-- browser hardening PASS.
-- PWA smoke PASS.
+- Chromium critical browser hardening PASS.
+- Firefox 160 production render PASS.
+- PWA production smoke PASS.
 - Prettier PASS.
-- npm runtime audit PASS — 0 vulnerabilities.
-- `git diff --check` PASS.
-- no dependency/lockfile changes.
-- no backend implementation changes.
-- no Vite chunk-size warning.
+- runtime npm audit PASS — 0 vulnerabilities.
+- git diff check PASS.
 
-## Bundle
+## Release evidence limits
 
-- HTML ~1.36 KB / 0.55 KB gzip.
-- CSS ~118.67 KB / 15.45 KB gzip.
-- main JS ~308.10 KB / 92.92 KB gzip.
-- no chunk >500 KB.
+Do not claim as proven:
 
-## Remaining PWA/offline debt
+- formal WCAG 2.1 AA conformance;
+- exact NFR-01/NFR-02 performance thresholds;
+- old Android/iOS compatibility;
+- physical Android/WebView PWA install support;
+- aspirational iOS 12 / Android 7 support.
 
-Intentionally deferred:
+Current build target is `es2018` + `safari14`.
 
-- API/personalized-data offline caching;
-- saved-Idea snapshots;
-- eBook downloads;
+## Dependency note
+
+Runtime audit: 0 vulnerabilities.
+
+Full dev audit has a moderate `typescript-eslint -> minimatch` tooling advisory.
+
+It is not bundled into the production runtime and is a maintenance item rather than a release blocker.
+
+## Deployment prerequisites
+
+Production hosting still needs:
+
+- HTTPS;
+- SPA fallback;
+- root service worker with revalidation-friendly headers;
+- manifest/icon delivery;
+- preferred same-origin API routing or correct API base;
+- secure session/CSRF backend configuration;
+- static/media hosting.
+
+## Deferred product scope
+
+Not first-MVP blockers:
+
+- realtime;
+- messaging;
+- notifications;
+- TTS;
+- membership/eBooks/payment;
 - push/background sync;
-- install/update UX;
-- physical Android/iOS install testing.
+- privacy export/deletion UX;
+- social auth;
+- optional Creator directory.
 
 ## Next
 
-1. FE-026 — final frontend completion/release-readiness audit and handoff.
+1. Frontend core-MVP implementation phase closed.
+2. Hand frontend to deployment/integration/staging validation.
+3. Reopen frontend implementation only for a staging defect or new product scope.
