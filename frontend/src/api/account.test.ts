@@ -32,6 +32,24 @@ describe('account API', () => {
     })
   })
 
+  it('persists the preferred UI language through the same account PATCH contract', async () => {
+    apiRequestMock.mockResolvedValueOnce({
+      id: 1,
+      email: 'reader@example.com',
+      display_name: 'Reader',
+      preferred_ui_language: 'fa',
+      avatar_url: null,
+      capabilities: { can_moderate: false, can_administer: false },
+    })
+
+    await updateCurrentUser({ preferred_ui_language: 'fa' })
+
+    expect(apiRequestMock).toHaveBeenCalledWith('/me/', {
+      method: 'PATCH',
+      body: JSON.stringify({ preferred_ui_language: 'fa' }),
+    })
+  })
+
   it('uploads the exact avatar multipart field with PUT /me/avatar/', async () => {
     apiRequestMock.mockResolvedValueOnce({ avatar_url: '/media/user_avatars/new.webp' })
     const file = new File(['avatar'], 'avatar.webp', { type: 'image/webp' })

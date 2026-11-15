@@ -3,13 +3,16 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 
+import { updateCurrentUser } from '../api/account'
 import { logout } from '../api/auth'
+import type { UiLanguage } from '../api/types'
 import { AccountAvatar } from '../components/ui/AccountAvatar'
 import { getAccountDisplayName } from '../components/ui/accountAvatar'
 import { Brand } from '../components/ui/Brand'
 import { RouteLoadingScreen } from '../components/ui/Feedback'
 import { LanguageToggle } from '../components/ui/LanguageToggle'
 import { SESSION_QUERY_KEY, useSession } from '../features/auth/session'
+import { RECOMMENDATIONS_QUERY_KEY } from '../features/feed/recommendations'
 
 type NavigationItem = {
   label: string
@@ -56,6 +59,18 @@ export function RootLayout() {
         { label: t('shell.home'), to: '/', active: (path) => path === '/' },
         { label: t('shell.search'), to: '/search', active: (path) => path === '/search' },
       ]
+
+  const languagePreferenceMutation = useMutation({
+    mutationFn: (language: UiLanguage) => updateCurrentUser({ preferred_ui_language: language }),
+    onSuccess: (user) => {
+      queryClient.setQueryData(SESSION_QUERY_KEY, user)
+      void queryClient.invalidateQueries({ queryKey: RECOMMENDATIONS_QUERY_KEY })
+    },
+  })
+
+  const persistLanguagePreference = async (language: UiLanguage) => {
+    await languagePreferenceMutation.mutateAsync(language)
+  }
 
   const logoutMutation = useMutation({
     mutationFn: logout,
@@ -150,7 +165,10 @@ export function RootLayout() {
 
           <div className="site-header__actions">
             <div className="site-header__language">
-              <LanguageToggle />
+              <LanguageToggle
+                preferredLanguage={currentUser?.preferred_ui_language}
+                onAuthenticatedLanguageChange={currentUser ? persistLanguagePreference : undefined}
+              />
             </div>
             {currentUser ? (
               <div className="account-control">

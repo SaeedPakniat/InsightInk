@@ -7,6 +7,11 @@ import { changeUiLanguage } from '../../i18n'
 const LANGUAGE_SWITCH_DELAY_MS = 340
 const LANGUAGE_MORPH_DURATION_MS = 900
 
+type LanguageToggleProps = {
+  preferredLanguage?: UiLanguage
+  onAuthenticatedLanguageChange?: (language: UiLanguage) => Promise<void>
+}
+
 type FlowDirection = 'to-ltr' | 'to-rtl'
 
 type MorphState = {
@@ -82,13 +87,20 @@ function removeMorphClasses() {
   document.documentElement.classList.remove('language-morph-active', 'language-morph-settling')
 }
 
-export function LanguageToggle() {
+export function LanguageToggle({
+  preferredLanguage,
+  onAuthenticatedLanguageChange,
+}: LanguageToggleProps = {}) {
   const { i18n, t } = useTranslation()
   const [morph, setMorph] = useState<MorphState | null>(null)
+  const [persisting, setPersisting] = useState(false)
+  const [syncError, setSyncError] = useState(false)
   const switchTimer = useRef<number | null>(null)
   const finishTimer = useRef<number | null>(null)
+  const locallyPersistedLanguage = useRef<UiLanguage | null>(null)
 
   const activeLanguage: UiLanguage = i18n.language.startsWith('en') ? 'en' : 'fa'
+  const busy = Boolean(morph) || persisting
 
   useEffect(() => {
     return () => {
@@ -98,11 +110,50 @@ export function LanguageToggle() {
     }
   }, [])
 
+  useEffect(() => {
+    if (!preferredLanguage || busy) return
+
+    if (preferredLanguage === activeLanguage) {
+      if (locallyPersistedLanguage.current === preferredLanguage) {
+        locallyPersistedLanguage.current = null
+      }
+      return
+    }
+
+    if (locallyPersistedLanguage.current === activeLanguage) return
+    void changeUiLanguage(preferredLanguage)
+  }, [activeLanguage, busy, preferredLanguage])
+
+  const applyLanguage = async (language: UiLanguage, previousLanguage: UiLanguage) => {
+    setSyncError(false)
+
+    if (!onAuthenticatedLanguageChange) {
+      await changeUiLanguage(language)
+      return
+    }
+
+    setPersisting(true)
+    await changeUiLanguage(language)
+
+    try {
+      await onAuthenticatedLanguageChange(language)
+      locallyPersistedLanguage.current = language
+    } catch {
+      locallyPersistedLanguage.current = null
+      await changeUiLanguage(previousLanguage)
+      setSyncError(true)
+    } finally {
+      setPersisting(false)
+    }
+  }
+
   const selectLanguage = (language: UiLanguage) => {
-    if (language === activeLanguage || morph) return
+    if (language === activeLanguage || busy) return
+
+    setSyncError(false)
 
     if (prefersReducedMotion()) {
-      void changeUiLanguage(language)
+      void applyLanguage(language, activeLanguage)
       return
     }
 
@@ -115,7 +166,7 @@ export function LanguageToggle() {
     setMorph(nextMorph)
 
     switchTimer.current = window.setTimeout(() => {
-      void changeUiLanguage(language)
+      void applyLanguage(language, activeLanguage)
       document.documentElement.classList.add('language-morph-settling')
     }, LANGUAGE_SWITCH_DELAY_MS)
 
@@ -129,28 +180,36 @@ export function LanguageToggle() {
 
   return (
     <>
-      <div
-        className="language-toggle"
-        role="group"
-        aria-label={t('language.label')}
-        aria-busy={morph ? true : undefined}
-      >
-        <button
-          type="button"
-          aria-pressed={activeLanguage === 'fa'}
-          disabled={Boolean(morph)}
-          onClick={() => selectLanguage('fa')}
+      <div className="language-control">
+        <div
+          className="language-toggle"
+          role="group"
+          aria-label={t('language.label')}
+          aria-busy={busy ? true : undefined}
         >
-          {t('language.persian')}
-        </button>
-        <button
-          type="button"
-          aria-pressed={activeLanguage === 'en'}
-          disabled={Boolean(morph)}
-          onClick={() => selectLanguage('en')}
-        >
-          {t('language.english')}
-        </button>
+          <button
+            type="button"
+            aria-pressed={activeLanguage === 'fa'}
+            disabled={busy}
+            onClick={() => selectLanguage('fa')}
+          >
+            {t('language.persian')}
+          </button>
+          <button
+            type="button"
+            aria-pressed={activeLanguage === 'en'}
+            disabled={busy}
+            onClick={() => selectLanguage('en')}
+          >
+            {t('language.english')}
+          </button>
+        </div>
+
+        {syncError && (
+          <span className="language-control__error" role="alert">
+            {t('language.updateError')}
+          </span>
+        )}
       </div>
 
       {morph && (

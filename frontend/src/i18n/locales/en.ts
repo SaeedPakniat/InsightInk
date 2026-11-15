@@ -7,6 +7,7 @@ export const en = {
       label: 'Interface language',
       persian: 'فارسی',
       english: 'English',
+      updateError: 'Language preference could not be saved. Your previous language was restored.',
     },
     nav: {
       login: 'Log in',
@@ -109,7 +110,8 @@ export const en = {
       invalidCredentials: 'The email or password is incorrect.',
       genericError: 'Something went wrong while contacting the server. Try again.',
       passwordHint: 'Your password must pass the Django password validation rules.',
-      languageStoredLocally: 'Language changes are currently stored on this device.',
+      languageStoredLocally:
+        'Your current interface language will be saved to your account when you create it.',
     },
     home: {
       eyebrow: 'InsightInk · Reader space',

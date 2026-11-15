@@ -1,4 +1,4 @@
-import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { changeUiLanguage } from '../../i18n'
@@ -101,5 +101,45 @@ describe('LanguageToggle', () => {
     expect(screen.queryByTestId('language-morph')).not.toBeInTheDocument()
     expect(document.documentElement.lang).toBe('en')
     expect(document.documentElement.dir).toBe('ltr')
+  })
+
+  it('lets an authenticated account preference override the local tab language', async () => {
+    await changeUiLanguage('en')
+
+    render(<LanguageToggle preferredLanguage="fa" />)
+
+    await waitFor(() => {
+      expect(document.documentElement.lang).toBe('fa')
+      expect(document.documentElement.dir).toBe('rtl')
+    })
+  })
+
+  it('persists an authenticated language change while preserving reduced-motion behavior', async () => {
+    mockReducedMotion(true)
+    const persist = vi.fn().mockResolvedValue(undefined)
+
+    render(<LanguageToggle preferredLanguage="fa" onAuthenticatedLanguageChange={persist} />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'English' }))
+
+    await waitFor(() => expect(persist).toHaveBeenCalledWith('en'))
+    expect(document.documentElement.lang).toBe('en')
+    expect(document.documentElement.dir).toBe('ltr')
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+  })
+
+  it('restores the previous language and reports a failed authenticated preference save', async () => {
+    mockReducedMotion(true)
+    const persist = vi.fn().mockRejectedValue(new Error('network'))
+
+    render(<LanguageToggle preferredLanguage="fa" onAuthenticatedLanguageChange={persist} />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'English' }))
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'ترجیح زبان ذخیره نشد و زبان قبلی بازگردانده شد.',
+    )
+    expect(document.documentElement.lang).toBe('fa')
+    expect(document.documentElement.dir).toBe('rtl')
   })
 })

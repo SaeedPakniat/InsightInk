@@ -7,6 +7,7 @@ export const fa = {
       label: 'زبان رابط کاربری',
       persian: 'فارسی',
       english: 'English',
+      updateError: 'ترجیح زبان ذخیره نشد و زبان قبلی بازگردانده شد.',
     },
     nav: {
       login: 'ورود',
@@ -107,7 +108,7 @@ export const fa = {
       invalidCredentials: 'ایمیل یا رمز عبور درست نیست.',
       genericError: 'در ارتباط با سرور مشکلی پیش آمد. دوباره تلاش کنید.',
       passwordHint: 'رمز عبور باید قوانین اعتبارسنجی Django را بگذراند.',
-      languageStoredLocally: 'تغییر زبان فعلاً روی همین دستگاه ذخیره می‌شود.',
+      languageStoredLocally: 'زبان فعلی رابط کاربری هنگام ساخت حساب در حساب شما ذخیره می‌شود.',
     },
     home: {
       eyebrow: 'InsightInk · فضای خواننده',

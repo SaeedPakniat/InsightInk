@@ -1,84 +1,79 @@
 # Frontend State
 
-- Task: FE-020 — Related Ideas on Idea Detail.
-- Status: ACCEPTED by user; checkpointed in the FE-020 commit containing this state.
-- Accepted frontend base: `8769ff07a5c8b646e0d0ce5a855ecd71042d7a50`.
+- Task: FE-021 — Authenticated UI-Language Preference Synchronization.
+- Status: ACCEPTED by user; checkpointed in the FE-021 commit containing this state.
+- Accepted frontend base: `0f8f4e8e64a7188627da688863e53e8f609c09ca`.
 - Branch: `master`.
 - Scope: frontend and frontend AI documentation only; backend implementation files unchanged.
 
-## FE-020 delivered
+## FE-021 delivered
 
-- Public related-Idea client for `GET /ideas/:idea_id/related/`.
-- `RelatedIdeaItem` frontend type including backend `similarity`.
-- Related-Idea query key/hook with finite non-paginated results.
-- Related Ideas section integrated into public Idea Detail between source context and discussion.
-- Existing `RecommendedIdea` + `IdeaCard` reused.
-- Loading/error/retry/empty states.
-- Anonymous viewers remain public and do not hydrate engagement.
-- Authenticated viewers hydrate Spark/Save state for related cards.
-- English/Persian reason direction follows reason language.
-- Related Idea content direction follows each Idea language.
-- Content-language saves invalidate related-Idea cache in addition to recommendations/latest feed.
+- Authenticated header language changes now persist through existing `PATCH /api/v1/me/`.
+- Exact persisted field: `preferred_ui_language`.
+- Anonymous language switching remains local-only.
+- Account preference wins over conflicting localStorage after authenticated session resolution/login.
+- Successful persistence:
+  - updates local UI/localStorage/document direction;
+  - replaces `SESSION_QUERY_KEY` with backend response;
+  - invalidates recommendations so backend-generated explanation language refreshes.
+- Failed persistence:
+  - restores previous language;
+  - restores localStorage/lang/dir;
+  - exposes localized alert feedback.
+- Existing language morph/reduced-motion behavior preserved.
+- Language control stays directly visible in the persistent header.
+- Compact failure alert is viewport-safe below the sticky header.
+- Registration language-storage copy updated to match account-backed behavior.
 
-FE-020 closes FE-019 High finding H-01.
+FE-021 closes FE-019 High finding H-02.
 
 ## Verification
 
 - TypeScript PASS.
 - ESLint PASS.
-- focused FE-020 tests: 4 files / 12 tests PASS.
-- full Vitest: 51 files / 202 tests PASS.
+- focused FE-021: 3 files / 26 tests PASS.
+- full Vitest: 51 files / 208 tests PASS.
 - production build PASS — 193 modules.
 - Prettier PASS.
 - npm runtime audit PASS — 0 vulnerabilities.
 - `git diff --check` PASS.
-- backend RelatedIdeasAPITests: 8/8 PASS.
 - no dependency/lockfile changes.
 - no backend implementation changes.
-- IdeaDetailPage: 19.95 KB / 4.58 KB gzip.
 - no Vite chunk-size warning and no chunk over 500 KB.
 
 ## Browser review
 
-Real Chromium review passed using safe intercepted API responses.
+Real Chromium review passed using safe intercepted current-user/CSRF requests.
 
-Desktop English:
-- two related cards;
-- mixed English/Persian reason direction;
-- correct related Idea links;
-- Related Ideas before Discussion;
-- sticky shell;
-- one language switch;
-- no overflow.
+Verified:
 
-390px Persian RTL:
-- localized related section;
-- mixed-language cards preserve content direction;
-- directly visible header language switch;
-- sticky shell;
+- conflicting local English + account Persian -> account Persian wins;
+- localStorage and document direction reconcile to account preference;
+- Persian -> English sends exact account PATCH and remains English;
+- failed English -> Persian PATCH rolls UI/localStorage/direction back to English;
+- localized rollback alert shown;
+- compact 390px alert fully fits viewport after one CSS correction;
+- sticky header preserved;
+- language switch remains directly visible exactly once;
 - no horizontal overflow.
 
-No visual correction was required.
+## Remaining FE-019 findings
 
-## Remaining FE-019 priority
+Medium:
+- Idea Share action.
+- Account/Profile does not link existing Interests and Content Languages settings.
+- No localized route/render error boundary.
+- Repeatable E2E/accessibility/compatibility evidence is missing.
 
-High:
-- FE-021 — authenticated UI-language preference synchronization.
+Low:
+- auth redirect loses query/hash.
+- optional direct Creator directory is absent.
 
-Then:
-- FE-022 completeness polish:
-  - Share;
-  - Account links to Interests/Content Languages;
-  - route/render error boundary;
-  - preserve query/hash through auth redirect.
-- hardening;
-- motion;
-- PWA.
+High findings are now closed by FE-020 and FE-021.
 
 ## Next
 
-1. FE-021 — authenticated UI-language preference synchronization.
-2. FE-022 completeness polish.
-3. hardening.
-4. motion.
-5. PWA.
+1. FE-022 — bounded completeness polish bundle.
+2. hardening.
+3. motion.
+4. PWA.

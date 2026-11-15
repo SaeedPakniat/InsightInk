@@ -8,14 +8,39 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { CurrentUser } from '../api/types'
 import { changeUiLanguage } from '../i18n'
 import { SESSION_QUERY_KEY } from '../features/auth/session'
+import { RECOMMENDATIONS_QUERY_KEY } from '../features/feed/recommendations'
 import { RootLayout } from './RootLayout'
 
-const { logoutMock } = vi.hoisted(() => ({ logoutMock: vi.fn() }))
+const { logoutMock, updateCurrentUserMock } = vi.hoisted(() => ({
+  logoutMock: vi.fn(),
+  updateCurrentUserMock: vi.fn(),
+}))
 
 vi.mock('../api/auth', async (importOriginal) => {
   const original = await importOriginal<typeof import('../api/auth')>()
   return { ...original, logout: logoutMock }
 })
+
+vi.mock('../api/account', async (importOriginal) => {
+  const original = await importOriginal<typeof import('../api/account')>()
+  return { ...original, updateCurrentUser: updateCurrentUserMock }
+})
+
+function mockReducedMotion(matches = true) {
+  vi.stubGlobal(
+    'matchMedia',
+    vi.fn().mockReturnValue({
+      matches,
+      media: '(prefers-reduced-motion: reduce)',
+      onchange: null,
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      dispatchEvent: vi.fn(),
+    }),
+  )
+}
 
 function user(overrides: Partial<CurrentUser> = {}): CurrentUser {
   return {
@@ -65,11 +90,13 @@ function renderLayout(
 describe('RootLayout application shell', () => {
   beforeEach(async () => {
     logoutMock.mockReset()
+    updateCurrentUserMock.mockReset()
     await changeUiLanguage('en')
   })
 
   afterEach(() => {
     cleanup()
+    vi.unstubAllGlobals()
   })
 
   it('shows the complete reader navigation to authenticated users', () => {
@@ -187,6 +214,38 @@ describe('RootLayout application shell', () => {
 
     await pointer.click(screen.getByRole('button', { name: 'Open navigation menu' }))
     expect(screen.getAllByRole('group', { name: 'Interface language' })).toHaveLength(1)
+  })
+
+  it('lets the authenticated account preference override a different local language', async () => {
+    await changeUiLanguage('en')
+
+    renderLayout(user({ preferred_ui_language: 'fa' }))
+
+    await waitFor(() => {
+      expect(document.documentElement.lang).toBe('fa')
+      expect(document.documentElement.dir).toBe('rtl')
+    })
+  })
+
+  it('persists authenticated language changes into the session and invalidates recommendations', async () => {
+    mockReducedMotion()
+    const updatedUser = user({ preferred_ui_language: 'fa' })
+    updateCurrentUserMock.mockResolvedValue(updatedUser)
+    const pointer = userEvent.setup()
+    const { queryClient } = renderLayout(user({ preferred_ui_language: 'en' }))
+    queryClient.setQueryData(RECOMMENDATIONS_QUERY_KEY, [])
+
+    await pointer.click(screen.getByRole('button', { name: 'فارسی' }))
+
+    await waitFor(() => {
+      expect(updateCurrentUserMock).toHaveBeenCalledWith({
+        preferred_ui_language: 'fa',
+      })
+    })
+    expect(queryClient.getQueryData(SESSION_QUERY_KEY)).toEqual(updatedUser)
+    expect(queryClient.getQueryState(RECOMMENDATIONS_QUERY_KEY)?.isInvalidated).toBe(true)
+    expect(document.documentElement.lang).toBe('fa')
+    expect(document.documentElement.dir).toBe('rtl')
   })
 
   it('marks the matching nested route as the current page', () => {
