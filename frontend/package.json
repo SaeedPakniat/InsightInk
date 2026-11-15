@@ -13,6 +13,7 @@
     "test:browser-smoke": "node scripts/browser-smoke.mjs",
     "test:compat:firefox": "npm run build && node scripts/firefox-compat-smoke.mjs",
     "test:hardening": "npm run test:browser-smoke && npm run test:compat:firefox",
+    "test:pwa": "npm run build && node scripts/pwa-smoke.mjs",
     "format:check": "prettier --check ."
   },
   "dependencies": {

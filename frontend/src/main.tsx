@@ -7,6 +7,7 @@ import './styles/tokens.css'
 import './styles/global.css'
 import { AppProviders } from './app/providers'
 import { router } from './app/router'
+import { registerServiceWorker } from './pwa/registerServiceWorker'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
@@ -15,3 +16,5 @@ createRoot(document.getElementById('root')!).render(
     </AppProviders>
   </StrictMode>,
 )
+
+void registerServiceWorker()

@@ -206,7 +206,7 @@ Maintain a table during frontend development:
 | Old Android target | Not verified | TBD | TBD | TBD | No representative device/browser available yet; do not claim minimum-version support. |
 | Old iOS target | Not verified | TBD | TBD | TBD | No representative Safari/iOS device available yet; do not claim minimum-version support. |
 | Current Android | Layout-only smoke | TBD | TBD | TBD | Chromium 157 was exercised at a 390×844 viewport; this is not equivalent to a physical Android/WebView compatibility test. |
-| Current desktop Chromium 157 | Critical-flow PASS | N/A | TBD | TBD | Dependency-free browser smoke covers protected login return, personalized feed, Idea detail, Spark, Save, comment, Library, accessibility-tree names, keyboard mobile menu, focus visibility, and compact overflow. |
+| Current desktop Chromium 157 | Critical-flow PASS | Installability PASS | TBD | TBD | Critical-flow/accessibility smoke passes. Production PWA smoke reports 0 Chromium manifest errors and 0 installability errors, active root-scope service worker, bounded static-asset caching, 0 cached API entries and bilingual offline fallback. |
 | Firefox 160 | Public production-render PASS | N/A | TBD | TBD | Built production bundle rendered Idea Detail at 1440×900 and 390×844 via Firefox WebDriver BiDi; sticky header, Share, RTL shell and no horizontal overflow verified. Authenticated critical flow is not yet duplicated in Firefox. |
 
 This matrix records actual evidence only. “Not verified” and “TBD” remain intentional where the required device, browser capability or product feature has not been tested.

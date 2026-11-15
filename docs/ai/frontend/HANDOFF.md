@@ -1,54 +1,84 @@
 # Frontend Handoff
 
-- Task: FE-024 — Bounded Motion and Interaction Polish.
-- Accepted base: `a737f19634598f6cecbb04ce80eed89dab7a41fc`.
-- Result: ACCEPTED by user; checkpointed in the FE-024 commit containing this handoff.
+- Task: FE-025 — Installable PWA and Safe Offline Fallback.
+- Accepted base: `5c6352d70d1db329e544361f832074fd6e509f93`.
+- Result: ACCEPTED by user; checkpointed in the FE-025 commit containing this handoff.
 - Backend implementation unchanged.
 - No dependency addition.
 
-## Motion changes
+## PWA implementation
 
-- account/mobile disclosures: 180 ms opacity + 6px vertical settle.
-- account trigger chevron transition.
-- trigger/menu/auth press and hover feedback.
-- Account and Share feedback entrance.
-- directional IdeaCard arrow feedback.
-- Idea back/report interaction polish.
+Added:
 
-No broad page-motion system was introduced.
+- manifest;
+- install icons;
+- Apple touch icon;
+- production-only service-worker registration;
+- service worker;
+- bilingual offline page;
+- deterministic Chromium PWA smoke.
 
-## Reduced motion
+## Cache policy
 
-Explicitly suppresses:
+Precache:
 
-- route/disclosure/feedback/loading animations;
-- representative lift/press transform motion.
+- manifest/icons/favicon/offline page.
 
-Chromium emulation confirms:
+Runtime cache:
 
-- `prefers-reduced-motion: reduce` = true;
-- route-stage animation = none;
-- mobile-navigation animation = none.
+- same-origin `/assets/` only;
+- maximum 40 entries.
 
-## Quality evidence
+Network-only:
 
-- full Vitest: 53 files / 217 tests PASS.
+- all `/api/`;
+- personalized account/content data.
+
+Navigation:
+
+- online network-first;
+- network failure -> cached `offline.html`.
+
+No stale personalized API replay is implemented.
+
+## PWA browser evidence
+
+Chromium 157 production smoke PASS:
+
+- manifest errors 0;
+- installability errors 0;
+- service worker activated at root scope;
+- 7 precache entries;
+- 14 runtime hashed assets observed;
+- 0 cached API paths;
+- Persian/English offline fallback and retry control verified.
+
+## Unit and regression evidence
+
+- service-worker registration: 4 focused tests PASS.
+- full Vitest: 54 files / 221 tests PASS.
 - TypeScript PASS.
 - ESLint PASS.
 - build PASS.
-- `npm run test:hardening` PASS.
+- FE-023/024 hardening PASS.
+- PWA smoke PASS.
 - Prettier PASS.
 - runtime audit: 0 vulnerabilities.
 - git diff check PASS.
+- package-lock unchanged.
+
+## Platform evidence
+
+- Chromium 157 desktop installability PASS.
 - Firefox 160 production render remains PASS.
-- no package-lock change.
+- physical Android/iOS PWA installation remains unverified and must not be claimed.
 
-## Bundle
+## Deployment note
 
-- CSS ~118.67 KB / 15.45 KB gzip.
-- main JS ~307.90 KB / 92.83 KB gzip.
-- no Vite chunk warning.
+Production needs HTTPS and root-served `service-worker.js`.
+
+Prefer revalidation/no-cache semantics for the service-worker script so updates are detected promptly.
 
 ## Pending
 
-- Next: FE-025 PWA architecture/implementation — Medium effort.
+- Next: FE-026 final frontend completion/release-readiness audit and handoff.
