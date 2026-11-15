@@ -1,82 +1,106 @@
 # Frontend State
 
-- Task: FE-018 — Moderator Hidden Ideas Workspace.
-- Status: ACCEPTED by user; checkpointed in the FE-018 commit containing this state.
-- Accepted frontend base: `d6a734a47fd9cb6211f25552bc67184546d04483`.
+- Task: FE-019 — Frontend Completeness Audit.
+- Status: audit complete and accepted by Frontend Lead; documentation-only checkpoint.
+- Audit base: `1c970bcfedd706dd165c519e9b4343d1a6821855`.
 - Branch: `master`.
-- Scope: frontend and frontend AI documentation only; backend implementation files unchanged.
+- Production implementation changes in FE-019: none.
 
-## Delivered
+## Current accepted frontend baseline
 
-- New moderator-only `/moderation/ideas` route under the existing `RequireModerator` boundary.
-- Shared Reports / Hidden Ideas moderation workspace navigation.
-- Existing report queue now includes the workspace switcher.
-- Hidden-Idea cursor list consumes only the landed backend safe shape:
-  - id, title, body excerpt, language, hidden status;
-  - creator id/display name;
-  - source id/type/title;
-  - published_at and updated_at.
-- UI deliberately labels `updated_at` as “Last updated”; it does not invent a hidden-at timestamp or hidden-by metadata.
-- Cursor pagination with duplicate-ID protection.
-- Loading, retryable error, empty and end-of-list states.
-- Restore flow:
-  - explicit confirmation;
-  - warning that restoration republishes the Idea;
-  - optional audit note capped at 2000;
-  - trimmed note payload;
-  - pending disabled state;
-  - localized error/success feedback;
-  - restored Idea removed from hidden workspace after refetch.
-- Restore invalidates Idea detail, feed, recommendations, search, creator and library surfaces.
-- English/Persian UI and RTL/LTR-safe mixed-language content.
-- No recoverable hard-delete/trash behavior was invented; moderator lifecycle remains hidden -> published.
+FE-018 was accepted and pushed at:
 
-## Verification
+`1c970bcfedd706dd165c519e9b4343d1a6821855`
 
-- TypeScript: PASS.
-- ESLint: PASS.
-- Focused FE-018 tests: 4 files / 19 tests PASS.
-- Full Vitest: 50 files / 195 tests PASS.
-- Production build: PASS — 191 modules.
-- Prettier: PASS.
-- `npm audit --omit=dev`: PASS on retry — 0 vulnerabilities.
-- `git diff --check`: PASS.
-- Backend `moderation.test_hidden_ideas`: 8/8 PASS using the normal project environment.
-- No dependency or lockfile changes.
-- HiddenIdeasPage lazy chunk: 5.93 KB / 1.67 KB gzip.
-- No Vite chunk-size warning and no chunk over 500 KB.
+The accepted frontend currently includes:
 
-## Browser review
+- responsive persistent application shell;
+- account/profile/avatar management;
+- onboarding interests/content languages;
+- personalized and latest feeds;
+- public Idea detail and source traceability;
+- Spark / Save / comments / reports;
+- saved Library;
+- search with source-format and topic filters;
+- creator public profiles, published Ideas and follow/unfollow;
+- Creator Studio and Idea lifecycle;
+- moderator report workspace, direct hide/restore and Hidden Ideas workspace;
+- Persian/English RTL/LTR support.
 
-Real Chromium rendering through the existing Vite server passed using interception only for session/moderation API responses, so no real moderator content was changed.
+Accepted quality baseline:
 
-Verified:
-- desktop English moderator workspace;
-- persistent header moderation destination active;
-- Hidden Ideas workspace tab active;
-- hidden cards and safe metadata;
-- restore confirmation;
-- trimmed restore note payload;
-- post-restore removal and success state;
-- Persian RTL;
-- 390px compact layout;
-- full-width workspace tabs;
-- one-column compact metadata;
-- sticky header;
-- single visible language toggle;
-- no horizontal overflow.
+- TypeScript PASS.
+- ESLint PASS.
+- Vitest PASS — 50 files / 195 tests.
+- production build PASS — 191 modules.
+- Prettier PASS.
+- npm runtime audit PASS — 0 vulnerabilities.
+- no Vite chunk-size warning and no chunk over 500 KB.
 
-## Product boundary
+## FE-019 completeness findings
 
-FE-018 covers moderator-hidden Ideas only.
+Full evidence and rationale:
 
-- Moderator removal remains non-destructive `hidden`.
-- Moderator restore is `hidden -> published`.
-- Creator draft hard deletion remains permanent and is not represented in this workspace.
-- A future trash/recoverable-delete requirement would require a new backend lifecycle/data-retention contract.
+`docs/ai/frontend/tasks/FE-019.md`
 
-## Next
+### Blocker
 
-1. Frontend completeness audit.
-2. Bounded motion/interaction polish.
-3. PWA.
+None.
+
+### High
+
+1. Related Ideas are required by product scope and backend-ready, but absent from Idea Detail.
+2. Authenticated UI language changes are local-only and do not synchronize `preferred_ui_language`, causing cross-device preference and recommendation-explanation language divergence.
+
+### Medium
+
+1. Idea sharing action is missing.
+2. Account/Profile does not yet serve as a complete settings hub for Interests and Content Languages.
+3. No localized application-specific route/render error boundary exists.
+4. Repeatable E2E/accessibility/compatibility evidence is missing.
+
+### Low
+
+1. Protected-route login return preserves only pathname and drops query/hash.
+2. Public Creator list backend capability has no direct Creator directory frontend; Idea-led Creator discovery still works.
+
+## Confirmed not gaps
+
+- Topic browsing is already covered through public Search topic filters/shareable URL state.
+- Django Admin satisfies the current admin-interface architecture; no React admin panel is required.
+- Idea Detail provides source traceability and original-source links.
+- Registration onboarding continuity is complete.
+- Current moderation scope is complete.
+
+## Deferred product scope
+
+Documented later milestones, not counted as core frontend defects:
+
+- realtime/WebSockets;
+- direct messaging;
+- notifications;
+- TTS;
+- membership/eBooks/payment;
+- broader block/mute tied to messaging;
+- privacy export/deletion without backend contract;
+- unresolved social sign-in question.
+
+PWA remains a required later NFR phase, but should follow core completeness/hardening.
+
+## Recommended next sequence
+
+1. FE-020 — Related Ideas on Idea Detail — Medium.
+2. FE-021 — Authenticated UI-language preference synchronization — Medium.
+3. FE-022 — Small completeness polish bundle — Medium:
+   - Share action;
+   - Account links to Interests / Content Languages;
+   - route/render error boundary;
+   - preserve query/hash through auth redirect.
+4. Frontend hardening — Medium:
+   - minimal critical-flow E2E;
+   - accessibility checks/evidence;
+   - compatibility matrix.
+5. Motion/interaction polish.
+6. PWA.
+
+Do not move directly to motion/PWA before FE-020 and FE-021.
