@@ -1,106 +1,84 @@
 # Frontend State
 
-- Task: FE-019 — Frontend Completeness Audit.
-- Status: audit complete and accepted by Frontend Lead; documentation-only checkpoint.
-- Audit base: `1c970bcfedd706dd165c519e9b4343d1a6821855`.
+- Task: FE-020 — Related Ideas on Idea Detail.
+- Status: ACCEPTED by user; checkpointed in the FE-020 commit containing this state.
+- Accepted frontend base: `8769ff07a5c8b646e0d0ce5a855ecd71042d7a50`.
 - Branch: `master`.
-- Production implementation changes in FE-019: none.
+- Scope: frontend and frontend AI documentation only; backend implementation files unchanged.
 
-## Current accepted frontend baseline
+## FE-020 delivered
 
-FE-018 was accepted and pushed at:
+- Public related-Idea client for `GET /ideas/:idea_id/related/`.
+- `RelatedIdeaItem` frontend type including backend `similarity`.
+- Related-Idea query key/hook with finite non-paginated results.
+- Related Ideas section integrated into public Idea Detail between source context and discussion.
+- Existing `RecommendedIdea` + `IdeaCard` reused.
+- Loading/error/retry/empty states.
+- Anonymous viewers remain public and do not hydrate engagement.
+- Authenticated viewers hydrate Spark/Save state for related cards.
+- English/Persian reason direction follows reason language.
+- Related Idea content direction follows each Idea language.
+- Content-language saves invalidate related-Idea cache in addition to recommendations/latest feed.
 
-`1c970bcfedd706dd165c519e9b4343d1a6821855`
+FE-020 closes FE-019 High finding H-01.
 
-The accepted frontend currently includes:
-
-- responsive persistent application shell;
-- account/profile/avatar management;
-- onboarding interests/content languages;
-- personalized and latest feeds;
-- public Idea detail and source traceability;
-- Spark / Save / comments / reports;
-- saved Library;
-- search with source-format and topic filters;
-- creator public profiles, published Ideas and follow/unfollow;
-- Creator Studio and Idea lifecycle;
-- moderator report workspace, direct hide/restore and Hidden Ideas workspace;
-- Persian/English RTL/LTR support.
-
-Accepted quality baseline:
+## Verification
 
 - TypeScript PASS.
 - ESLint PASS.
-- Vitest PASS — 50 files / 195 tests.
-- production build PASS — 191 modules.
+- focused FE-020 tests: 4 files / 12 tests PASS.
+- full Vitest: 51 files / 202 tests PASS.
+- production build PASS — 193 modules.
 - Prettier PASS.
 - npm runtime audit PASS — 0 vulnerabilities.
+- `git diff --check` PASS.
+- backend RelatedIdeasAPITests: 8/8 PASS.
+- no dependency/lockfile changes.
+- no backend implementation changes.
+- IdeaDetailPage: 19.95 KB / 4.58 KB gzip.
 - no Vite chunk-size warning and no chunk over 500 KB.
 
-## FE-019 completeness findings
+## Browser review
 
-Full evidence and rationale:
+Real Chromium review passed using safe intercepted API responses.
 
-`docs/ai/frontend/tasks/FE-019.md`
+Desktop English:
+- two related cards;
+- mixed English/Persian reason direction;
+- correct related Idea links;
+- Related Ideas before Discussion;
+- sticky shell;
+- one language switch;
+- no overflow.
 
-### Blocker
+390px Persian RTL:
+- localized related section;
+- mixed-language cards preserve content direction;
+- directly visible header language switch;
+- sticky shell;
+- no horizontal overflow.
 
-None.
+No visual correction was required.
 
-### High
+## Remaining FE-019 priority
 
-1. Related Ideas are required by product scope and backend-ready, but absent from Idea Detail.
-2. Authenticated UI language changes are local-only and do not synchronize `preferred_ui_language`, causing cross-device preference and recommendation-explanation language divergence.
+High:
+- FE-021 — authenticated UI-language preference synchronization.
 
-### Medium
+Then:
+- FE-022 completeness polish:
+  - Share;
+  - Account links to Interests/Content Languages;
+  - route/render error boundary;
+  - preserve query/hash through auth redirect.
+- hardening;
+- motion;
+- PWA.
 
-1. Idea sharing action is missing.
-2. Account/Profile does not yet serve as a complete settings hub for Interests and Content Languages.
-3. No localized application-specific route/render error boundary exists.
-4. Repeatable E2E/accessibility/compatibility evidence is missing.
+## Next
 
-### Low
-
-1. Protected-route login return preserves only pathname and drops query/hash.
-2. Public Creator list backend capability has no direct Creator directory frontend; Idea-led Creator discovery still works.
-
-## Confirmed not gaps
-
-- Topic browsing is already covered through public Search topic filters/shareable URL state.
-- Django Admin satisfies the current admin-interface architecture; no React admin panel is required.
-- Idea Detail provides source traceability and original-source links.
-- Registration onboarding continuity is complete.
-- Current moderation scope is complete.
-
-## Deferred product scope
-
-Documented later milestones, not counted as core frontend defects:
-
-- realtime/WebSockets;
-- direct messaging;
-- notifications;
-- TTS;
-- membership/eBooks/payment;
-- broader block/mute tied to messaging;
-- privacy export/deletion without backend contract;
-- unresolved social sign-in question.
-
-PWA remains a required later NFR phase, but should follow core completeness/hardening.
-
-## Recommended next sequence
-
-1. FE-020 — Related Ideas on Idea Detail — Medium.
-2. FE-021 — Authenticated UI-language preference synchronization — Medium.
-3. FE-022 — Small completeness polish bundle — Medium:
-   - Share action;
-   - Account links to Interests / Content Languages;
-   - route/render error boundary;
-   - preserve query/hash through auth redirect.
-4. Frontend hardening — Medium:
-   - minimal critical-flow E2E;
-   - accessibility checks/evidence;
-   - compatibility matrix.
-5. Motion/interaction polish.
-6. PWA.
-
-Do not move directly to motion/PWA before FE-020 and FE-021.
+1. FE-021 — authenticated UI-language preference synchronization.
+2. FE-022 completeness polish.
+3. hardening.
+4. motion.
+5. PWA.

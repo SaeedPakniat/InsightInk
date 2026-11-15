@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { ApiError } from '../../../api/client'
 import { getIdea } from '../../../api/ideas'
+import { getRelatedIdeas } from '../../../api/recommendations'
 import type { Idea } from '../../../api/types'
 import { changeUiLanguage } from '../../../i18n'
 import { SESSION_QUERY_KEY } from '../../auth/session'
@@ -13,6 +14,11 @@ import { IdeaDetailPage } from './IdeaDetailPage'
 
 vi.mock('../../../api/ideas', () => ({
   getIdea: vi.fn(),
+}))
+
+vi.mock('../../../api/recommendations', () => ({
+  getRelatedIdeas: vi.fn(),
+  getRecommendations: vi.fn(),
 }))
 
 const idea: Idea = {
@@ -68,6 +74,7 @@ function renderDetail(entry = '/ideas/40') {
 describe('IdeaDetailPage', () => {
   beforeEach(async () => {
     vi.clearAllMocks()
+    vi.mocked(getRelatedIdeas).mockResolvedValue([])
     await changeUiLanguage('en')
   })
 
@@ -101,6 +108,8 @@ describe('IdeaDetailPage', () => {
       'href',
       'https://www.ted.com/podcasts/ted-radio-hour',
     )
+    expect(await screen.findByRole('heading', { name: 'Related Ideas' })).toBeInTheDocument()
+    expect(getRelatedIdeas).toHaveBeenCalledWith(40)
   })
 
   it('turns a backend 404 into the public unavailable-Idea state', async () => {

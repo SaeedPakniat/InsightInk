@@ -13,6 +13,7 @@ import { IdeaReportAction } from '../../reporting/IdeaReportAction'
 import { FormatBadge } from '../FormatBadge'
 import { formatUiNumber, getContentDirection, getInitials, getReadMinutes } from '../presentation'
 import { useIdea } from './ideaQuery'
+import { RelatedIdeasSection } from './RelatedIdeasSection'
 
 export function IdeaDetailPage() {
   const { ideaId: ideaIdParam } = useParams()
@@ -190,6 +191,8 @@ export function IdeaDetailPage() {
             </div>
           </div>
         </section>
+
+        <RelatedIdeasSection ideaId={idea.id} />
 
         <CommentsSection ideaId={idea.id} />
       </div>

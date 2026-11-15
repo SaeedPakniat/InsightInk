@@ -6,6 +6,7 @@ import { updateContentLanguages } from '../../../api/languages'
 import { ErrorState } from '../../../components/ui/Feedback'
 import { LATEST_FEED_QUERY_KEY } from '../../feed/latestFeed'
 import { RECOMMENDATIONS_QUERY_KEY } from '../../feed/recommendations'
+import { RELATED_IDEAS_QUERY_PREFIX } from '../../ideas/detail/relatedIdeas'
 import { ContentLanguageSelectionForm } from './ContentLanguageSelectionForm'
 import {
   CONTENT_LANGUAGES_QUERY_KEY,
@@ -26,6 +27,7 @@ export function ContentLanguagesPage() {
       queryClient.setQueryData(CONTENT_LANGUAGES_QUERY_KEY, data)
       void queryClient.invalidateQueries({ queryKey: RECOMMENDATIONS_QUERY_KEY })
       void queryClient.invalidateQueries({ queryKey: LATEST_FEED_QUERY_KEY })
+      void queryClient.invalidateQueries({ queryKey: RELATED_IDEAS_QUERY_PREFIX })
       navigate('/app', { replace: true })
     },
   })

@@ -160,6 +160,10 @@ export type RecommendationItem = {
   reason: string
 }
 
+export type RelatedIdeaItem = RecommendationItem & {
+  similarity: number
+}
+
 export type ViewerEngagementItem = {
   idea_id: number
   sparked: boolean

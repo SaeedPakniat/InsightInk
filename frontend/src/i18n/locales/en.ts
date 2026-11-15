@@ -188,6 +188,15 @@ export const en = {
       detailLoadErrorTitle: 'Idea could not be loaded',
       detailLoadErrorBody: 'InsightInk could not load this idea right now.',
       loadingDetail: 'Loading idea…',
+      relatedEyebrow: 'Keep exploring',
+      relatedTitle: 'Related Ideas',
+      relatedBody:
+        'Ideas connected by shared topics, with a small preference for useful cross-format connections.',
+      relatedLoading: 'Finding related Ideas…',
+      relatedLoadErrorTitle: 'Related Ideas could not be loaded',
+      relatedLoadErrorBody: 'InsightInk could not load related Ideas for this page right now.',
+      relatedEmptyTitle: 'No related Ideas yet',
+      relatedEmptyBody: 'There are no other public Ideas with enough topic overlap right now.',
     },
     engagement: {
       spark: 'Spark',

@@ -1,77 +1,70 @@
 # Frontend Handoff
 
-- Current task: FE-019 — Frontend Completeness Audit.
-- Base audited: `1c970bcfedd706dd165c519e9b4343d1a6821855` on `master`.
-- Result: audit complete; no production frontend/backend implementation changed.
-- Detailed audit: `docs/ai/frontend/tasks/FE-019.md`.
+- Task: FE-020 — Related Ideas on Idea Detail.
+- Accepted frontend base: `8769ff07a5c8b646e0d0ce5a855ecd71042d7a50` on `master`.
+- Result: ACCEPTED by user; checkpointed in the FE-020 commit containing this handoff.
+- Scope remained frontend-only; no backend implementation files changed.
 
-## Audit result
+## Backend contract consumed
 
-No Blockers.
+`GET /api/v1/ideas/:idea_id/related/`
 
-High priority:
+- public/AllowAny;
+- safe published Idea payload;
+- finite list;
+- score + similarity + deterministic reason;
+- server-side content-language discovery filtering;
+- candidate reason generated in candidate Idea language.
 
-1. **Related Ideas missing from Idea Detail**
-   - backend `GET /api/v1/ideas/:idea_id/related/` already exists and is public;
-   - repository product scope/frontend mapping explicitly requires related Ideas;
-   - frontend has no related API/query/UI.
+Backend RelatedIdeasAPITests: 8/8 PASS.
 
-2. **Authenticated UI language is not persisted back to the account**
-   - `preferred_ui_language` exists and PATCH `/api/v1/me/` supports it;
-   - current LanguageToggle changes only localStorage/i18next/document direction;
-   - backend recommendation explanation language uses the stale account preference;
-   - cross-device UI preference therefore diverges.
+## Delivered
 
-Medium priority:
+- Related API type/client.
+- Related query key/hook.
+- Idea Detail Related Ideas section.
+- Existing RecommendedIdea/IdeaCard reused.
+- anonymous public rendering preserved.
+- authenticated engagement hydration for related cards.
+- loading, retryable error and empty states.
+- mixed-language reason/content direction.
+- content-language saves invalidate related caches.
+- EN/FA copy and RTL/LTR support.
 
-- Idea Share action absent.
-- Account/Profile does not link the existing Interests and Content Languages settings.
-- No localized route/render error boundary for lazy/import/render failures.
-- No repeatable Playwright E2E, axe-style accessibility automation, or completed compatibility matrix.
-
-Low priority:
-
-- auth redirect loses query/hash;
-- optional direct Creator directory is absent despite backend creator-list support.
-
-## Important confirmations
-
-- Topic browsing is already implemented through Search topic filters.
-- Admin work remains correctly delegated to Django Admin.
-- Source traceability is complete.
-- Onboarding continuity is complete.
-- Moderation frontend is complete for the current backend lifecycle.
-
-## Quality baseline audited
+## Quality gates
 
 - TypeScript PASS.
 - ESLint PASS.
-- Vitest PASS — 50 files / 195 tests.
-- production build PASS — 191 modules.
+- focused FE-020: 4 files / 12 tests PASS.
+- full Vitest: 51 files / 202 tests PASS.
+- build PASS — 193 modules.
 - Prettier PASS.
-- npm runtime audit PASS — 0 vulnerabilities.
-- no dependency concern identified by FE-019.
+- npm audit runtime: 0 vulnerabilities.
+- git diff check PASS.
+- no package changes.
 
-## Next recommended implementation
+Production:
+- CSS 111.64 KB / 14.60 KB gzip.
+- relatedIdeas query chunk 0.26 KB / 0.22 KB gzip.
+- RecommendedIdea shared chunk 0.53 KB / 0.32 KB gzip.
+- IdeaDetailPage 19.95 KB / 4.58 KB gzip.
+- main entry 397.19 KB / 121.83 KB gzip.
+- no chunk warning.
 
-### FE-020 — Related Ideas on Idea Detail
+## Browser review
 
-Recommended effort: MEDIUM.
+Desktop English and 390px Persian RTL passed.
 
-Use the landed public related-Idea backend contract; reuse IdeaCard and existing engagement hydration rules. No architecture escalation expected.
+Verified:
+- correct section location in reading flow;
+- correct related links;
+- two-card related rendering;
+- English/Persian reason direction;
+- mixed content direction;
+- sticky header;
+- unique visible language switch;
+- no horizontal overflow.
 
-Then:
+## Pending
 
-### FE-021 — Authenticated UI-language preference synchronization
-
-Recommended effort: MEDIUM.
-
-Use the existing account PATCH contract; keep the language switch exactly where it is in the persistent header.
-
-After FE-020/021:
-- bounded completeness polish;
-- hardening;
-- motion;
-- PWA.
-
-Second-wave messaging/notifications/TTS/membership remain deliberately deferred.
+- Next task: FE-021 — authenticated UI-language preference synchronization, Medium effort.

@@ -187,6 +187,15 @@ export const fa = {
       detailLoadErrorTitle: 'بارگذاری ایده انجام نشد',
       detailLoadErrorBody: 'InsightInk فعلاً نتوانست این ایده را بارگذاری کند.',
       loadingDetail: 'در حال بارگذاری ایده…',
+      relatedEyebrow: 'ادامهٔ کاوش',
+      relatedTitle: 'ایده‌های مرتبط',
+      relatedBody:
+        'ایده‌هایی با موضوع‌های مشترک؛ با اندکی ترجیح برای ارتباط‌های مفید میان قالب‌های متفاوت.',
+      relatedLoading: 'در حال پیدا کردن ایده‌های مرتبط…',
+      relatedLoadErrorTitle: 'ایده‌های مرتبط بارگذاری نشدند',
+      relatedLoadErrorBody: 'InsightInk فعلاً نتوانست ایده‌های مرتبط با این صفحه را بارگذاری کند.',
+      relatedEmptyTitle: 'هنوز ایدهٔ مرتبطی وجود ندارد',
+      relatedEmptyBody: 'فعلاً ایدهٔ عمومی دیگری با هم‌پوشانی موضوعی کافی وجود ندارد.',
     },
     engagement: {
       spark: 'اسپارک',

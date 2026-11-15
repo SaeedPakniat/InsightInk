@@ -1,10 +1,28 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { getRecommendations } from './recommendations'
+import { getRecommendations, getRelatedIdeas } from './recommendations'
 
 describe('recommendations API', () => {
   beforeEach(() => {
     vi.restoreAllMocks()
+  })
+
+  it('loads related Ideas from the exact public endpoint', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(
+      new Response(JSON.stringify([]), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      }),
+    )
+
+    await getRelatedIdeas(40)
+
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+    expect(fetchMock.mock.calls[0]?.[0]).toBe('/api/v1/ideas/40/related/')
+    expect(fetchMock.mock.calls[0]?.[1]).toMatchObject({
+      method: 'GET',
+      credentials: 'include',
+    })
   })
 
   it('loads personalized items from the exact authenticated endpoint', async () => {

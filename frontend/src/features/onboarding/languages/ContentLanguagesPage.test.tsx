@@ -10,6 +10,7 @@ import {
 } from '../../../api/languages'
 import type { ContentLanguage } from '../../../api/types'
 import { changeUiLanguage } from '../../../i18n'
+import { relatedIdeasQueryKey } from '../../ideas/detail/relatedIdeas'
 import { ContentLanguagesPage } from './ContentLanguagesPage'
 
 vi.mock('../../../api/languages', () => ({
@@ -40,16 +41,19 @@ function renderPage() {
     },
   })
 
-  return render(
-    <QueryClientProvider client={queryClient}>
-      <MemoryRouter initialEntries={['/onboarding/languages']}>
-        <Routes>
-          <Route path="/onboarding/languages" element={<ContentLanguagesPage />} />
-          <Route path="/app" element={<div>App destination</div>} />
-        </Routes>
-      </MemoryRouter>
-    </QueryClientProvider>,
-  )
+  return {
+    queryClient,
+    ...render(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter initialEntries={['/onboarding/languages']}>
+          <Routes>
+            <Route path="/onboarding/languages" element={<ContentLanguagesPage />} />
+            <Route path="/app" element={<div>App destination</div>} />
+          </Routes>
+        </MemoryRouter>
+      </QueryClientProvider>,
+    ),
+  }
 }
 
 describe('ContentLanguagesPage', () => {
@@ -71,7 +75,8 @@ describe('ContentLanguagesPage', () => {
       languages: [english, japanese],
     })
 
-    renderPage()
+    const { queryClient } = renderPage()
+    queryClient.setQueryData(relatedIdeasQueryKey(40), [])
 
     const japaneseButton = await screen.findByRole('button', { name: /Japanese/ })
     expect(japaneseButton).toHaveAttribute('aria-pressed', 'false')
@@ -86,5 +91,6 @@ describe('ContentLanguagesPage', () => {
     })
 
     expect(await screen.findByText('App destination')).toBeInTheDocument()
+    expect(queryClient.getQueryState(relatedIdeasQueryKey(40))?.isInvalidated).toBe(true)
   })
 })
