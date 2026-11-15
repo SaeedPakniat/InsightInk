@@ -1,77 +1,94 @@
 # Frontend State
 
-- Task: FE-022 — Completeness Polish Bundle.
-- Status: ACCEPTED by user; checkpointed in the FE-022 commit containing this state.
-- Accepted frontend base: `38540ef783da04a14d1e30364c353f639a70ed5c`.
+- Task: FE-023 — Frontend Hardening Evidence.
+- Status: ACCEPTED by user; checkpointed in the FE-023 commit containing this state.
+- Accepted frontend base: `b78c600b81bd4147f45600b42879161910d23427`.
 - Branch: `master`.
-- Scope: frontend and frontend AI documentation only; backend implementation files unchanged.
+- Scope: frontend hardening tooling, one frontend auth-routing fix, testing documentation.
+- Backend implementation files unchanged.
+- No new npm dependencies.
 
-## FE-022 delivered
+## FE-023 delivered
 
-- Progressive-enhancement Idea Share:
-  - Web Share when supported;
-  - canonical Idea URL clipboard fallback;
-  - localized success/error;
-  - neutral native-share cancellation.
-- Account now exposes existing Interests and Content Languages settings through a bilingual Reading Preferences card.
-- RootLayout now preserves the persistent shell around unexpected route/render/lazy-import failures and shows localized recovery actions.
-- RequireAuth and RequireModerator preserve `pathname + search + hash` through login.
-- Login returns to the complete stored protected URL.
+- Repeatable Chromium browser critical-flow smoke.
+- Browser accessibility-tree inspection for unnamed interactive controls.
+- Compact keyboard navigation/focus evidence.
+- Repeatable Firefox production-bundle render smoke using WebDriver BiDi.
+- Compatibility matrix updated with measured evidence only.
+- New combined `npm run test:hardening` command.
 
-FE-022 closes FE-019:
-- M-01;
-- M-02;
-- M-03;
-- L-01.
+## Real bug found and fixed
+
+The Chromium E2E smoke exposed an auth-routing race:
+
+- LoginPage attempted to return to the stored deep link.
+- `AnonymousOnly` redirected authenticated users unconditionally to `/app`.
+- real browser result was `/app`.
+
+Fix:
+
+- `AnonymousOnly` now honors `location.state.from` when present;
+- `/app` remains fallback.
+
+Regression coverage added.
 
 ## Verification
 
 - TypeScript PASS.
 - ESLint PASS.
-- focused FE-022: 6 files / 45 tests PASS.
-- full Vitest: 53 files / 215 tests PASS.
-- production build PASS — 195 modules.
+- full Vitest PASS — 53 files / 217 tests.
+- focused RouteGuards PASS — 1 file / 7 tests.
+- build PASS — 195 modules.
 - Prettier PASS.
 - npm runtime audit PASS — 0 vulnerabilities.
 - `git diff --check` PASS.
+- `npm run test:hardening` PASS.
 - no dependency/lockfile changes.
 - no backend implementation changes.
-- no Vite chunk-size warning and no chunk over 500 KB.
 
-## Browser review
+## Chromium evidence
 
-Real Chromium review passed with safe request interception.
+Headless Chromium 157:
 
-Verified:
+- protected deep-link login return PASS;
+- personalized feed PASS;
+- Idea Detail PASS;
+- Spark PASS;
+- Save PASS;
+- comment POST PASS;
+- saved Idea in Library PASS;
+- accessibility-tree unnamed interactive nodes: 0 on app, Idea Detail and open mobile navigation;
+- mobile trigger reached after 5 Tab presses;
+- `:focus-visible` true;
+- 3px solid focus outline;
+- Space opens mobile menu;
+- Escape closes and restores focus;
+- 390×844 no overflow;
+- sticky header retained;
+- one permanent language control.
 
-- public Share clipboard fallback copies canonical Idea URL;
-- localized Share success;
-- Account Reading Preferences links;
-- account language precedence remains intact;
-- 390px Persian RTL Account layout without overflow;
-- sticky shell retained;
-- one visible language switch;
-- a real forced Vite lazy-module failure is caught by the route recovery boundary;
-- recovery UI remains inside the mounted persistent shell;
-- authenticated recovery Home target is `/app`.
+## Firefox evidence
 
-## FE-019 status after FE-022
+Firefox 160 production bundle:
 
-Closed:
-- both High findings;
-- Share;
-- Account settings discoverability;
-- route/render recovery;
-- query/hash auth return.
+- public Idea Detail rendered at 1440×900;
+- public Idea Detail rendered at 390×844;
+- Persian RTL shell retained;
+- sticky header retained;
+- Share retained;
+- no horizontal overflow.
 
-Remaining Medium:
-- repeatable E2E/accessibility/compatibility evidence.
+## Compatibility limits
 
-Remaining Low:
-- optional direct Creator directory.
+Not verified:
+
+- physical current Android/WebView;
+- old Android target;
+- old iOS/Safari target.
+
+No minimum OS/browser claim was added.
 
 ## Next
 
-1. FE-023 — frontend hardening: critical-flow E2E, accessibility evidence, compatibility matrix.
-2. motion/interaction polish.
-3. PWA.
+1. FE-024 — bounded motion/interaction polish.
+2. PWA.

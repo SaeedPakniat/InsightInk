@@ -6,7 +6,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import type { CurrentUser } from '../../api/types'
 import { changeUiLanguage } from '../../i18n'
 import { SESSION_QUERY_KEY } from './session'
-import { RequireAuth, RequireModerator } from './RouteGuards'
+import { AnonymousOnly, RequireAuth, RequireModerator } from './RouteGuards'
 
 function user(canModerate: boolean): CurrentUser {
   return {
@@ -100,6 +100,60 @@ function renderAccountGuard(sessionData: CurrentUser | null, initialEntry = '/ac
     </QueryClientProvider>,
   )
 }
+
+function LocationProbe() {
+  const location = useLocation()
+  return <div>Location: {location.pathname + location.search + location.hash}</div>
+}
+
+function renderAnonymousGuard(sessionData: CurrentUser | null, from?: string) {
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: { retry: false },
+    },
+  })
+  queryClient.setQueryData(SESSION_QUERY_KEY, sessionData)
+
+  return render(
+    <QueryClientProvider client={queryClient}>
+      <MemoryRouter
+        initialEntries={[
+          {
+            pathname: '/login',
+            state: from ? { from } : null,
+          },
+        ]}
+      >
+        <Routes>
+          <Route element={<AnonymousOnly />}>
+            <Route path="/login" element={<div>Login page</div>} />
+          </Route>
+          <Route path="/library" element={<LocationProbe />} />
+          <Route path="/app" element={<div>Reader app</div>} />
+        </Routes>
+      </MemoryRouter>
+    </QueryClientProvider>,
+  )
+}
+
+describe('AnonymousOnly login return', () => {
+  afterEach(() => {
+    cleanup()
+  })
+
+  it('honors the stored protected return path for an authenticated session', async () => {
+    renderAnonymousGuard(user(false), '/library?sort=oldest#saved-item')
+
+    expect(await screen.findByText('Location: /library?sort=oldest#saved-item')).toBeInTheDocument()
+    expect(screen.queryByText('Reader app')).not.toBeInTheDocument()
+  })
+
+  it('falls back to the app when no return path exists', async () => {
+    renderAnonymousGuard(user(false))
+
+    expect(await screen.findByText('Reader app')).toBeInTheDocument()
+  })
+})
 
 describe('RequireAuth account route', () => {
   afterEach(() => {

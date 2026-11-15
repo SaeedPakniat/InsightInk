@@ -1,71 +1,75 @@
 # Frontend Handoff
 
-- Task: FE-022 — Completeness Polish Bundle.
-- Accepted frontend base: `38540ef783da04a14d1e30364c353f639a70ed5c` on `master`.
-- Result: ACCEPTED by user; checkpointed in the FE-022 commit containing this handoff.
-- Scope remained frontend-only; no backend implementation files changed.
+- Task: FE-023 — Frontend Hardening Evidence.
+- Accepted base: `b78c600b81bd4147f45600b42879161910d23427`.
+- Result: ACCEPTED by user; checkpointed in the FE-023 commit containing this handoff.
+- Backend implementation unchanged.
+- No npm dependency addition.
 
-## Delivered
+## Added repeatable commands
 
-### Idea Share
-- native Web Share when available;
-- canonical `/ideas/:id` URL;
-- clipboard fallback;
-- legacy copy fallback;
-- localized copied/shared/error state;
-- AbortError treated as cancellation rather than failure.
+- `npm run test:browser-smoke`
+- `npm run test:compat:firefox`
+- `npm run test:hardening`
 
-### Account settings hub
-- Account links to existing Interests settings;
-- Account links to existing Content Languages settings;
-- bilingual/RTL-safe Reading Preferences navigation card.
+## Chromium critical flow
 
-### Route/render recovery
-- dependency-free React error boundary inside RootLayout main content;
-- persistent shell survives route/lazy/render failures;
-- localized Reload and Home actions;
-- route key includes path/search/hash.
+Dependency-free Node + CDP fixture smoke covers:
 
-### Auth return preservation
-- RequireAuth and RequireModerator store full path/search/hash;
-- LoginPage returns to the complete protected URL.
+protected deep link -> Login -> exact return path -> personalized feed -> Idea -> Spark -> Save -> comment -> Library.
 
-## Tests and quality gates
+It also inspects Chromium's accessibility tree and keyboard-drives the compact menu.
 
-- TypeScript PASS.
-- ESLint PASS.
-- focused FE-022: 6 files / 45 tests PASS.
-- full Vitest: 53 files / 215 tests PASS.
-- build PASS — 195 modules.
+Current evidence:
+
+- Chromium 157 PASS;
+- 0 unnamed interactive AX nodes on representative app/Idea/mobile surfaces;
+- visible 3px keyboard focus;
+- compact sticky/no-overflow shell.
+
+## Auth race fixed
+
+Real-browser smoke showed `AnonymousOnly` could override LoginPage return navigation with `/app`.
+
+It now redirects an authenticated Login/Register route to stored `state.from` when present and uses `/app` only as fallback.
+
+Unit regression tests cover both paths.
+
+## Firefox compatibility
+
+Dependency-free Node + Firefox WebDriver BiDi smoke serves the built production bundle from a deterministic same-origin fixture server.
+
+Firefox 160 passed:
+
+- 1440×900 Idea Detail render;
+- 390×844 Idea Detail render;
+- RTL shell;
+- sticky header;
+- Share;
+- no horizontal overflow.
+
+## Verification
+
+- full Vitest: 53 files / 217 tests PASS.
+- typecheck PASS.
+- lint PASS.
+- build PASS.
 - Prettier PASS.
 - npm audit runtime: 0 vulnerabilities.
 - git diff check PASS.
-- no package changes.
+- `npm run test:hardening` PASS.
+- no package-lock change.
 
-Production:
+## Compatibility honesty
 
-- CSS 115.79 KB / 15.03 KB gzip.
-- AccountPage 6.88 KB / 2.00 KB gzip.
-- IdeaDetailPage 21.86 KB / 5.21 KB gzip.
-- main entry 307.83 KB / 92.80 KB gzip.
-- jsx-runtime 159.03 KB / 51.83 KB gzip.
-- no chunk warning.
+Still unverified:
 
-## Browser review
+- old Android;
+- old iOS/Safari;
+- physical current Android/WebView.
 
-Passed:
-
-- public Idea Share clipboard fallback;
-- canonical copied URL;
-- Persian Share feedback;
-- Account preference navigation;
-- 390px RTL Account layout;
-- sticky shell and permanent language switch;
-- no horizontal overflow.
-
-A real Vite request for `SavedLibraryPage.tsx` was forced to HTTP 500.
-The resulting rejected lazy import was caught by the production route boundary and rendered localized recovery while preserving the sticky shell.
+Do not convert viewport emulation into a physical-device compatibility claim.
 
 ## Pending
 
-- Next: FE-023 frontend hardening — Medium effort.
+- Next task: FE-024 motion/interaction polish — Medium effort.

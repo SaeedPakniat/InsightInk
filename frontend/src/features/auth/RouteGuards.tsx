@@ -70,6 +70,7 @@ export function RequireModerator() {
 
 export function AnonymousOnly() {
   const session = useSession()
+  const location = useLocation()
   const { t } = useTranslation()
 
   if (session.isPending) return <LoadingScreen />
@@ -85,7 +86,8 @@ export function AnonymousOnly() {
   }
 
   if (session.data) {
-    return <Navigate to="/app" replace />
+    const state = location.state as { from?: string } | null
+    return <Navigate to={state?.from || '/app'} replace />
   }
 
   return <Outlet />
