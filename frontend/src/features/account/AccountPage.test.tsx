@@ -112,6 +112,22 @@ describe('AccountPage', () => {
     )
   })
 
+  it('links the existing interests and content-language settings from Account', () => {
+    renderPage()
+
+    expect(
+      screen.getByRole('navigation', { name: 'Reading preference settings' }),
+    ).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: /Interests/ })).toHaveAttribute(
+      'href',
+      '/onboarding/interests',
+    )
+    expect(screen.getByRole('link', { name: /Content languages/ })).toHaveAttribute(
+      'href',
+      '/onboarding/languages',
+    )
+  })
+
   it('uses account initials when avatar_url is null', () => {
     renderPage()
 
@@ -318,5 +334,10 @@ describe('AccountPage', () => {
     expect(document.documentElement).toHaveAttribute('dir', 'rtl')
     expect(screen.getByRole('heading', { name: 'حساب کاربری', level: 1 })).toBeInTheDocument()
     expect(screen.getByLabelText('انتخاب تصویر')).toBeInTheDocument()
+    expect(screen.getByRole('navigation', { name: 'تنظیمات ترجیحات مطالعه' })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: /علایق/ })).toHaveAttribute(
+      'href',
+      '/onboarding/interests',
+    )
   })
 })

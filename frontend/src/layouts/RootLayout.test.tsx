@@ -59,6 +59,10 @@ function user(overrides: Partial<CurrentUser> = {}): CurrentUser {
 
 const SuspendedPage = lazy(() => new Promise<{ default: () => null }>(() => {}))
 
+function ThrowingPage(): never {
+  throw new Error('route render failed')
+}
+
 function renderLayout(
   currentUser: CurrentUser | null,
   options: { path?: string; child?: ReactNode } = {},
@@ -294,6 +298,21 @@ describe('RootLayout application shell', () => {
     expect(document.documentElement).toHaveAttribute('dir', 'rtl')
     expect(screen.getByRole('navigation', { name: 'ناوبری اصلی' })).toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'استودیوی سازنده' })).toBeInTheDocument()
+  })
+
+  it('keeps the shell mounted and offers localized recovery after a route render failure', () => {
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined)
+
+    renderLayout(user(), { child: <ThrowingPage /> })
+
+    expect(screen.getByRole('link', { name: 'InsightInk' })).toBeInTheDocument()
+    expect(
+      screen.getByRole('heading', { name: 'This view could not be opened' }),
+    ).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Reload page' })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Back to home' })).toHaveAttribute('href', '/app')
+
+    consoleError.mockRestore()
   })
 
   it('keeps the shell mounted while a route chunk loads', () => {

@@ -108,6 +108,7 @@ describe('IdeaDetailPage', () => {
       'href',
       'https://www.ted.com/podcasts/ted-radio-hour',
     )
+    expect(screen.getByRole('button', { name: 'Share' })).toBeInTheDocument()
     expect(await screen.findByRole('heading', { name: 'Related Ideas' })).toBeInTheDocument()
     expect(getRelatedIdeas).toHaveBeenCalledWith(40)
   })

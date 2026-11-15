@@ -10,6 +10,7 @@ import { AccountAvatar } from '../components/ui/AccountAvatar'
 import { getAccountDisplayName } from '../components/ui/accountAvatar'
 import { Brand } from '../components/ui/Brand'
 import { RouteLoadingScreen } from '../components/ui/Feedback'
+import { RouteErrorBoundary } from '../components/ui/RouteErrorBoundary'
 import { LanguageToggle } from '../components/ui/LanguageToggle'
 import { SESSION_QUERY_KEY, useSession } from '../features/auth/session'
 import { RECOMMENDATIONS_QUERY_KEY } from '../features/feed/recommendations'
@@ -297,11 +298,20 @@ export function RootLayout() {
         )}
       </header>
       <main className="site-main">
-        <Suspense fallback={<RouteLoadingScreen />}>
-          <div className="route-stage" key={location.pathname}>
-            <Outlet />
-          </div>
-        </Suspense>
+        <RouteErrorBoundary
+          key={`${location.pathname}${location.search}${location.hash}`}
+          title={t('errors.routeTitle')}
+          body={t('errors.routeBody')}
+          reloadLabel={t('errors.reload')}
+          homeLabel={t('errors.backHome')}
+          homePath={currentUser ? '/app' : '/'}
+        >
+          <Suspense fallback={<RouteLoadingScreen />}>
+            <div className="route-stage">
+              <Outlet />
+            </div>
+          </Suspense>
+        </RouteErrorBoundary>
       </main>
     </div>
   )

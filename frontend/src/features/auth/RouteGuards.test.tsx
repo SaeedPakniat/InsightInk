@@ -1,6 +1,6 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { cleanup, render, screen } from '@testing-library/react'
-import { MemoryRouter, Route, Routes } from 'react-router-dom'
+import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 import type { CurrentUser } from '../../api/types'
@@ -22,7 +22,13 @@ function user(canModerate: boolean): CurrentUser {
   }
 }
 
-function renderGuard(sessionData: CurrentUser | null) {
+function LoginStateProbe() {
+  const location = useLocation()
+  const state = location.state as { from?: string } | null
+  return <div>Login return: {state?.from ?? 'none'}</div>
+}
+
+function renderGuard(sessionData: CurrentUser | null, initialEntry = '/moderation') {
   const queryClient = new QueryClient({
     defaultOptions: {
       queries: { retry: false },
@@ -32,13 +38,13 @@ function renderGuard(sessionData: CurrentUser | null) {
 
   return render(
     <QueryClientProvider client={queryClient}>
-      <MemoryRouter initialEntries={['/moderation']}>
+      <MemoryRouter initialEntries={[initialEntry]}>
         <Routes>
           <Route element={<RequireModerator />}>
             <Route path="/moderation" element={<div>Moderator workspace</div>} />
           </Route>
           <Route path="/app" element={<div>Reader app</div>} />
-          <Route path="/login" element={<div>Login page</div>} />
+          <Route path="/login" element={<LoginStateProbe />} />
         </Routes>
       </MemoryRouter>
     </QueryClientProvider>,
@@ -65,13 +71,15 @@ describe('RequireModerator', () => {
     expect(screen.queryByText('Moderator workspace')).not.toBeInTheDocument()
   })
 
-  it('redirects an anonymous visitor to login', async () => {
-    renderGuard(null)
-    expect(await screen.findByText('Login page')).toBeInTheDocument()
+  it('redirects an anonymous visitor to login with the full return location', async () => {
+    renderGuard(null, '/moderation?status=in_review#case-12')
+    expect(
+      await screen.findByText('Login return: /moderation?status=in_review#case-12'),
+    ).toBeInTheDocument()
   })
 })
 
-function renderAccountGuard(sessionData: CurrentUser | null) {
+function renderAccountGuard(sessionData: CurrentUser | null, initialEntry = '/account') {
   const queryClient = new QueryClient({
     defaultOptions: {
       queries: { retry: false },
@@ -81,12 +89,12 @@ function renderAccountGuard(sessionData: CurrentUser | null) {
 
   return render(
     <QueryClientProvider client={queryClient}>
-      <MemoryRouter initialEntries={['/account']}>
+      <MemoryRouter initialEntries={[initialEntry]}>
         <Routes>
           <Route element={<RequireAuth />}>
             <Route path="/account" element={<div>Account page</div>} />
           </Route>
-          <Route path="/login" element={<div>Login page</div>} />
+          <Route path="/login" element={<LoginStateProbe />} />
         </Routes>
       </MemoryRouter>
     </QueryClientProvider>,
@@ -103,9 +111,11 @@ describe('RequireAuth account route', () => {
     expect(await screen.findByText('Account page')).toBeInTheDocument()
   })
 
-  it('redirects an anonymous visitor away from the account route', async () => {
-    renderAccountGuard(null)
-    expect(await screen.findByText('Login page')).toBeInTheDocument()
+  it('redirects an anonymous visitor away from the account route with query/hash intact', async () => {
+    renderAccountGuard(null, '/account?panel=profile#photo')
+    expect(
+      await screen.findByText('Login return: /account?panel=profile#photo'),
+    ).toBeInTheDocument()
     expect(screen.queryByText('Account page')).not.toBeInTheDocument()
   })
 })

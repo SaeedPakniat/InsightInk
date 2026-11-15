@@ -63,6 +63,15 @@ export const fa = {
       avatarInvalid: 'فایل انتخاب‌شده تصویر معتبری نیست.',
       avatarUploadError: 'بارگذاری تصویر پروفایل انجام نشد. دوباره تلاش کنید.',
       avatarRemoveError: 'حذف تصویر پروفایل انجام نشد. دوباره تلاش کنید.',
+      preferencesTitle: 'ترجیحات مطالعه',
+      preferencesBody:
+        'موضوع‌ها و زبان‌های محتوایی را که روی کاوش و پیشنهادها اثر می‌گذارند مدیریت کنید.',
+      preferencesNavigation: 'تنظیمات ترجیحات مطالعه',
+      interestsTitle: 'علایق',
+      interestsBody: 'موضوع‌هایی را انتخاب کنید که فید شخصی شما را شکل می‌دهند.',
+      contentLanguagesTitle: 'زبان‌های محتوا',
+      contentLanguagesBody:
+        'زبان‌هایی را انتخاب کنید که InsightInk بتواند محتوا را در آن‌ها پیشنهاد و پیدا کند.',
     },
     common: {
       retry: 'تلاش دوباره',
@@ -197,6 +206,12 @@ export const fa = {
       relatedLoadErrorBody: 'InsightInk فعلاً نتوانست ایده‌های مرتبط با این صفحه را بارگذاری کند.',
       relatedEmptyTitle: 'هنوز ایدهٔ مرتبطی وجود ندارد',
       relatedEmptyBody: 'فعلاً ایدهٔ عمومی دیگری با هم‌پوشانی موضوعی کافی وجود ندارد.',
+      share: 'اشتراک‌گذاری',
+      sharing: 'در حال اشتراک‌گذاری…',
+      shareText: 'ایدهٔ «{{title}}» را در InsightInk بخوانید.',
+      shareCopied: 'پیوند ایده کپی شد.',
+      shareComplete: 'ایده به اشتراک گذاشته شد.',
+      shareError: 'اشتراک‌گذاری این ایده انجام نشد. دوباره تلاش کنید.',
     },
     engagement: {
       spark: 'اسپارک',
@@ -677,6 +692,10 @@ export const fa = {
       sessionTitle: 'بررسی نشست انجام نشد',
       sessionBody: 'فرانت‌اند نتوانست وضعیت ورود را از API دریافت کند.',
       pageNotFound: 'این صفحه پیدا نشد.',
+      routeTitle: 'این بخش باز نشد',
+      routeBody:
+        'یکی از بخش‌های صفحه بارگذاری یا اجرا نشد. صفحه را دوباره بارگذاری کنید یا به خانه برگردید.',
+      reload: 'بارگذاری دوباره صفحه',
       backHome: 'بازگشت به صفحه اصلی',
     },
   },

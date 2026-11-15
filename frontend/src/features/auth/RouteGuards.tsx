@@ -22,7 +22,13 @@ export function RequireAuth() {
   }
 
   if (!session.data) {
-    return <Navigate to="/login" replace state={{ from: location.pathname }} />
+    return (
+      <Navigate
+        to="/login"
+        replace
+        state={{ from: `${location.pathname}${location.search}${location.hash}` }}
+      />
+    )
   }
 
   return <Outlet />
@@ -46,7 +52,13 @@ export function RequireModerator() {
   }
 
   if (!session.data) {
-    return <Navigate to="/login" replace state={{ from: location.pathname }} />
+    return (
+      <Navigate
+        to="/login"
+        replace
+        state={{ from: `${location.pathname}${location.search}${location.hash}` }}
+      />
+    )
   }
 
   if (!session.data.capabilities.can_moderate) {

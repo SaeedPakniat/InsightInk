@@ -1,5 +1,6 @@
 import { useRef, useState, type ChangeEvent, type FormEvent } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 
 import {
@@ -313,6 +314,36 @@ export function AccountPage() {
               </Button>
             </div>
           </form>
+        </Card>
+
+        <Card className="account-card account-card--preferences">
+          <div className="account-card__heading">
+            <div>
+              <h2>{t('account.preferencesTitle')}</h2>
+              <p>{t('account.preferencesBody')}</p>
+            </div>
+          </div>
+
+          <nav className="account-preferences" aria-label={t('account.preferencesNavigation')}>
+            <Link className="account-preferences__link" to="/onboarding/interests">
+              <span>
+                <strong>{t('account.interestsTitle')}</strong>
+                <small>{t('account.interestsBody')}</small>
+              </span>
+              <span className="account-preferences__chevron" aria-hidden="true">
+                ›
+              </span>
+            </Link>
+            <Link className="account-preferences__link" to="/onboarding/languages">
+              <span>
+                <strong>{t('account.contentLanguagesTitle')}</strong>
+                <small>{t('account.contentLanguagesBody')}</small>
+              </span>
+              <span className="account-preferences__chevron" aria-hidden="true">
+                ›
+              </span>
+            </Link>
+          </nav>
         </Card>
       </div>
 

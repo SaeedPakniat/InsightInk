@@ -1,45 +1,42 @@
 # Frontend Handoff
 
-- Task: FE-021 — Authenticated UI-Language Preference Synchronization.
-- Accepted frontend base: `0f8f4e8e64a7188627da688863e53e8f609c09ca` on `master`.
-- Result: ACCEPTED by user; checkpointed in the FE-021 commit containing this handoff.
+- Task: FE-022 — Completeness Polish Bundle.
+- Accepted frontend base: `38540ef783da04a14d1e30364c353f639a70ed5c` on `master`.
+- Result: ACCEPTED by user; checkpointed in the FE-022 commit containing this handoff.
 - Scope remained frontend-only; no backend implementation files changed.
-
-## Contract consumed
-
-Existing account metadata contract:
-
-`PATCH /api/v1/me/`
-
-FE-021 sends only:
-
-`{ "preferred_ui_language": "fa" | "en" }`
-
-The complete returned `CurrentUser` becomes the canonical session cache value.
-
-No API CONTRACT ISSUE was found.
 
 ## Delivered
 
-- Account-backed authenticated UI-language persistence.
-- Anonymous local-only language behavior preserved.
-- Account preference overrides conflicting localStorage after session resolution.
-- Session cache replacement after successful PATCH.
-- Recommendation invalidation after successful UI-language persistence.
-- Optimistic local switch with rollback on account PATCH failure.
-- Localized rollback alert.
-- Morph and reduced-motion behavior preserved.
-- Header language control location preserved.
-- Compact error bubble corrected to remain within viewport.
-- Registration copy updated to describe account-backed language preference.
+### Idea Share
+- native Web Share when available;
+- canonical `/ideas/:id` URL;
+- clipboard fallback;
+- legacy copy fallback;
+- localized copied/shared/error state;
+- AbortError treated as cancellation rather than failure.
+
+### Account settings hub
+- Account links to existing Interests settings;
+- Account links to existing Content Languages settings;
+- bilingual/RTL-safe Reading Preferences navigation card.
+
+### Route/render recovery
+- dependency-free React error boundary inside RootLayout main content;
+- persistent shell survives route/lazy/render failures;
+- localized Reload and Home actions;
+- route key includes path/search/hash.
+
+### Auth return preservation
+- RequireAuth and RequireModerator store full path/search/hash;
+- LoginPage returns to the complete protected URL.
 
 ## Tests and quality gates
 
 - TypeScript PASS.
 - ESLint PASS.
-- focused FE-021: 3 files / 26 tests PASS.
-- full Vitest: 51 files / 208 tests PASS.
-- build PASS — 193 modules.
+- focused FE-022: 6 files / 45 tests PASS.
+- full Vitest: 53 files / 215 tests PASS.
+- build PASS — 195 modules.
 - Prettier PASS.
 - npm audit runtime: 0 vulnerabilities.
 - git diff check PASS.
@@ -47,28 +44,28 @@ No API CONTRACT ISSUE was found.
 
 Production:
 
-- CSS: 113.71 KB / 14.77 KB gzip.
-- AccountPage: 5.80 KB / 1.82 KB gzip.
-- main entry: 398.65 KB / 122.29 KB gzip.
+- CSS 115.79 KB / 15.03 KB gzip.
+- AccountPage 6.88 KB / 2.00 KB gzip.
+- IdeaDetailPage 21.86 KB / 5.21 KB gzip.
+- main entry 307.83 KB / 92.80 KB gzip.
+- jsx-runtime 159.03 KB / 51.83 KB gzip.
 - no chunk warning.
 
 ## Browser review
 
-Safe request interception was used; no real account was modified.
-
 Passed:
 
-- local English vs account Persian reconciliation;
-- exact successful English account PATCH;
-- session/browser state remains English after success;
-- exact attempted Persian PATCH on forced failure;
-- server preference stays English;
-- browser UI/localStorage/lang/dir roll back to English;
-- error message shown in restored language;
-- 390px compact error entirely within viewport;
-- sticky shell and directly visible language control preserved;
+- public Idea Share clipboard fallback;
+- canonical copied URL;
+- Persian Share feedback;
+- Account preference navigation;
+- 390px RTL Account layout;
+- sticky shell and permanent language switch;
 - no horizontal overflow.
+
+A real Vite request for `SavedLibraryPage.tsx` was forced to HTTP 500.
+The resulting rejected lazy import was caught by the production route boundary and rendered localized recovery while preserving the sticky shell.
 
 ## Pending
 
-- Next: FE-022 bounded completeness polish bundle, Medium effort.
+- Next: FE-023 frontend hardening — Medium effort.

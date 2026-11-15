@@ -437,6 +437,62 @@ select:focus-visible {
   color: var(--color-muted);
 }
 
+.account-card--preferences {
+  grid-column: 1 / -1;
+}
+
+.account-preferences {
+  margin-block-start: var(--space-6);
+  display: grid;
+  gap: var(--space-3);
+}
+
+.account-preferences__link {
+  min-width: 0;
+  padding: var(--space-4);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-4);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+  background: rgba(12, 14, 26, 0.42);
+  color: var(--color-parchment);
+  text-decoration: none;
+  transition:
+    border-color var(--transition-fast),
+    background-color var(--transition-fast),
+    transform var(--transition-fast);
+}
+
+.account-preferences__link:hover {
+  transform: translateY(-1px);
+  border-color: var(--color-line-strong);
+  background: rgba(245, 241, 230, 0.04);
+}
+
+.account-preferences__link > span:first-child {
+  min-width: 0;
+  display: grid;
+  gap: 0.2rem;
+}
+
+.account-preferences__link small {
+  color: var(--color-muted);
+  font-size: var(--text-xs);
+  line-height: 1.55;
+}
+
+.account-preferences__chevron {
+  color: var(--color-spark);
+  font-size: 1.6rem;
+  line-height: 1;
+}
+
+[dir='rtl'] .account-preferences__chevron {
+  transform: rotate(180deg);
+}
+
 .account-page__status {
   margin: var(--space-5) 0 0;
   padding: var(--space-3) var(--space-4);
@@ -1139,6 +1195,45 @@ html.language-morph-settling[dir='rtl'] .route-stage {
 
 .feedback--center {
   text-align: center;
+}
+
+.route-error {
+  max-width: var(--content-narrow);
+  margin: clamp(3rem, 10vw, 7rem) auto;
+  padding: clamp(1.5rem, 5vw, 2.5rem);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-lg);
+  background: var(--color-ink-900);
+  box-shadow: var(--shadow-raised);
+}
+
+.route-error h1 {
+  margin: var(--space-3) 0;
+  font-family: var(--font-editorial);
+  font-size: clamp(2rem, 7vw, 3.4rem);
+  font-weight: 600;
+  line-height: 1.08;
+  letter-spacing: -0.04em;
+}
+
+[dir='rtl'] .route-error h1 {
+  font-family: var(--font-ui);
+  font-weight: 850;
+  line-height: 1.28;
+  letter-spacing: -0.02em;
+}
+
+.route-error > p:not(.eyebrow) {
+  margin: 0;
+  color: var(--color-muted);
+  line-height: 1.7;
+}
+
+.route-error__actions {
+  margin-block-start: var(--space-6);
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
 }
 
 .spinner {
@@ -2534,6 +2629,35 @@ html.language-morph-settling[dir='rtl'] .route-stage {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-2);
+}
+
+.idea-detail-page__primary-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--space-2);
+}
+
+.idea-share-action {
+  min-width: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.idea-share-action__status,
+.idea-share-action__error {
+  font-size: var(--text-xs);
+  line-height: 1.5;
+}
+
+.idea-share-action__status {
+  color: var(--color-tide);
+}
+
+.idea-share-action__error {
+  color: var(--color-error);
 }
 
 .idea-detail-page__trust-actions {

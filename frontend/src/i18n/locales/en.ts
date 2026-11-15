@@ -65,6 +65,14 @@ export const en = {
       avatarInvalid: 'That file is not a valid image.',
       avatarUploadError: 'The profile photo could not be uploaded. Try again.',
       avatarRemoveError: 'The profile photo could not be removed. Try again.',
+      preferencesTitle: 'Reading preferences',
+      preferencesBody:
+        'Manage the topics and content languages that shape discovery and recommendations.',
+      preferencesNavigation: 'Reading preference settings',
+      interestsTitle: 'Interests',
+      interestsBody: 'Choose the topics that shape your personalized feed.',
+      contentLanguagesTitle: 'Content languages',
+      contentLanguagesBody: 'Choose which languages InsightInk can recommend and discover for you.',
     },
     common: {
       retry: 'Try again',
@@ -199,6 +207,12 @@ export const en = {
       relatedLoadErrorBody: 'InsightInk could not load related Ideas for this page right now.',
       relatedEmptyTitle: 'No related Ideas yet',
       relatedEmptyBody: 'There are no other public Ideas with enough topic overlap right now.',
+      share: 'Share',
+      sharing: 'Sharing…',
+      shareText: 'Read “{{title}}” on InsightInk.',
+      shareCopied: 'Idea link copied.',
+      shareComplete: 'Idea shared.',
+      shareError: 'This Idea could not be shared. Try again.',
     },
     engagement: {
       spark: 'Spark',
@@ -686,6 +700,10 @@ export const en = {
       sessionTitle: 'Session check failed',
       sessionBody: 'The frontend could not read your login state from the API.',
       pageNotFound: 'This page does not exist.',
+      routeTitle: 'This view could not be opened',
+      routeBody:
+        'A page component failed to load or render. Reload the page, or return home and try again.',
+      reload: 'Reload page',
       backHome: 'Back to home',
     },
   },

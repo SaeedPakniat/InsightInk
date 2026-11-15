@@ -14,6 +14,7 @@ import { FormatBadge } from '../FormatBadge'
 import { formatUiNumber, getContentDirection, getInitials, getReadMinutes } from '../presentation'
 import { useIdea } from './ideaQuery'
 import { RelatedIdeasSection } from './RelatedIdeasSection'
+import { ShareIdeaAction } from './ShareIdeaAction'
 
 export function IdeaDetailPage() {
   const { ideaId: ideaIdParam } = useParams()
@@ -103,7 +104,10 @@ export function IdeaDetailPage() {
             </div>
           )}
 
-          <IdeaEngagementActions ideaId={idea.id} variant="detail" />
+          <div className="idea-detail-page__primary-actions">
+            <IdeaEngagementActions ideaId={idea.id} variant="detail" />
+            <ShareIdeaAction ideaId={idea.id} title={idea.title} />
+          </div>
 
           <div className="idea-detail-page__trust-actions">
             <IdeaReportAction ideaId={idea.id} />
