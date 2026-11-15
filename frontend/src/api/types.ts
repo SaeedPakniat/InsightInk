@@ -10,7 +10,7 @@ export type CurrentUser = {
   email: string
   display_name: string
   preferred_ui_language: UiLanguage
-  avatar_url?: string | null
+  avatar_url: string | null
   capabilities: UserCapabilities
 }
 

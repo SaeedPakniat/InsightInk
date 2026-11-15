@@ -197,6 +197,9 @@ export function RootLayout() {
                         <span>{currentUser.email}</span>
                       </div>
                     </div>
+                    <Link className="account-menu__link" to="/account" onClick={closeMenus}>
+                      {t('shell.account')}
+                    </Link>
                     <Link className="account-menu__link" to="/app" onClick={closeMenus}>
                       {t('shell.home')}
                     </Link>

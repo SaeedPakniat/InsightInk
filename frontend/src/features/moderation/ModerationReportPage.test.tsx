@@ -61,6 +61,7 @@ const moderator: CurrentUser = {
   email: 'moderator@example.com',
   display_name: 'Demo Moderator',
   preferred_ui_language: 'en',
+  avatar_url: null,
   capabilities: { can_moderate: true, can_administer: false },
 }
 

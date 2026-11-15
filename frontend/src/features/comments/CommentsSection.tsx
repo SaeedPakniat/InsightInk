@@ -27,6 +27,7 @@ export function CommentsSection({ ideaId }: CommentsSectionProps) {
       email: '',
       display_name: '',
       preferred_ui_language: 'en',
+      avatar_url: null,
       capabilities: { can_moderate: false, can_administer: false },
     },
   )

@@ -58,7 +58,9 @@ export async function apiRequest<T>(path: string, options: RequestInit = {}): Pr
 
   headers.set('Accept', 'application/json')
 
-  if (options.body && !headers.has('Content-Type')) {
+  const bodyIsFormData = typeof FormData !== 'undefined' && options.body instanceof FormData
+
+  if (options.body && !bodyIsFormData && !headers.has('Content-Type')) {
     headers.set('Content-Type', 'application/json')
   }
 

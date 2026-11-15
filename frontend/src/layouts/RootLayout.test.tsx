@@ -164,6 +164,7 @@ describe('RootLayout application shell', () => {
     await pointer.click(trigger)
     expect(trigger).toHaveAttribute('aria-expanded', 'true')
     expect(screen.getByText('reader@example.com')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Account' })).toHaveAttribute('href', '/account')
     expect(screen.getByRole('button', { name: 'Log out' })).toBeInTheDocument()
     await pointer.keyboard('{Escape}')
     expect(trigger).toHaveFocus()

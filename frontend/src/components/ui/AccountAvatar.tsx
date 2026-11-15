@@ -4,7 +4,7 @@ type AccountAvatarProps = {
   avatarUrl?: string | null
   displayName: string
   email: string
-  size?: 'small' | 'medium'
+  size?: 'small' | 'medium' | 'large'
   className?: string
 }
 

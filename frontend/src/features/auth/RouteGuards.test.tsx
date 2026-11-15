@@ -6,7 +6,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import type { CurrentUser } from '../../api/types'
 import { changeUiLanguage } from '../../i18n'
 import { SESSION_QUERY_KEY } from './session'
-import { RequireModerator } from './RouteGuards'
+import { RequireAuth, RequireModerator } from './RouteGuards'
 
 function user(canModerate: boolean): CurrentUser {
   return {
@@ -14,6 +14,7 @@ function user(canModerate: boolean): CurrentUser {
     email: canModerate ? 'moderator@example.com' : 'reader@example.com',
     display_name: canModerate ? 'Moderator' : 'Reader',
     preferred_ui_language: 'en',
+    avatar_url: null,
     capabilities: {
       can_moderate: canModerate,
       can_administer: false,
@@ -67,5 +68,44 @@ describe('RequireModerator', () => {
   it('redirects an anonymous visitor to login', async () => {
     renderGuard(null)
     expect(await screen.findByText('Login page')).toBeInTheDocument()
+  })
+})
+
+function renderAccountGuard(sessionData: CurrentUser | null) {
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: { retry: false },
+    },
+  })
+  queryClient.setQueryData(SESSION_QUERY_KEY, sessionData)
+
+  return render(
+    <QueryClientProvider client={queryClient}>
+      <MemoryRouter initialEntries={['/account']}>
+        <Routes>
+          <Route element={<RequireAuth />}>
+            <Route path="/account" element={<div>Account page</div>} />
+          </Route>
+          <Route path="/login" element={<div>Login page</div>} />
+        </Routes>
+      </MemoryRouter>
+    </QueryClientProvider>,
+  )
+}
+
+describe('RequireAuth account route', () => {
+  afterEach(() => {
+    cleanup()
+  })
+
+  it('allows an authenticated user to access the account route', async () => {
+    renderAccountGuard(user(false))
+    expect(await screen.findByText('Account page')).toBeInTheDocument()
+  })
+
+  it('redirects an anonymous visitor away from the account route', async () => {
+    renderAccountGuard(null)
+    expect(await screen.findByText('Login page')).toBeInTheDocument()
+    expect(screen.queryByText('Account page')).not.toBeInTheDocument()
   })
 })

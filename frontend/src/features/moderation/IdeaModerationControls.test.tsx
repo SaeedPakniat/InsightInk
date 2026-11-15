@@ -23,6 +23,7 @@ function user(canModerate: boolean): CurrentUser {
     email: 'moderator@example.com',
     display_name: 'Moderator',
     preferred_ui_language: 'en',
+    avatar_url: null,
     capabilities: {
       can_moderate: canModerate,
       can_administer: false,
