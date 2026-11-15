@@ -217,6 +217,16 @@ select:focus-visible {
   background: var(--color-ink-900);
   color: var(--color-parchment);
   cursor: pointer;
+  transition:
+    border-color var(--transition-fast),
+    background-color var(--transition-fast),
+    box-shadow var(--transition-fast),
+    transform var(--transition-fast);
+}
+
+.account-control__trigger:active,
+.mobile-menu-trigger:active {
+  transform: scale(0.96);
 }
 
 .account-control__trigger {
@@ -247,6 +257,7 @@ select:focus-visible {
   stroke-linecap: round;
   stroke-linejoin: round;
   stroke-width: 1.7;
+  transition: transform var(--transition-medium);
 }
 
 .account-control__trigger[aria-expanded='true'] svg {
@@ -501,6 +512,7 @@ select:focus-visible {
   background: rgba(88, 166, 166, 0.08);
   color: var(--color-tide);
   font-size: var(--text-sm);
+  animation: feedback-enter 160ms var(--ease-out) both;
 }
 
 .account-menu {
@@ -516,6 +528,7 @@ select:focus-visible {
   border-radius: var(--radius-lg);
   background: var(--color-ink-900);
   box-shadow: var(--shadow-raised);
+  animation: disclosure-enter 180ms var(--ease-out) both;
 }
 
 .account-menu__identity {
@@ -568,6 +581,16 @@ select:focus-visible {
   font-size: var(--text-sm);
   text-align: start;
   text-decoration: none;
+  transition:
+    background-color var(--transition-fast),
+    color var(--transition-fast),
+    transform var(--transition-fast);
+}
+
+.account-menu__link:active,
+.account-menu__logout:active:not(:disabled),
+.mobile-navigation__logout:active:not(:disabled) {
+  transform: scale(0.98);
 }
 
 .account-menu__link:hover,
@@ -596,6 +619,7 @@ select:focus-visible {
   background: rgba(240, 112, 112, 0.08);
   color: var(--color-error);
   font-size: var(--text-xs);
+  animation: feedback-enter 160ms var(--ease-out) both;
 }
 
 .mobile-menu-trigger {
@@ -639,6 +663,7 @@ select:focus-visible {
   border-block-end: 1px solid var(--color-line-strong);
   background: var(--color-ink-900);
   box-shadow: var(--shadow-raised);
+  animation: disclosure-enter 180ms var(--ease-out) both;
 }
 
 .mobile-navigation__links {
@@ -673,6 +698,23 @@ select:focus-visible {
   font-size: var(--text-xs);
   font-weight: 750;
   text-decoration: none;
+  transition:
+    border-color var(--transition-fast),
+    background-color var(--transition-fast),
+    color var(--transition-fast),
+    transform var(--transition-fast);
+}
+
+.mobile-navigation__auth a:hover,
+.shell-auth a:hover {
+  border-color: var(--color-line-strong);
+  background: rgba(245, 241, 230, 0.04);
+  color: var(--color-parchment);
+}
+
+.mobile-navigation__auth a:active,
+.shell-auth a:active {
+  transform: scale(0.97);
 }
 
 .mobile-navigation__account {
@@ -701,6 +743,7 @@ select:focus-visible {
   box-shadow: var(--shadow-raised);
   font-size: var(--text-xs);
   line-height: 1.5;
+  animation: feedback-enter 160ms var(--ease-out) both;
 }
 
 @media (max-width: 35rem) {
@@ -2650,6 +2693,7 @@ html.language-morph-settling[dir='rtl'] .route-stage {
 .idea-share-action__error {
   font-size: var(--text-xs);
   line-height: 1.5;
+  animation: feedback-enter 160ms var(--ease-out) both;
 }
 
 .idea-share-action__status {
@@ -2676,6 +2720,13 @@ html.language-morph-settling[dir='rtl'] .route-stage {
   font-size: var(--text-xs);
   font-weight: 750;
   cursor: pointer;
+  transition:
+    color var(--transition-fast),
+    transform var(--transition-fast);
+}
+
+.idea-report-action__trigger:active {
+  transform: scale(0.97);
 }
 
 .idea-report-action__trigger:hover {
@@ -4333,6 +4384,8 @@ html.language-morph-settling[dir='rtl'] .route-stage {
 }
 
 .idea-card__read-link {
+  --idea-read-shift: 2px;
+
   width: fit-content;
   display: inline-flex;
   align-items: center;
@@ -4341,11 +4394,25 @@ html.language-morph-settling[dir='rtl'] .route-stage {
   font-size: var(--text-xs);
   font-weight: 800;
   text-decoration: none;
+  transition: color var(--transition-fast);
+}
+
+[dir='rtl'] .idea-card__read-link {
+  --idea-read-shift: -2px;
+}
+
+.idea-card__read-link span {
+  transition: transform var(--transition-fast);
 }
 
 .idea-card__read-link:hover {
+  color: var(--color-spark);
   text-decoration: underline;
   text-underline-offset: 0.2em;
+}
+
+.idea-card__read-link:hover span {
+  transform: translateX(var(--idea-read-shift));
 }
 
 .idea-detail-page {
@@ -4367,6 +4434,7 @@ html.language-morph-settling[dir='rtl'] .route-stage {
   font-size: var(--text-sm);
   font-weight: 700;
   text-decoration: none;
+  transition: color var(--transition-fast);
 }
 
 .idea-detail-page__back a:hover {
@@ -5172,6 +5240,30 @@ html.language-morph-settling[dir='rtl'] .route-stage {
   padding-block: 7rem;
 }
 
+@keyframes disclosure-enter {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes feedback-enter {
+  from {
+    opacity: 0;
+    transform: translateY(-3px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 @keyframes route-enter {
   from {
     opacity: 0;
@@ -5449,5 +5541,45 @@ html.language-morph-settling[dir='rtl'] .route-stage {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+  }
+
+  .route-stage,
+  .account-menu,
+  .mobile-navigation,
+  .language-control__error,
+  .account-menu__error,
+  .account-page__status,
+  .idea-share-action__status,
+  .idea-share-action__error,
+  .comment-composer--loading,
+  .idea-skeleton,
+  .topic-option--skeleton,
+  .spinner {
+    animation: none !important;
+  }
+
+  .button:hover:not(:disabled),
+  .button:active:not(:disabled),
+  .account-control__trigger:active,
+  .mobile-menu-trigger:active,
+  .shell-nav__link:active,
+  .mobile-navigation__link:active,
+  .mobile-navigation__auth a:active,
+  .shell-auth a:active,
+  .account-menu__link:active,
+  .account-menu__logout:active:not(:disabled),
+  .mobile-navigation__logout:active:not(:disabled),
+  .account-preferences__link:hover,
+  .topic-option:hover,
+  .topic-option:active,
+  .feed-mode-nav__link:active,
+  .moderation-filters button:active,
+  .moderation-report-card:hover,
+  .idea-card:hover,
+  .idea-engagement__button:hover:not(:disabled),
+  .idea-engagement__button:active:not(:disabled),
+  .idea-card__read-link:hover span,
+  .idea-report-action__trigger:active {
+    transform: none !important;
   }
 }

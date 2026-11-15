@@ -475,6 +475,15 @@ async function run() {
     'Unnamed interactive nodes in mobile nav: ' + JSON.stringify(mobileAx),
   )
 
+  const disclosureMotion = await evaluate(
+    "(() => { const s=getComputedStyle(document.querySelector('.mobile-navigation')); return { animationName:s.animationName, animationDuration:s.animationDuration }; })()",
+  )
+  assert(
+    disclosureMotion.animationName.includes('disclosure-enter') &&
+      disclosureMotion.animationDuration !== '0s',
+    'Mobile navigation disclosure motion is missing: ' + JSON.stringify(disclosureMotion),
+  )
+
   await pressKey('Escape', 'Escape', 27)
   await waitForJs(
     "document.querySelector('.mobile-menu-trigger')?.getAttribute('aria-expanded') === 'false' && document.activeElement?.classList.contains('mobile-menu-trigger')",
@@ -491,6 +500,30 @@ async function run() {
   assert(
     compact.sticky === 'sticky' && !compact.overflow && compact.languageControls === 1,
     'Compact shell invariant failed: ' + JSON.stringify(compact),
+  )
+
+  await cdp.send('Emulation.setEmulatedMedia', {
+    features: [{ name: 'prefers-reduced-motion', value: 'reduce' }],
+  })
+  await navigate('/app')
+  await waitForJs(
+    "window.matchMedia('(prefers-reduced-motion: reduce)').matches && Boolean(document.querySelector('.route-stage'))",
+    'reduced-motion shell',
+  )
+  await click('.mobile-menu-trigger')
+  await waitForJs(
+    "document.querySelector('.mobile-menu-trigger')?.getAttribute('aria-expanded') === 'true'",
+    'reduced-motion menu open',
+  )
+
+  const reducedMotion = await evaluate(
+    "(() => ({ preferred:window.matchMedia('(prefers-reduced-motion: reduce)').matches, routeAnimation:getComputedStyle(document.querySelector('.route-stage')).animationName, menuAnimation:getComputedStyle(document.querySelector('.mobile-navigation')).animationName }))()",
+  )
+  assert(
+    reducedMotion.preferred &&
+      reducedMotion.routeAnimation === 'none' &&
+      reducedMotion.menuAnimation === 'none',
+    'Reduced-motion animation suppression failed: ' + JSON.stringify(reducedMotion),
   )
 
   for (const required of [
@@ -525,6 +558,10 @@ async function run() {
           focus,
         },
         compact,
+        motion: {
+          disclosureMotion,
+          reducedMotion,
+        },
       },
       null,
       2,

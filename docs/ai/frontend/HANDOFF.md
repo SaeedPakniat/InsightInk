@@ -1,75 +1,54 @@
 # Frontend Handoff
 
-- Task: FE-023 — Frontend Hardening Evidence.
-- Accepted base: `b78c600b81bd4147f45600b42879161910d23427`.
-- Result: ACCEPTED by user; checkpointed in the FE-023 commit containing this handoff.
+- Task: FE-024 — Bounded Motion and Interaction Polish.
+- Accepted base: `a737f19634598f6cecbb04ce80eed89dab7a41fc`.
+- Result: ACCEPTED by user; checkpointed in the FE-024 commit containing this handoff.
 - Backend implementation unchanged.
-- No npm dependency addition.
+- No dependency addition.
 
-## Added repeatable commands
+## Motion changes
 
-- `npm run test:browser-smoke`
-- `npm run test:compat:firefox`
-- `npm run test:hardening`
+- account/mobile disclosures: 180 ms opacity + 6px vertical settle.
+- account trigger chevron transition.
+- trigger/menu/auth press and hover feedback.
+- Account and Share feedback entrance.
+- directional IdeaCard arrow feedback.
+- Idea back/report interaction polish.
 
-## Chromium critical flow
+No broad page-motion system was introduced.
 
-Dependency-free Node + CDP fixture smoke covers:
+## Reduced motion
 
-protected deep link -> Login -> exact return path -> personalized feed -> Idea -> Spark -> Save -> comment -> Library.
+Explicitly suppresses:
 
-It also inspects Chromium's accessibility tree and keyboard-drives the compact menu.
+- route/disclosure/feedback/loading animations;
+- representative lift/press transform motion.
 
-Current evidence:
+Chromium emulation confirms:
 
-- Chromium 157 PASS;
-- 0 unnamed interactive AX nodes on representative app/Idea/mobile surfaces;
-- visible 3px keyboard focus;
-- compact sticky/no-overflow shell.
+- `prefers-reduced-motion: reduce` = true;
+- route-stage animation = none;
+- mobile-navigation animation = none.
 
-## Auth race fixed
-
-Real-browser smoke showed `AnonymousOnly` could override LoginPage return navigation with `/app`.
-
-It now redirects an authenticated Login/Register route to stored `state.from` when present and uses `/app` only as fallback.
-
-Unit regression tests cover both paths.
-
-## Firefox compatibility
-
-Dependency-free Node + Firefox WebDriver BiDi smoke serves the built production bundle from a deterministic same-origin fixture server.
-
-Firefox 160 passed:
-
-- 1440×900 Idea Detail render;
-- 390×844 Idea Detail render;
-- RTL shell;
-- sticky header;
-- Share;
-- no horizontal overflow.
-
-## Verification
+## Quality evidence
 
 - full Vitest: 53 files / 217 tests PASS.
-- typecheck PASS.
-- lint PASS.
+- TypeScript PASS.
+- ESLint PASS.
 - build PASS.
-- Prettier PASS.
-- npm audit runtime: 0 vulnerabilities.
-- git diff check PASS.
 - `npm run test:hardening` PASS.
+- Prettier PASS.
+- runtime audit: 0 vulnerabilities.
+- git diff check PASS.
+- Firefox 160 production render remains PASS.
 - no package-lock change.
 
-## Compatibility honesty
+## Bundle
 
-Still unverified:
-
-- old Android;
-- old iOS/Safari;
-- physical current Android/WebView.
-
-Do not convert viewport emulation into a physical-device compatibility claim.
+- CSS ~118.67 KB / 15.45 KB gzip.
+- main JS ~307.90 KB / 92.83 KB gzip.
+- no Vite chunk warning.
 
 ## Pending
 
-- Next task: FE-024 motion/interaction polish — Medium effort.
+- Next: FE-025 PWA architecture/implementation — Medium effort.
