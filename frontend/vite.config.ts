@@ -11,6 +11,11 @@ export default defineConfig({
         target: backendTarget,
         changeOrigin: false,
       },
+      '/ws': {
+        target: backendTarget,
+        changeOrigin: false,
+        ws: true,
+      },
     },
   },
   build: {

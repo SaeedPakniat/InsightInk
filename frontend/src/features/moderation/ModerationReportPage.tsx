@@ -156,6 +156,21 @@ export function ModerationReportPage() {
                 </div>
                 <p dir="auto">{report.target_comment.body}</p>
               </article>
+            ) : report.target_message ? (
+              <article className="moderation-target-message">
+                <div className="moderation-target-message__meta">
+                  <strong dir="auto">
+                    {report.target_message.sender.display_name || t('moderation.unknownUser')}
+                  </strong>
+                  <time dateTime={report.target_message.created_at}>
+                    {new Intl.DateTimeFormat(isEnglishUi ? 'en' : 'fa', {
+                      dateStyle: 'medium',
+                      timeStyle: 'short',
+                    }).format(new Date(report.target_message.created_at))}
+                  </time>
+                </div>
+                <p dir="auto">{report.target_message.body}</p>
+              </article>
             ) : report.target_idea ? (
               <article className="moderation-target-idea">
                 <div className="moderation-target-idea__meta">
@@ -319,6 +334,10 @@ function workflowDescription(
 ) {
   if (status === 'reviewing' && targetType === 'idea') {
     return t('moderation.workflowDescription.ideaReviewing')
+  }
+
+  if (status === 'reviewing' && targetType === 'message') {
+    return t('moderation.workflowDescription.messageReviewing')
   }
 
   return t(`moderation.workflowDescription.${status}`)

@@ -8,6 +8,7 @@ import { useSession } from '../auth/session'
 import { useHydrateViewerEngagement } from '../engagement/viewerEngagement'
 import { IdeaCard } from '../ideas/IdeaCard'
 import { IdeaCardSkeleton } from '../ideas/IdeaCardSkeleton'
+import { StartConversationAction } from '../messaging/StartConversationAction'
 import { formatUiNumber, getInitials } from '../ideas/presentation'
 import { CreatorFollowAction } from './CreatorFollowAction'
 import { flattenCreatorIdeas, useCreator, useCreatorIdeas } from './creatorQueries'
@@ -128,7 +129,10 @@ export function CreatorProfilePage() {
             </p>
           )}
 
-          <CreatorFollowAction creatorId={creator.id} />
+          <div className="creator-profile-page__actions">
+            <CreatorFollowAction creatorId={creator.id} />
+            <StartConversationAction creatorId={creator.id} />
+          </div>
 
           <dl className="creator-profile-page__stats">
             <div>

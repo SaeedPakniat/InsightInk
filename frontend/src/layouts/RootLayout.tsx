@@ -14,6 +14,7 @@ import { RouteErrorBoundary } from '../components/ui/RouteErrorBoundary'
 import { LanguageToggle } from '../components/ui/LanguageToggle'
 import { SESSION_QUERY_KEY, useSession } from '../features/auth/session'
 import { RECOMMENDATIONS_QUERY_KEY } from '../features/feed/recommendations'
+import { MessagingRealtimeProvider } from '../features/messaging/MessagingRealtime'
 
 type NavigationItem = {
   label: string
@@ -41,6 +42,11 @@ export function RootLayout() {
         { label: t('shell.explore'), to: '/explore', active: (path) => path === '/explore' },
         { label: t('shell.search'), to: '/search', active: (path) => path === '/search' },
         { label: t('shell.library'), to: '/library', active: (path) => path === '/library' },
+        {
+          label: t('shell.messages'),
+          to: '/messages',
+          active: (path) => path.startsWith('/messages'),
+        },
         {
           label: t('shell.studio'),
           to: '/studio',
@@ -222,6 +228,9 @@ export function RootLayout() {
                     <Link className="account-menu__link" to="/app" onClick={closeMenus}>
                       {t('shell.home')}
                     </Link>
+                    <Link className="account-menu__link" to="/messages" onClick={closeMenus}>
+                      {t('shell.messages')}
+                    </Link>
                     <Link className="account-menu__link" to="/studio" onClick={closeMenus}>
                       {t('shell.studio')}
                     </Link>
@@ -297,22 +306,24 @@ export function RootLayout() {
           </div>
         )}
       </header>
-      <main className="site-main">
-        <RouteErrorBoundary
-          key={`${location.pathname}${location.search}${location.hash}`}
-          title={t('errors.routeTitle')}
-          body={t('errors.routeBody')}
-          reloadLabel={t('errors.reload')}
-          homeLabel={t('errors.backHome')}
-          homePath={currentUser ? '/app' : '/'}
-        >
-          <Suspense fallback={<RouteLoadingScreen />}>
-            <div className="route-stage">
-              <Outlet />
-            </div>
-          </Suspense>
-        </RouteErrorBoundary>
-      </main>
+      <MessagingRealtimeProvider userId={currentUser?.id ?? null}>
+        <main className="site-main">
+          <RouteErrorBoundary
+            key={`${location.pathname}${location.search}${location.hash}`}
+            title={t('errors.routeTitle')}
+            body={t('errors.routeBody')}
+            reloadLabel={t('errors.reload')}
+            homeLabel={t('errors.backHome')}
+            homePath={currentUser ? '/app' : '/'}
+          >
+            <Suspense fallback={<RouteLoadingScreen />}>
+              <div className="route-stage">
+                <Outlet />
+              </div>
+            </Suspense>
+          </RouteErrorBoundary>
+        </main>
+      </MessagingRealtimeProvider>
     </div>
   )
 }

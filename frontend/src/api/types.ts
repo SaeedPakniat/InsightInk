@@ -237,6 +237,15 @@ export type ModerationTargetComment = {
   updated_at: string
 }
 
+export type ModerationTargetMessage = {
+  id: number
+  conversation_id: number
+  sender: ModeratorUserSummary
+  body: string
+  created_at: string
+  read_at: string | null
+}
+
 export type ModerationReportListItem = {
   id: number
   reporter: ModeratorUserSummary
@@ -263,6 +272,7 @@ export type ModerationReportDetail = ModerationReportListItem & {
   details: string
   target_comment: ModerationTargetComment | null
   target_idea: ModerationTargetIdea | null
+  target_message: ModerationTargetMessage | null
   actions: ModerationAction[]
 }
 
@@ -311,6 +321,106 @@ export type SavedLibraryItem = {
   saved_at: string
   idea: Idea
 }
+
+export type MessagingViewerRole = 'reader' | 'creator'
+
+export type MessagingUserSummary = {
+  id: number
+  display_name: string
+  avatar_url: string | null
+}
+
+export type MessagingCreatorSummary = {
+  id: number
+  user_id: number
+  display_name: string
+  avatar: string | null
+  account_avatar_url: string | null
+  is_verified: boolean
+}
+
+export type ConversationLastMessage = {
+  id: number
+  sender_id: number | null
+  body_excerpt: string
+  created_at: string | null
+  read_at: string | null
+  is_read: boolean
+}
+
+export type Conversation = {
+  id: number
+  reader: MessagingUserSummary
+  creator: MessagingCreatorSummary
+  viewer_role: MessagingViewerRole
+  last_message: ConversationLastMessage | null
+  unread_count: number
+  created_at: string
+  updated_at: string
+}
+
+export type ConversationPage = {
+  next: string | null
+  previous: string | null
+  results: Conversation[]
+}
+
+export type DirectMessage = {
+  id: number
+  sender: MessagingUserSummary
+  body: string
+  created_at: string
+  read_at: string | null
+  is_read: boolean
+}
+
+export type DirectMessagePage = {
+  next: string | null
+  previous: string | null
+  results: DirectMessage[]
+}
+
+export type ConversationReadResult = {
+  marked_read: number
+  unread_count: number
+  read_at: string
+}
+
+export type MessagingSocketStatus = 'disconnected' | 'connecting' | 'connected' | 'reconnecting'
+
+export type MessagingRealtimeEvent =
+  | { type: 'sync.required'; reason?: string }
+  | {
+      type: 'conversation.created'
+      conversation: {
+        id: number
+        reader: { id: number; display_name: string }
+        creator: { id: number; user_id: number; display_name: string }
+        created_at: string
+        updated_at: string
+      }
+    }
+  | {
+      type: 'message.created'
+      message: {
+        id: number
+        conversation_id: number
+        sender: { id: number; display_name: string }
+        body: string
+        created_at: string
+        read_at: string | null
+        is_read: boolean
+      }
+    }
+  | {
+      type: 'messages.read'
+      conversation_id: number
+      read_by_user_id: number
+      marked_read: number
+      read_at: string
+    }
+  | { type: 'pong' }
+  | { type: 'error'; code?: string; detail?: string }
 
 export type LoginPayload = {
   email: string

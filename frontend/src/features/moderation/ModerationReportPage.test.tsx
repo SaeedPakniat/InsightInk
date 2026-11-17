@@ -31,6 +31,7 @@ function report(status: ModerationReportDetail['status'] = 'open'): ModerationRe
     resolved_at: status === 'resolved' || status === 'rejected' ? '2026-11-07T07:00:00Z' : null,
     details: 'Repeated personal attacks.',
     target_idea: null,
+    target_message: null,
     target_comment: {
       id: 5,
       author: { id: 8, display_name: 'Comment Author' },
@@ -148,6 +149,7 @@ describe('ModerationReportPage', () => {
       target_type: 'idea',
       target_id: 25,
       target_comment: null,
+      target_message: null,
       target_idea: {
         id: 25,
         title: 'Reported Idea',
@@ -181,6 +183,40 @@ describe('ModerationReportPage', () => {
     expect(screen.getByText('Original Website')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Hide Idea' })).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Hide reported comment' })).not.toBeInTheDocument()
+  })
+
+  it('renders only the reported private message without exposing the conversation', async () => {
+    const messageReport: ModerationReportDetail = {
+      ...report('reviewing'),
+      target_type: 'message',
+      target_id: 77,
+      target_comment: null,
+      target_idea: null,
+      target_message: {
+        id: 77,
+        conversation_id: 4,
+        sender: { id: 12, display_name: 'Message Sender' },
+        body: 'Reported private message body.',
+        created_at: '2026-11-07T05:30:00Z',
+        read_at: '2026-11-07T05:45:00Z',
+      },
+      actions: [],
+    }
+    vi.mocked(getModerationReport).mockResolvedValue(messageReport)
+
+    const view = renderPage()
+
+    expect(await screen.findByText('Reported private message body.')).toBeInTheDocument()
+    expect(screen.getByText('Message Sender')).toBeInTheDocument()
+    expect(
+      screen.getByText(
+        'This private-message report is under review. Review only the reported message shown above, then resolve or reject the report.',
+      ),
+    ).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Hide reported comment' })).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Resolve report' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Reject report' })).toBeInTheDocument()
+    expect(view.container.querySelector('a[href="/messages/4"]')).not.toBeInTheDocument()
   })
 
   it('hides moderation actions after the case reaches a terminal state', async () => {

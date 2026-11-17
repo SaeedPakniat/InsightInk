@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { clearCsrfToken } from './client'
-import { reportComment, reportIdea } from './reporting'
+import { reportComment, reportIdea, reportMessage } from './reporting'
 
 describe('reporting API', () => {
   beforeEach(() => {
@@ -87,5 +87,49 @@ describe('reporting API', () => {
       credentials: 'include',
       body: JSON.stringify({ reason: 'spam' }),
     })
+  })
+
+  it('submits a received-message report through the moderation-owned message endpoint', async () => {
+    const fetchMock = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ csrfToken: 'message-report-csrf' }), {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        }),
+      )
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            id: 21,
+            reason: 'harassment',
+            details: 'Private message report.',
+            status: 'open',
+            created_at: '2026-11-17T12:00:00Z',
+          }),
+          {
+            status: 201,
+            headers: { 'content-type': 'application/json' },
+          },
+        ),
+      )
+
+    await reportMessage(91, {
+      reason: 'harassment',
+      details: 'Private message report.',
+    })
+
+    expect(fetchMock.mock.calls[1]?.[0]).toBe('/api/v1/messages/91/report/')
+    expect(fetchMock.mock.calls[1]?.[1]).toMatchObject({
+      method: 'POST',
+      credentials: 'include',
+      body: JSON.stringify({
+        reason: 'harassment',
+        details: 'Private message report.',
+      }),
+    })
+    expect(new Headers(fetchMock.mock.calls[1]?.[1]?.headers).get('X-CSRFToken')).toBe(
+      'message-report-csrf',
+    )
   })
 })

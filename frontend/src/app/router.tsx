@@ -35,6 +35,9 @@ const LatestFeedPage = lazyPage(() =>
 const SavedLibraryPage = lazyPage(() =>
   import('../features/library/SavedLibraryPage').then((module) => module.SavedLibraryPage),
 )
+const MessagingPage = lazyPage(() =>
+  import('../features/messaging/MessagingPage').then((module) => module.MessagingPage),
+)
 const AccountPage = lazyPage(() =>
   import('../features/account/AccountPage').then((module) => module.AccountPage),
 )
@@ -90,6 +93,8 @@ export const router = createBrowserRouter([
           { path: 'app', element: <AuthenticatedHomePage /> },
           { path: 'explore', element: <LatestFeedPage /> },
           { path: 'library', element: <SavedLibraryPage /> },
+          { path: 'messages', element: <MessagingPage /> },
+          { path: 'messages/:conversationId', element: <MessagingPage /> },
           { path: 'account', element: <AccountPage /> },
           { path: 'onboarding/interests', element: <InterestsOnboardingPage /> },
           { path: 'onboarding/languages', element: <ContentLanguagesPage /> },
