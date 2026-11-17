@@ -243,25 +243,32 @@ Build:
 
 No LLM.
 
-## Phase 14 — Realtime sync
+## Phase 14 — Direct messaging persistence — COMPLETE
 
-Only now introduce:
+BE-DM-001 establishes the domain before any realtime infrastructure:
+
+- Reader ↔ Creator conversations;
+- explicit participant rules;
+- unique Reader/Creator conversation pairs;
+- PostgreSQL-persisted messages;
+- REST conversation list/history/send;
+- cursor pagination;
+- read/unread state;
+- message-report integration;
+- participant-isolation and CSRF tests.
+
+## Phase 15 — Messaging realtime delivery — NEXT
+
+Now introduce realtime because the persistent messaging domain exists:
 
 - Django Channels;
-- Redis;
-- WebSocket lifecycle;
-- sync/pending state;
+- Redis channel layer;
+- authenticated WebSocket lifecycle;
+- live delivery to active conversation participants;
+- reconnect/refetch behavior;
 - two-session/device tests.
 
-## Phase 15 — Direct messaging
-
-Build:
-
-- conversations;
-- participant rules;
-- persisted messages;
-- live delivery;
-- block/report integration.
+REST/PostgreSQL remains authoritative. WebSocket delivery must never become the write source of truth.
 
 ## Phase 16 — Notifications
 

@@ -98,6 +98,34 @@ PUT    /api/v1/creators/{id}/follow/
 DELETE /api/v1/creators/{id}/follow/
 ```
 
+### Direct messaging
+
+BE-DM-001 provides the persistent REST core:
+
+```text
+GET    /api/v1/conversations/
+POST   /api/v1/conversations/
+GET    /api/v1/conversations/{id}/messages/
+POST   /api/v1/conversations/{id}/messages/
+POST   /api/v1/conversations/{id}/read/
+POST   /api/v1/messages/{id}/report/
+```
+
+Messaging rules:
+
+- every conversation is one Reader/User ↔ one CreatorProfile pair;
+- creating the same Reader/Creator pair again returns the existing conversation rather than duplicating it;
+- a user cannot start a conversation with their own CreatorProfile;
+- conversation and message history endpoints return data only to the Reader or the Creator's User account; non-participants receive HTTP 404 so private-conversation existence is not disclosed;
+- conversation lists use cursor pagination with page size 20 and `-updated_at,-id` ordering;
+- message history uses cursor pagination with page size 50 and newest-first `-id` ordering;
+- message bodies are trimmed, non-blank, and limited to 4000 characters;
+- `POST .../read/` marks only unread messages sent by the other participant;
+- message reports may be created only by the recipient/other participant, not by the sender or an unrelated account;
+- a message report enters the existing moderation queue. Moderator report detail exposes only the reported Message and minimal sender identity, not arbitrary private-conversation history.
+
+PostgreSQL is the message source of truth. Channels/Redis/WebSocket delivery is a separate next phase and must not replace these REST writes.
+
 ### Explore/search
 
 ```text

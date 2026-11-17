@@ -1,17 +1,36 @@
 # Backend Handoff
 
-- Task ID: BE-MOD-HIDDEN-001 — Moderator Hidden-Idea Workspace API.
-- Starting SHA: `9673026596432952b63e6f1438487bd9502271d0`; implementation SHA: `e4ec7914ecae1caeb8affb7d10254e2ac15c8530` (`feat(moderation): add hidden idea workspace`).
-- Route/authority: `GET /api/v1/moderation/ideas/?status=hidden`; the existing `IsModeratorOrAdmin` is unchanged. Moderator and Admin are allowed; ordinary Reader, Creator without moderation authority, staff-only non-Moderator, and anonymous are forbidden.
-- Required filter: `status=hidden` is mandatory and is the sole supported value. Missing and every unsupported status return HTTP 400. The ORM query explicitly uses `status=Idea.IdeaStatus.HIDDEN` rather than reflecting arbitrary query input.
-- Scope: this is a hidden-moderation workspace, not a general private-Idea browser. Published, draft, and withdrawn Ideas are excluded; no role, lifecycle, audit-model, or content-model changes were introduced.
-- Representation: exactly `id`, `title`, `body_excerpt`, `language`, `status`, `creator{id,display_name}`, `source{id,type,title}`, `published_at`, and `updated_at`. Full body and sensitive/broader Creator, Source, report, note, actor, and audit fields are absent.
-- Excerpt rule: body unchanged when `len(body) <= 240`; otherwise `body[:239] + "…"`. Python Unicode character slicing is covered with Persian test content.
-- Data access: current truth comes from `Idea.status`; `ModerationAction` remains historical audit. `select_related("creator", "creator__user", "source")` gives bounded relationship loading without N+1 queries.
-- Pagination: dedicated `HiddenIdeaCursorPagination`, page size 25, ordering `("-updated_at", "-id")`; multi-page tests cover complete, duplicate-free, ordered hidden results while retaining `status=hidden` navigation.
-- Restore: existing CSRF-protected restore endpoint and `idea_restored` audit action remain unchanged. Restore moves `hidden -> published`, after which the Idea is absent from the workspace.
-- Migration: none; dry-run migration check reported no changes.
-- Verification: focused moderation 43/43; full backend 380/380; Django check passed; pip check clean; diff check clean.
-- Live smoke: disposable hide/list/authorization/exclusion/restore/audit lifecycle passed, and created records were removed without resetting the development database.
-- FE-016 preservation: pre/post deterministic frontend hash matched exactly: `2531cfb06e78e154006d2d920ea38ff5fe96e1585fff45a1fa978f9b3aa6a05c`. No frontend or frontend-state file was staged by this task.
-- External teaching notes appended; no remaining blockers; no frontend implementation delivered.
+- Current task: BE-DM-001 — Persistent Reader ↔ Creator Direct Messaging Core.
+- Status: COMPLETE.
+- Starting SHA: `55c749a36382304ab8aaefbf7dae3a1158282ada`.
+- Implementation SHA: `539ec32` (`feat(messaging): add persistent reader creator messaging`).
+- New app: `backend/messaging/`.
+- Schema:
+  - `Conversation(reader, creator, created_at, updated_at)`
+  - unique `(reader, creator)`
+  - `Message(conversation, sender, body, created_at, read_at)`
+  - recent-conversation and message-history indexes
+- Participant rule: the Reader is `Conversation.reader`; the Creator participant is `Conversation.creator.user`. Only these two accounts may access or write the conversation. A Creator account may still act as a Reader when contacting a different Creator, but no arbitrary Reader ↔ Reader conversation exists.
+- Conversation API:
+  - `GET /api/v1/conversations/` — current participant's conversations, cursor page size 20, `-updated_at,-id`
+  - `POST /api/v1/conversations/` with `creator_id` — create (201) or return existing pair (200)
+  - self-conversation rejected
+- Message API:
+  - `GET /api/v1/conversations/{id}/messages/` — cursor page size 50, newest first
+  - `POST /api/v1/conversations/{id}/messages/` — persist a trimmed nonblank body up to 4000 chars
+  - `POST /api/v1/conversations/{id}/read/` — mark only incoming unread Messages read
+- Privacy/authorization: participant-only lookup returns 404 to unrelated accounts; all mutations remain SessionAuthentication + CSRF protected.
+- Conversation list representation includes safe Reader and Creator summaries, viewer role, unread count, and a max-160-character latest-message preview. It does not expose email, groups, staff/superuser flags, permissions, or private account internals.
+- Message reporting:
+  - `POST /api/v1/messages/{id}/report/`
+  - only the other participant/recipient can report the Message; sender and unrelated accounts receive 404
+  - report uses existing `Report.TargetType.MESSAGE`
+  - moderator report detail can inspect only that reported Message and minimal sender identity; no conversation browsing endpoint was added for moderators
+- Migration: `messaging.0001_initial` applied locally.
+- Tests: focused messaging + moderation 58/58 PASS; full backend 395/395 PASS.
+- Additional checks: Django check PASS; `makemigrations --check --dry-run` no drift; pip check clean; diff check clean.
+- Disposable local integration smoke PASS for create → send → unread → read → reply → report → outsider denial; smoke data rolled back.
+- No frontend changes were made.
+- No Redis/Channels/WebSocket dependency was added yet. This is intentional.
+- Environment note: the existing venv has stale `InkSight` path metadata in launcher/shebang information. Use `.venv/bin/python` for now; recreating the venv later will clean this up.
+- Next task: BE-RT-001 — authenticated Django Channels + Redis messaging delivery, reconnect/refetch behavior, and two-session tests. Persist via the existing REST/database path first, then broadcast after commit.

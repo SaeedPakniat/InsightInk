@@ -1,20 +1,32 @@
 # Backend State
 
-- BE-MOD-HIDDEN-001 status: Complete; implementation committed and verified, backend checkpoint documentation ready to commit.
-- Exact starting SHA: `9673026596432952b63e6f1438487bd9502271d0` on `master`, equal to pre-task `origin/master`.
-- Exact implementation commit SHA: `e4ec7914ecae1caeb8affb7d10254e2ac15c8530` (`feat(moderation): add hidden idea workspace`).
-- Endpoint: Moderator/Admin-only `GET /api/v1/moderation/ideas/?status=hidden`, enforced by the existing `IsModeratorOrAdmin`; ordinary Readers, non-moderator Creators, staff-only users, and anonymous users remain forbidden.
-- Filter contract: `status` is required and `hidden` is the only accepted value; missing, `published`, `draft`, `withdrawn`, and arbitrary values return DRF HTTP 400. The queryset independently filters the constant `Idea.IdeaStatus.HIDDEN`.
-- Visibility/current state: `Idea.status` is authoritative; only currently hidden Ideas are listed. Creator drafts, published Ideas, and creator-withdrawn Ideas remain excluded. `ModerationAction` remains audit history.
-- Safe result contract: exactly `id`, `title`, `body_excerpt`, `language`, `status`, `creator{id,display_name}`, `source{id,type,title}`, `published_at`, and `updated_at`; no full body, account internals, broader Source data, reports, notes, moderator identity, or audit history.
-- Excerpt: bodies at or below 240 Unicode characters are unchanged; longer bodies use `body[:239] + "…"`, yielding exactly 240 characters.
-- Query/pagination: `select_related("creator", "creator__user", "source")` prevents N+1 relationship reads. Dedicated cursor pagination uses page size 25 and deterministic ordering `-updated_at,-id`.
-- Restore/audit compatibility: existing CSRF-protected `POST /api/v1/moderation/ideas/{id}/restore/` remains authoritative for `hidden -> published`, still records `idea_restored`, and restored Ideas naturally disappear from the workspace.
-- Schema: no model change or migration; `makemigrations --check --dry-run` returned `No changes detected`.
-- Focused moderation suite: 43/43 passed.
-- Full backend suite: 380/380 passed (previous baseline 372).
-- Quality: `manage.py check` PASS; migration drift none; `.venv/bin/python -m pip check` clean; `git diff --check` PASS.
-- Disposable live API smoke: published Idea hidden and listed with exact minimal shape; ordinary Reader forbidden; disposable draft/withdrawn Ideas excluded; restore returned published/`idea_restored`; restored Idea absent; hide/restore audit rows verified; all disposable data cleaned.
-- Frontend preservation: FE-016 remained unstaged and task-untouched. Deterministic frontend tracked+untracked non-ignored filename/content hash before and after: `2531cfb06e78e154006d2d920ea38ff5fe96e1585fff45a1fa978f9b3aa6a05c`.
-- Teaching notes: appended `BE-MOD-HIDDEN-001 — Safe Moderator Read Models and Cursor Pagination` outside the repository without staging it.
-- Remaining blockers: none. No frontend implementation was performed.
+- BE-DM-001 status: Complete; persistent Reader ↔ Creator direct-messaging core implemented, tested, locally migrated, smoke-verified, and committed.
+- Starting SHA: `55c749a36382304ab8aaefbf7dae3a1158282ada` (`docs(frontend): finalize release readiness handoff`), equal to `origin/master` before this task.
+- Implementation commit: `539ec32` (`feat(messaging): add persistent reader creator messaging`).
+- New Django app: `messaging`.
+- Conversation domain: one `Conversation.reader -> User` plus one `Conversation.creator -> CreatorProfile`; unique constraint on `(reader, creator)`. This fixed pair is the bounded participant model for v1; no generic arbitrary user-to-user chat was introduced.
+- Self-conversation against the user's own CreatorProfile is rejected.
+- Message domain: `Message.conversation`, `sender`, immutable body, `created_at`, nullable `read_at`. API input trims bodies, rejects blank content, and limits bodies to 4000 characters.
+- PostgreSQL remains authoritative. No Channels, Redis, or WebSocket dependency was added in BE-DM-001.
+- REST endpoints:
+  - `GET /api/v1/conversations/`
+  - `POST /api/v1/conversations/`
+  - `GET /api/v1/conversations/{id}/messages/`
+  - `POST /api/v1/conversations/{id}/messages/`
+  - `POST /api/v1/conversations/{id}/read/`
+  - `POST /api/v1/messages/{id}/report/`
+- Conversation creation is idempotent for an existing Reader/Creator pair: HTTP 201 when created, HTTP 200 when the pair already exists.
+- Conversation list: participant-only, cursor page size 20, deterministic ordering `-updated_at,-id`, unread count, bounded 160-character latest-message preview, safe Reader/Creator summaries.
+- Message history: participant-only, cursor page size 50, newest-first `-id` ordering.
+- Non-participants receive HTTP 404 for private conversation/history/write/read access so conversation existence is not disclosed.
+- Read behavior: `POST .../read/` sets `read_at` only on unread Messages sent by the other participant; repeated calls are idempotent.
+- Reporting: only the recipient/other participant can report a Message. Message reports reuse the existing moderation queue with `Report.TargetType.MESSAGE`. Moderator report detail exposes only the reported Message plus minimal sender identity, never arbitrary conversation history.
+- Migration: `messaging.0001_initial`; applied successfully to the local development database.
+- Focused verification: messaging + moderation 58/58 PASS.
+- Full backend regression: 395/395 PASS (previous backend baseline 380).
+- Quality: `manage.py check` PASS; migration drift none; `pip check` clean; `git diff --check` PASS.
+- Disposable local API smoke: conversation creation, Reader send, Creator unread count, mark-read, Creator reply, Reader message report, and outsider 404 all PASS; smoke records were rolled back.
+- Frontend: untouched by BE-DM-001. Existing core frontend checkpoint remains preserved.
+- Environment note: the current virtualenv contains stale launcher metadata from the old `InkSight` path; invoking the environment's Python directly works and all tests pass. This is not a BE-DM-001 blocker, but recreating the venv later would remove the warning/stale `django-admin` shebang.
+- Deliberately not implemented yet: Channels/Redis/WebSocket delivery, messaging UI, voice notes, blocking, and realtime notifications.
+- Next recommended task: BE-RT-001 — Django Channels + Redis realtime delivery for persisted messaging, while keeping REST/PostgreSQL as source of truth.

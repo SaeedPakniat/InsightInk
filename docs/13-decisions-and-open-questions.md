@@ -110,9 +110,9 @@ Status: Accepted.
 
 ### D-011 — Realtime
 
-**Decision:** REST/database first; add Channels + Redis only when realtime phase begins.
+**Decision:** REST/PostgreSQL remains authoritative. The persistent Reader ↔ Creator messaging model and REST API are implemented before Channels/Redis. Realtime delivery is added only on top of committed database state and must not become an authoritative write path.
 
-Status: Accepted.
+Status: Accepted; persistent messaging prerequisite implemented in BE-DM-001.
 
 ### D-012 — Background jobs
 

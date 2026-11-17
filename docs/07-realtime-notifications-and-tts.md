@@ -66,38 +66,67 @@ If WebSocket disconnects:
 
 ## 5. Messaging scope
 
-Initial direct messaging is between Reader and Creator.
+BE-DM-001 now implements the persistent messaging core.
 
-It is not a general reader-to-reader messenger.
+Direct messaging is between Reader/User and CreatorProfile only. It is not a general reader-to-reader messenger.
 
-## 6. Message persistence
+Each Conversation stores the Reader and Creator directly, with one unique conversation per pair. The Creator participant is the User behind that CreatorProfile.
+
+## 6. Message persistence and read state
 
 ~~~text
 Client
   │
+  │ REST send
   ▼
-authenticated server action
+authenticated Django action
   │
   ▼
-store Message in PostgreSQL
+PostgreSQL Message commit
   │
-  ▼
-deliver realtime event to active participant
+  ├── REST history/read state remains authoritative
+  │
+  └── future realtime event
+        ▼
+     Channels
+        │
+      Redis
+        │
+        ▼
+ active participant session
 ~~~
 
-Message history always comes from the database.
+Current persistent behavior:
 
-## 7. Authorization
+- message history always comes from PostgreSQL;
+- message bodies are immutable in the current core;
+- `read_at` is set when the receiver explicitly marks incoming unread messages as read;
+- conversation lists expose unread counts and a bounded latest-message preview;
+- history is cursor-paginated;
+- no WebSocket write path exists yet.
 
-Only conversation participants may access messages.
+## 7. Authorization and reporting
 
-Moderators do not casually browse private conversations. Moderation access, if implemented, must be tied to a safety/report workflow.
+Only the Reader and the Creator's User account may access a conversation. Non-participants receive HTTP 404.
 
-NFR-13 requires encrypted transport; production uses HTTPS/WSS.
+A participant may report a Message received from the other participant. The existing moderation queue stores a `message` report target. Moderator report detail exposes only the reported Message and minimal sender identity; it does not provide casual browsing of the rest of the private conversation.
+
+NFR-13 requires encrypted transport; a future deployed environment uses HTTPS/WSS.
+
+## 8. Realtime messaging — next dependency
+
+The next backend task is to add Django Channels + Redis delivery on top of the persisted REST behavior.
+
+Rules remain:
+
+- REST/PostgreSQL is the source of truth;
+- WebSocket carries delivery events, not authoritative writes;
+- reconnect must refetch server state;
+- missing a realtime event must never lose a persisted Message.
 
 # Part C — Notifications
 
-## 8. Notification types
+## 9. Notification types
 
 Potential in-app events:
 
@@ -108,13 +137,13 @@ Potential in-app events:
 - batched new ideas from followed creators;
 - moderation outcome where relevant.
 
-## 9. Notification preferences
+## 10. Notification preferences
 
 Users must be able to disable specific notification types.
 
 Preferences are server-side so they follow the account across devices.
 
-## 10. Batching
+## 11. Batching
 
 The source specifically asks for new ideas from followed creators to be batched into one notification.
 
@@ -129,7 +158,7 @@ Do not add Celery in advance.
 
 # Part D — Text-to-Speech
 
-## 11. Requirement
+## 12. Requirement
 
 Source material requires:
 
@@ -139,7 +168,7 @@ Source material requires:
 - voice choice;
 - accessible UI independently of TTS.
 
-## 12. Important distinction
+## 13. Important distinction
 
 TTS is not an LLM feature.
 
@@ -160,7 +189,7 @@ Potential limitations:
 - old browser support varies;
 - playback behavior differs across platforms.
 
-## 13. TTS decision is intentionally deferred
+## 14. TTS decision is intentionally deferred
 
 Before implementing, build a small compatibility prototype on:
 
@@ -180,7 +209,7 @@ Only if consistent progress/scrubbing/voice behavior is required and browser TTS
 
 Option B adds storage/delivery complexity.
 
-## 14. Accessibility independence
+## 15. Accessibility independence
 
 NFR-16 states accessibility is independent of TTS.
 

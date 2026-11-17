@@ -225,30 +225,40 @@ ModerationAction
 
 A generic target may be implemented carefully, or separate report types may be used. Choose the simpler Django design during implementation.
 
-## 12. Messaging — later phase
+## 12. Messaging — persistent core implemented
+
+BE-DM-001 implements the bounded Reader ↔ Creator domain directly:
 
 ```text
 Conversation
 - id
+- reader_id -> User
+- creator_id -> CreatorProfile
 - created_at
-
-ConversationParticipant
-- conversation_id
-- user_id
+- updated_at
 
 Message
 - id
-- conversation_id
-- sender_id
+- conversation_id -> Conversation
+- sender_id -> User
 - body
 - created_at
 - read_at
 ```
 
-Initial product rule:
+Constraints and semantics:
 
-- reader ↔ creator direct conversation;
-- not a general reader-to-reader social messenger.
+- `unique(reader_id, creator_id)` gives one durable conversation per Reader/Creator pair;
+- the two participant identities are explicit on `Conversation`; a generic participant table is intentionally unnecessary while the product is limited to exactly Reader ↔ Creator messaging;
+- the Creator participant is `conversation.creator.user`;
+- self-conversations against the user's own CreatorProfile are rejected;
+- only those two participants may list history, send, or mark the conversation read;
+- Message bodies are immutable in the current core and limited to 4000 characters by the API;
+- `read_at` records when the receiving participant marked an incoming Message as read;
+- PostgreSQL is authoritative; realtime delivery is layered on after persistence and REST behavior are stable;
+- received Messages can be reported through the existing moderation Report model using target type `message`.
+
+This remains direct Reader ↔ Creator messaging, not a general user-to-user social messenger.
 
 ## 13. Block / mute — later phase
 
@@ -339,7 +349,7 @@ User ──1:1── CreatorProfile
  └──< CreatorFollow >── CreatorProfile ────┘
 ```
 
-Messaging, notifications, membership and moderation attach to the same User foundation in later phases.
+Messaging now attaches to the same User foundation through Conversation and Message; notifications and membership remain later phases, while moderation is already implemented.
 
 ## 18. Database design rules
 
