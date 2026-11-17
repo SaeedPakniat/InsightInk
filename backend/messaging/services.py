@@ -2,6 +2,11 @@ from django.db import transaction
 from django.utils import timezone
 
 from .models import Conversation, Message
+from .realtime import (
+    schedule_conversation_created,
+    schedule_message_created,
+    schedule_messages_read,
+)
 
 
 class MessagingDomainError(ValueError):
@@ -15,10 +20,13 @@ def start_conversation(*, reader, creator):
             "You cannot start a conversation with your own creator profile."
         )
 
-    return Conversation.objects.get_or_create(
+    conversation, created = Conversation.objects.get_or_create(
         reader=reader,
         creator=creator,
     )
+    if created:
+        schedule_conversation_created(conversation)
+    return conversation, created
 
 
 @transaction.atomic
@@ -37,6 +45,10 @@ def send_message(*, conversation, sender, body):
         updated_at=message.created_at
     )
     conversation.updated_at = message.created_at
+    schedule_message_created(
+        conversation=conversation,
+        message=message,
+    )
     return message
 
 
@@ -55,5 +67,11 @@ def mark_conversation_read(*, conversation, viewer):
         )
         .exclude(sender=viewer)
         .update(read_at=read_at)
+    )
+    schedule_messages_read(
+        conversation=conversation,
+        viewer=viewer,
+        marked_count=marked_count,
+        read_at=read_at,
     )
     return marked_count, read_at
