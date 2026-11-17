@@ -3,7 +3,8 @@
 - TYPE: explicit new product scope after FE-026.
 - STARTING HEAD: `38e6f052f98020be035d4291125cc648b4bfc297`.
 - BACKEND SOURCE OF TRUTH: committed messaging + Redis realtime backend at `38e6f05`.
-- STATUS: IMPLEMENTED and VERIFIED.
+- IMPLEMENTATION COMMIT: `22b79c3f48fcbd9ee4d714d8af5ccb84799dfed6`.
+- STATUS: IMPLEMENTED, VERIFIED and checkpointed.
 - BACKEND API REDESIGN: none.
 - NEW NPM DEPENDENCIES: none.
 
