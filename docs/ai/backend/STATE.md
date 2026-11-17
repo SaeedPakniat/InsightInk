@@ -1,32 +1,34 @@
 # Backend State
 
-- BE-DM-001 status: Complete; persistent Reader ↔ Creator direct-messaging core implemented, tested, locally migrated, smoke-verified, and committed.
-- Starting SHA: `55c749a36382304ab8aaefbf7dae3a1158282ada` (`docs(frontend): finalize release readiness handoff`), equal to `origin/master` before this task.
-- Implementation commit: `539ec32` (`feat(messaging): add persistent reader creator messaging`).
-- New Django app: `messaging`.
-- Conversation domain: one `Conversation.reader -> User` plus one `Conversation.creator -> CreatorProfile`; unique constraint on `(reader, creator)`. This fixed pair is the bounded participant model for v1; no generic arbitrary user-to-user chat was introduced.
-- Self-conversation against the user's own CreatorProfile is rejected.
-- Message domain: `Message.conversation`, `sender`, immutable body, `created_at`, nullable `read_at`. API input trims bodies, rejects blank content, and limits bodies to 4000 characters.
-- PostgreSQL remains authoritative. No Channels, Redis, or WebSocket dependency was added in BE-DM-001.
-- REST endpoints:
-  - `GET /api/v1/conversations/`
-  - `POST /api/v1/conversations/`
-  - `GET /api/v1/conversations/{id}/messages/`
-  - `POST /api/v1/conversations/{id}/messages/`
-  - `POST /api/v1/conversations/{id}/read/`
-  - `POST /api/v1/messages/{id}/report/`
-- Conversation creation is idempotent for an existing Reader/Creator pair: HTTP 201 when created, HTTP 200 when the pair already exists.
-- Conversation list: participant-only, cursor page size 20, deterministic ordering `-updated_at,-id`, unread count, bounded 160-character latest-message preview, safe Reader/Creator summaries.
-- Message history: participant-only, cursor page size 50, newest-first `-id` ordering.
-- Non-participants receive HTTP 404 for private conversation/history/write/read access so conversation existence is not disclosed.
-- Read behavior: `POST .../read/` sets `read_at` only on unread Messages sent by the other participant; repeated calls are idempotent.
-- Reporting: only the recipient/other participant can report a Message. Message reports reuse the existing moderation queue with `Report.TargetType.MESSAGE`. Moderator report detail exposes only the reported Message plus minimal sender identity, never arbitrary conversation history.
-- Migration: `messaging.0001_initial`; applied successfully to the local development database.
-- Focused verification: messaging + moderation 58/58 PASS.
-- Full backend regression: 395/395 PASS (previous backend baseline 380).
+- BE-RT-001 status: Complete; Django Channels + Redis realtime delivery is implemented for the existing persistent Reader ↔ Creator messaging system.
+- Starting SHA: `42c15ad41a622bc81d00dd104bba4e59bf598bdc` (`docs(backend): record persistent messaging checkpoint`), equal to `origin/master` before this task.
+- Implementation commit: `d14e6e2` (`feat(messaging): add redis realtime delivery`).
+- PostgreSQL/REST remains authoritative. No WebSocket mutation path was introduced.
+- Realtime dependencies pinned: `channels==4.3.2`, `channels-redis==4.3.0`, `daphne==4.2.1`.
+- ASGI: `config.asgi.application` uses `ProtocolTypeRouter`; HTTP continues through Django and WebSocket traffic uses `AllowedHostsOriginValidator(AuthMiddlewareStack(...))`.
+- WebSocket route: `/ws/messaging/`.
+- Authentication: existing Django session cookie. Anonymous sockets are rejected.
+- Group model: each authenticated session joins only `messaging.user.<user_id>`. Multiple active sessions for the same account receive the same committed event.
+- Delivery events:
+  - `sync.required` immediately after successful socket connection;
+  - `conversation.created` after a new REST-created Conversation commits;
+  - `message.created` after a REST-created Message commits;
+  - `messages.read` after incoming unread Message state commits.
+- Reconnect semantics: no Redis replay/history is treated as durable truth. `sync.required` directs the client to refetch REST state after every connection/reconnection.
+- Client WebSocket writes: only `ping` is accepted as a transport check and returns `pong`; application writes receive `rest_write_required`. Conversation/message/read mutations remain REST-only.
+- Transaction boundary: all domain events are scheduled with `transaction.on_commit`, so live delivery can only observe committed PostgreSQL state.
+- Failure behavior: channel-layer/Redis delivery exceptions are contained and logged; they do not roll back a committed Conversation, Message, or read-state change.
+- Redis configuration: `REDIS_URL`, default `redis://127.0.0.1:6379/0`; `RedisChannelLayer` uses prefix `insightink`.
+- Schema/migrations: no model change and no migration; `makemigrations --check --dry-run` returned `No changes detected`.
+- Focused messaging suite: 25/25 PASS (15 persistent messaging tests + 10 realtime/ASGI tests).
+- Full backend suite: 405/405 PASS (previous baseline 395).
 - Quality: `manage.py check` PASS; migration drift none; `pip check` clean; `git diff --check` PASS.
-- Disposable local API smoke: conversation creation, Reader send, Creator unread count, mark-read, Creator reply, Reader message report, and outsider 404 all PASS; smoke records were rolled back.
-- Frontend: untouched by BE-DM-001. Existing core frontend checkpoint remains preserved.
-- Environment note: the current virtualenv contains stale launcher metadata from the old `InkSight` path; invoking the environment's Python directly works and all tests pass. This is not a BE-DM-001 blocker, but recreating the venv later would remove the warning/stale `django-admin` shebang.
-- Deliberately not implemented yet: Channels/Redis/WebSocket delivery, messaging UI, voice notes, blocking, and realtime notifications.
-- Next recommended task: BE-RT-001 — Django Channels + Redis realtime delivery for persisted messaging, while keeping REST/PostgreSQL as source of truth.
+- Realtime tests cover anonymous rejection, session-authenticated connection, delivery-only socket behavior, REST-before-delivery persistence, participant isolation, two simultaneous sessions for one user, read events, conversation events, reconnect/refetch, and Redis-failure persistence.
+- Real Redis smoke: temporary Redis 8.10.3 container on `127.0.0.1:6380`; authenticated Reader and Creator sockets both received the same `message.created` event after a REST Message was verified persisted. Result: `REAL_REDIS_SMOKE_PASS`.
+- Normal launcher smoke: `run backend.sh` served `GET /api/v1/health/` with HTTP 200 and `Server: daphne`, confirming the existing development launcher now serves ASGI.
+- Temporary Redis/backend smoke processes were stopped after verification.
+- Frontend was not modified by BE-RT-001.
+- Pre-existing unrelated local change preserved and not staged: `backend/content/language_filters.py`, SHA-256 `0806f1a45c9480c362844b7fc7ebbaa8635a19a7bd37830f444ea0f5fab0a781`.
+- Existing environment note remains: the root virtualenv still contains stale launcher metadata from the old `InkSight` path; direct `.venv/bin/python` execution works and all tests pass.
+- Deliberately not implemented here: frontend messaging UI, persistent notification model, Save/Library realtime events, Web Push, voice notes, or blocking.
+- Next recommended product task: FE-DM — Messaging UI using the existing REST API for writes/history and `/ws/messaging/` for live delivery. After that, implement persistent + realtime in-app notifications.

@@ -257,18 +257,25 @@ BE-DM-001 establishes the domain before any realtime infrastructure:
 - message-report integration;
 - participant-isolation and CSRF tests.
 
-## Phase 15 — Messaging realtime delivery — NEXT
+## Phase 15 — Messaging realtime delivery — COMPLETE
 
-Now introduce realtime because the persistent messaging domain exists:
+BE-RT-001 implements realtime delivery because the persistent messaging domain already exists:
 
-- Django Channels;
-- Redis channel layer;
-- authenticated WebSocket lifecycle;
-- live delivery to active conversation participants;
-- reconnect/refetch behavior;
-- two-session/device tests.
+- Django Channels + ASGI;
+- Redis-backed channel layer;
+- session-authenticated WebSocket lifecycle;
+- account-scoped realtime groups;
+- live `conversation.created`, `message.created`, and `messages.read` delivery;
+- explicit `sync.required` reconnect/refetch behavior;
+- two-session/device tests;
+- real Redis integration smoke;
+- graceful Redis-delivery failure without rolling back PostgreSQL state.
 
-REST/PostgreSQL remains authoritative. WebSocket delivery must never become the write source of truth.
+REST/PostgreSQL remains authoritative. WebSocket delivery is not a write source of truth.
+
+### Immediate integration gate — FE-DM — NEXT
+
+The next product task is the frontend messaging UI using the existing REST API plus `/ws/messaging/` for live delivery. The frontend must refetch REST state after `sync.required` and must continue to perform all writes through REST.
 
 ## Phase 16 — Notifications
 

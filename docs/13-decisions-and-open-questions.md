@@ -110,9 +110,11 @@ Status: Accepted.
 
 ### D-011 — Realtime
 
-**Decision:** REST/PostgreSQL remains authoritative. The persistent Reader ↔ Creator messaging model and REST API are implemented before Channels/Redis. Realtime delivery is added only on top of committed database state and must not become an authoritative write path.
+**Decision:** REST/PostgreSQL remains authoritative. Reader ↔ Creator messaging persists through the REST/database path first. Realtime delivery is layered on top with Django Channels and Redis and must never become an authoritative write path.
 
-Status: Accepted; persistent messaging prerequisite implemented in BE-DM-001.
+BE-RT-001 implements one session-authenticated account WebSocket at `/ws/messaging/`. Each active session joins `messaging.user.<user_id>`. Domain events are scheduled only with `transaction.on_commit`, so Redis delivery observes committed state. Reconnect does not replay missed events; the server emits `sync.required` and clients refetch REST state. WebSocket application writes are rejected with `rest_write_required`.
+
+Status: Accepted and implemented for messaging.
 
 ### D-012 — Background jobs
 

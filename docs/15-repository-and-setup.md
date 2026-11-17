@@ -166,21 +166,52 @@ During Phase 0 decide whether to delete it.
 
 Do not build project logic in root main.py.
 
-## 10. Environment variables — later
+## 10. Environment variables
 
-Likely backend settings:
+Current local backend variables include:
 
 ~~~text
-DJANGO_SECRET_KEY
-DJANGO_DEBUG
-DATABASE_URL or individual PostgreSQL settings
-ALLOWED_HOSTS
-CORS/CSRF origin settings if needed
+DATABASE_NAME
+DATABASE_USER
+DATABASE_PASSWORD
+DATABASE_HOST
+DATABASE_PORT
+REDIS_URL
 ~~~
 
-Later services may add variables only when implemented.
+`REDIS_URL` defaults in Django settings to:
+
+~~~text
+redis://127.0.0.1:6379/0
+~~~
+
+and may be overridden through `.env`.
+
+PostgreSQL stores authoritative application data. Redis is required only for live Channels delivery; it is not used as permanent application storage.
 
 Never pre-create dozens of unused configuration variables.
+
+## 10.1 Local Redis for messaging realtime
+
+Use any compatible local Redis service. Docker is convenient but is not a project architecture requirement.
+
+Example:
+
+~~~bash
+docker run --rm --name insightink-redis \
+  -p 127.0.0.1:6379:6379 \
+  redis:8-alpine
+~~~
+
+Then the existing backend launcher remains:
+
+~~~bash
+./run\ backend.sh
+~~~
+
+Daphne is installed with the backend dependencies, so Django's development `runserver` serves the ASGI application and supports both ordinary HTTP/REST traffic and the messaging WebSocket route.
+
+If Redis is temporarily unavailable, PostgreSQL/REST remains the source of truth. Existing REST operations can persist successfully while live WebSocket delivery is unavailable; clients recover by reconnecting and refetching REST state.
 
 ## 11. Daily development workflow
 

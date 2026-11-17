@@ -1,6 +1,6 @@
 # 07 — Realtime, Notifications and Text-to-Speech
 
-These capabilities are later phases. They are documented now so the core schema and API do not block them.
+Messaging realtime is now implemented. Notifications, broader Save/Library live sync, and TTS remain later phases; this document keeps their shared architecture explicit.
 
 # Part A — Realtime sync
 
@@ -72,38 +72,43 @@ Direct messaging is between Reader/User and CreatorProfile only. It is not a gen
 
 Each Conversation stores the Reader and Creator directly, with one unique conversation per pair. The Creator participant is the User behind that CreatorProfile.
 
-## 6. Message persistence and read state
+## 6. Message persistence, read state and live delivery
 
 ~~~text
 Client
   │
-  │ REST send
+  │ authenticated REST write
   ▼
-authenticated Django action
+Django service
   │
   ▼
-PostgreSQL Message commit
+PostgreSQL commit  ← authoritative state
   │
-  ├── REST history/read state remains authoritative
-  │
-  └── future realtime event
+  └── transaction.on_commit(...)
+        │
         ▼
      Channels
         │
-      Redis
+        ▼
+ RedisChannelLayer
         │
         ▼
- active participant session
+ messaging.user.<user_id>
+        │
+        ▼
+ active authenticated WebSocket sessions
 ~~~
 
-Current persistent behavior:
+Current behavior:
 
 - message history always comes from PostgreSQL;
 - message bodies are immutable in the current core;
 - `read_at` is set when the receiver explicitly marks incoming unread messages as read;
 - conversation lists expose unread counts and a bounded latest-message preview;
 - history is cursor-paginated;
-- no WebSocket write path exists yet.
+- realtime events are scheduled only after the database transaction commits;
+- Redis/channel-layer failure does not roll back or invalidate committed REST/database state;
+- WebSocket is never used to create a Conversation, persist a Message, or change read state.
 
 ## 7. Authorization and reporting
 
@@ -113,16 +118,48 @@ A participant may report a Message received from the other participant. The exis
 
 NFR-13 requires encrypted transport; a future deployed environment uses HTTPS/WSS.
 
-## 8. Realtime messaging — next dependency
+## 8. Realtime messaging — implemented
 
-The next backend task is to add Django Channels + Redis delivery on top of the persisted REST behavior.
+BE-RT-001 adds authenticated Django Channels + Redis delivery on top of the persisted REST behavior.
 
-Rules remain:
+WebSocket endpoint:
+
+~~~text
+/ws/messaging/
+~~~
+
+Authentication uses the existing Django session cookie through `AuthMiddlewareStack`, with WebSocket origin validation. Anonymous sockets are rejected.
+
+Each authenticated session joins only its account group:
+
+~~~text
+messaging.user.<user_id>
+~~~
+
+A user may have multiple active browser/PWA sessions in the same group, so the same committed event can update multiple devices/tabs.
+
+Current server events:
+
+~~~text
+sync.required
+conversation.created
+message.created
+messages.read
+~~~
+
+`sync.required` is sent immediately after a successful socket connection. It tells the frontend to refetch REST state rather than assuming the socket has replayed events missed while offline.
+
+Client-to-server WebSocket writes are deliberately unsupported. `ping` receives `pong`; other application messages receive a `rest_write_required` error. All domain mutations continue through REST.
+
+Delivery rules:
 
 - REST/PostgreSQL is the source of truth;
-- WebSocket carries delivery events, not authoritative writes;
+- WebSocket carries delivery events only;
+- events are scheduled with `transaction.on_commit`;
 - reconnect must refetch server state;
-- missing a realtime event must never lose a persisted Message.
+- there is no replay log in Redis;
+- missing a realtime event must never lose a persisted Message;
+- Redis unavailability may temporarily remove live delivery, but must not turn a successful database write into a failed or missing Message.
 
 # Part C — Notifications
 

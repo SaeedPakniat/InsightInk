@@ -178,17 +178,25 @@ Goals:
 
 PWA capability must not be confused with guaranteed native-app feature parity.
 
-## 5. Realtime stack — later phase only
+## 5. Realtime stack — implemented for messaging
 
 ### Django Channels
 
-Added for WebSocket support when realtime sync and messaging are implemented.
+Channels provides the ASGI/WebSocket layer for live messaging delivery. The current project pins `channels==4.3.2`.
 
-### Redis
+The WebSocket endpoint is delivery-only. Persistent writes continue to use the existing authenticated REST API and PostgreSQL.
 
-Added alongside Channels as realtime infrastructure.
+### channels-redis / Redis
 
-Redis is not a permanent-data store for this project.
+The project pins `channels-redis==4.3.0` and uses `RedisChannelLayer` for cross-process delivery between active sessions.
+
+Redis is transient delivery infrastructure, not a permanent-data store. PostgreSQL remains the source of truth for Conversations, Messages, and read state.
+
+Tests may use Channels' in-memory channel layer so the backend suite does not require a running Redis process.
+
+### Daphne
+
+The project pins `daphne==4.2.1` as the ASGI development server integration. With Daphne installed, the existing Django `runserver` path serves both HTTP and WebSocket traffic through ASGI.
 
 ## 6. Testing tools
 
