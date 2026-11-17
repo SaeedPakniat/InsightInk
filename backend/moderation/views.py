@@ -8,6 +8,7 @@ from rest_framework.views import APIView
 
 from engagement.models import Comment
 from content.models import Idea
+from messaging.selectors import reportable_message_for_user
 
 from .exceptions import ModerationTransitionError
 from .models import Report
@@ -27,6 +28,7 @@ from .serializers import (
 from .services import (
     create_comment_report,
     create_idea_report,
+    create_message_report,
     hide_idea_directly,
     hide_reported_comment,
     reject_report,
@@ -76,6 +78,33 @@ class IdeaReportView(APIView):
         report = create_idea_report(
             reporter=request.user,
             idea=idea,
+            reason=serializer.validated_data["reason"],
+            details=serializer.validated_data.get("details", ""),
+        )
+        return Response(
+            ReportPublicSerializer(report).data,
+            status=status.HTTP_201_CREATED,
+        )
+
+
+class MessageReportView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, message_id):
+        message = reportable_message_for_user(
+            message_id=message_id,
+            user=request.user,
+        )
+        if message is None:
+            from django.http import Http404
+
+            raise Http404
+
+        serializer = CommentReportCreateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        report = create_message_report(
+            reporter=request.user,
+            message=message,
             reason=serializer.validated_data["reason"],
             details=serializer.validated_data.get("details", ""),
         )

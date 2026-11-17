@@ -30,6 +30,17 @@ def create_idea_report(*, reporter, idea, reason, details=""):
     )
 
 
+def create_message_report(*, reporter, message, reason, details=""):
+    return Report.objects.create(
+        reporter=reporter,
+        target_type=Report.TargetType.MESSAGE,
+        target_id=message.id,
+        reason=reason,
+        details=details,
+        status=Report.Status.OPEN,
+    )
+
+
 def _record_action(
     *,
     actor,

@@ -4,6 +4,7 @@ from rest_framework import serializers
 from content.models import Idea, Source
 from creators.models import CreatorProfile
 from engagement.models import Comment
+from messaging.models import Message
 
 from .models import ModerationAction, Report
 
@@ -123,12 +124,14 @@ class ReportDetailSerializer(ReportListSerializer):
     actions = ModerationActionSerializer(many=True, read_only=True)
     target_comment = serializers.SerializerMethodField()
     target_idea = serializers.SerializerMethodField()
+    target_message = serializers.SerializerMethodField()
 
     class Meta(ReportListSerializer.Meta):
         fields = ReportListSerializer.Meta.fields + (
             "details",
             "target_comment",
             "target_idea",
+            "target_message",
             "actions",
         )
 
@@ -190,6 +193,29 @@ class ReportDetailSerializer(ReportListSerializer):
                 "cover": idea.source.cover,
             },
             "published_at": idea.published_at,
+        }
+
+    def get_target_message(self, report):
+        if report.target_type != Report.TargetType.MESSAGE:
+            return None
+
+        try:
+            message = Message.objects.select_related("sender").get(
+                pk=report.target_id
+            )
+        except Message.DoesNotExist:
+            return None
+
+        return {
+            "id": message.id,
+            "conversation_id": message.conversation_id,
+            "sender": {
+                "id": message.sender_id,
+                "display_name": message.sender.display_name,
+            },
+            "body": message.body,
+            "created_at": message.created_at,
+            "read_at": message.read_at,
         }
 
 

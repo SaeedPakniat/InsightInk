@@ -6,6 +6,7 @@ from .views import (
     HideReportedCommentView,
     HiddenIdeaListView,
     IdeaReportView,
+    MessageReportView,
     RejectReportView,
     ReportDetailView,
     ReportListView,
@@ -27,6 +28,11 @@ urlpatterns = [
         "ideas/<int:idea_id>/report/",
         IdeaReportView.as_view(),
         name="idea-report",
+    ),
+    path(
+        "messages/<int:message_id>/report/",
+        MessageReportView.as_view(),
+        name="message-report",
     ),
     path(
         "moderation/ideas/",
