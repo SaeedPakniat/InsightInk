@@ -1,6 +1,8 @@
 from django.db import transaction
 from django.utils import timezone
 
+from notifications.services import create_message_received_notification
+
 from .models import Conversation, Message
 from .realtime import (
     schedule_conversation_created,
@@ -45,6 +47,7 @@ def send_message(*, conversation, sender, body):
         updated_at=message.created_at
     )
     conversation.updated_at = message.created_at
+    create_message_received_notification(message=message)
     schedule_message_created(
         conversation=conversation,
         message=message,

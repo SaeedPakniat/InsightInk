@@ -30,6 +30,7 @@ urlpatterns = [
     path("", include("explore.urls")),
     path("", include("recommendations.urls")),
     path("", include("messaging.urls")),
+    path("", include("notifications.urls")),
     path("", include("moderation.urls")),
     path("health/", health, name="health"),
     path("feed/", FeedView.as_view(), name="feed"),

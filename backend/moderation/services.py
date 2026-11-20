@@ -3,6 +3,10 @@ from django.utils import timezone
 
 from content.models import Idea
 from engagement.models import Comment
+from notifications.services import (
+    create_idea_hidden_notification,
+    create_idea_restored_notification,
+)
 
 from .exceptions import ModerationTransitionError
 from .models import ModerationAction, Report
@@ -173,6 +177,7 @@ def hide_idea_directly(*, actor, idea_id, note=""):
         target_type=Report.TargetType.IDEA,
         target_id=idea.id,
     )
+    create_idea_hidden_notification(idea=idea)
     return idea
 
 
@@ -194,4 +199,5 @@ def restore_idea_directly(*, actor, idea_id, note=""):
         target_type=Report.TargetType.IDEA,
         target_id=idea.id,
     )
+    create_idea_restored_notification(idea=idea)
     return idea

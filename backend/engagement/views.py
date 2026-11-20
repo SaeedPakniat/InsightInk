@@ -8,6 +8,7 @@ from content.models import Idea
 
 from .models import Comment, SavedIdea, Spark
 from .selectors import viewer_engagement_state
+from .services import create_comment
 from .serializers import (
     CommentSerializer,
     ViewerEngagementQuerySerializer,
@@ -73,10 +74,10 @@ class IdeaCommentsView(APIView):
         idea = get_public_idea(idea_id)
         serializer = CommentSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        comment = serializer.save(
+        comment = create_comment(
             author=request.user,
             idea=idea,
-            status=Comment.CommentStatus.VISIBLE,
+            body=serializer.validated_data["body"],
         )
         return Response(
             CommentSerializer(comment).data,

@@ -11,6 +11,7 @@ from content.serializers import IdeaSerializer
 
 from .models import CreatorFollow, CreatorProfile
 from .selectors import public_creator_queryset, viewer_creator_follow_state
+from .services import follow_creator
 from .serializers import (
     CreatorProfileSelfSerializer,
     CreatorPublicSerializer,
@@ -89,7 +90,7 @@ class CreatorFollowView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        CreatorFollow.objects.get_or_create(
+        follow_creator(
             user=request.user,
             creator=creator,
         )
