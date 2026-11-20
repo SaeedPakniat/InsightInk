@@ -112,9 +112,9 @@ Status: Accepted.
 
 **Decision:** REST/PostgreSQL remains authoritative. Reader ↔ Creator messaging persists through the REST/database path first. Realtime delivery is layered on top with Django Channels and Redis and must never become an authoritative write path.
 
-BE-RT-001 implements one session-authenticated account WebSocket at `/ws/messaging/`. Each active session joins `messaging.user.<user_id>`. Domain events are scheduled only with `transaction.on_commit`, so Redis delivery observes committed state. Reconnect does not replay missed events; the server emits `sync.required` and clients refetch REST state. WebSocket application writes are rejected with `rest_write_required`.
+BE-RT-001 implements one session-authenticated account WebSocket at `/ws/messaging/`. Each active session joins `messaging.user.<user_id>`. NOTIF-RT reuses that same account-level socket/group rather than creating a second notification realtime subsystem. Domain delivery events are scheduled only with `transaction.on_commit`, so Redis delivery observes committed state. Reconnect does not replay missed events; the server emits `sync.required` and clients refetch authoritative REST state. WebSocket application writes are rejected with `rest_write_required`.
 
-Status: Accepted and implemented for messaging.
+Status: Accepted and implemented for messaging + notification delivery.
 
 ### D-012 — Background jobs
 
@@ -166,9 +166,11 @@ NOTIF-001 supports `message_received`, `creator_followed`, `comment_received`, `
 
 Notification payloads carry minimal safe navigation metadata. In particular, `comment_received` contains comment/idea identifiers only, not comment text; moderation hide/restore notifications do not expose moderator identity.
 
-`creator_published`, followed-creator batching, preferences, Web Push, and realtime notification delivery are deferred. Future NOTIF-RT may reuse the existing Channels + Redis infrastructure, but PostgreSQL/REST remains authoritative.
+NOTIF-RT now reuses the existing Channels + Redis account stream for a minimal post-commit `notification.created` event containing only `notification_id` and `notification_type`. PostgreSQL/REST remains authoritative; Redis failure cannot invalidate committed notification/domain state, and reconnect recovery uses `sync.required` + REST refetch.
 
-Status: Accepted.
+`creator_published`, followed-creator batching, preferences, Web Push, frontend notification UI, and realtime mark-read synchronization remain deferred.
+
+Status: Accepted and implemented for persistent + realtime in-app notification delivery.
 
 ## Open questions
 

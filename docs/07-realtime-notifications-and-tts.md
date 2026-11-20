@@ -1,6 +1,6 @@
 # 07 — Realtime, Notifications and Text-to-Speech
 
-Messaging realtime and the persistent PostgreSQL notification core are now implemented. Notification realtime delivery, broader Save/Library live sync, and TTS remain separate later phases; this document keeps their shared architecture explicit.
+Messaging realtime, persistent PostgreSQL notifications, and in-app realtime notification delivery are now implemented. Broader Save/Library live sync, notification preferences/push, and TTS remain separate later phases; this document keeps their shared architecture explicit.
 
 # Part A — Realtime sync
 
@@ -138,16 +138,17 @@ messaging.user.<user_id>
 
 A user may have multiple active browser/PWA sessions in the same group, so the same committed event can update multiple devices/tabs.
 
-Current server events:
+Current account-stream server events:
 
 ~~~text
 sync.required
 conversation.created
 message.created
 messages.read
+notification.created
 ~~~
 
-`sync.required` is sent immediately after a successful socket connection. It tells the frontend to refetch REST state rather than assuming the socket has replayed events missed while offline.
+`sync.required` is sent immediately after a successful socket connection. It tells clients to refetch authoritative REST state rather than assuming the socket has replayed events missed while offline. Messaging clients refetch conversation/history/read state; notification clients must also refetch notification list/unread state when FE-NOTIF is implemented.
 
 Client-to-server WebSocket writes are deliberately unsupported. `ping` receives `pong`; other application messages receive a `rest_write_required` error. All domain mutations continue through REST.
 
@@ -165,7 +166,7 @@ Delivery rules:
 
 ## 9. Persistent in-app notifications — implemented
 
-NOTIF-001 adds PostgreSQL-backed, per-user in-app notifications. The notification row is authoritative state; there is no notification WebSocket delivery in this checkpoint.
+NOTIF-001 adds PostgreSQL-backed, per-user in-app notifications. NOTIF-RT layers best-effort live delivery on top. The persisted Notification row and REST API remain authoritative.
 
 Implemented notification types:
 
@@ -206,7 +207,7 @@ Notification persistence is atomic with the domain mutation that creates it:
 - direct idea hide creates `idea_hidden` for the idea creator;
 - direct idea restore creates `idea_restored` for the idea creator.
 
-If notification insertion raises inside one of these atomic services, the paired domain mutation rolls back. Realtime messaging remains separate: its existing Channels/Redis event is still scheduled after commit, while notification persistence itself is PostgreSQL state in the transaction.
+If notification insertion raises inside one of these atomic services, the paired domain mutation rolls back. After a successful commit, NOTIF-RT schedules a separate best-effort delivery event through the existing account-level Channels/Redis path. Notification persistence itself remains PostgreSQL state inside the transaction.
 
 Schema migration:
 
@@ -220,17 +221,83 @@ Per-type notification preferences are not implemented in NOTIF-001.
 
 When added, preferences should be server-side so they follow the account across devices. Preference behavior must be decided before adding fan-out notification types.
 
-## 11. Batching and realtime delivery
+## 11. Realtime notification delivery — implemented
+
+NOTIF-RT reuses the existing session-authenticated account WebSocket rather than creating a second notification socket.
+
+Route:
+
+~~~text
+/ws/messaging/
+~~~
+
+Each authenticated session already joins only:
+
+~~~text
+messaging.user.<user_id>
+~~~
+
+That same recipient-scoped group now carries both messaging events and notification delivery events. No client may select an arbitrary user id/group, and Moderator/Admin status does not grant access to another account's stream.
+
+A successfully persisted Notification schedules this post-commit event:
+
+~~~json
+{
+  "type": "notification.created",
+  "notification_id": 123,
+  "notification_type": "message_received"
+}
+~~~
+
+The WebSocket payload is intentionally minimal. It does not include comment text, message text, Idea body, email, moderator identity, the full Notification serializer, or private conversation content. The receiving frontend should invalidate/refetch the REST notification list and unread count.
+
+Delivery sequence:
+
+~~~text
+domain mutation + Notification row
+        │
+        ▼
+PostgreSQL COMMIT
+        │
+        ▼
+transaction.on_commit(...)
+        │
+        ▼
+shared account realtime publisher
+        │
+        ▼
+Channels / Redis
+        │
+        ▼
+messaging.user.<recipient_user_id>
+        │
+        ▼
+all active authenticated recipient sessions
+~~~
+
+Failure/reconnect rules:
+
+- PostgreSQL Notification state remains authoritative;
+- notification delivery is best-effort only;
+- Redis/channel-layer failure is logged and contained after commit;
+- a committed domain mutation and Notification row remain available through REST if live delivery fails;
+- reconnect sends `sync.required`; there is no durable WebSocket replay log;
+- clients recover notification list/unread state by refetching REST;
+- multiple active sessions for one recipient receive the same `notification.created` event.
+
+NOTIF-RT does not add realtime events for mark-one-read or mark-all-read. Cross-device read-state realtime is deferred; clients can reconcile through REST/refetch.
+
+## 12. Batching and other notification delivery
 
 The source specifically asks for new ideas from followed creators to be batched into one notification.
 
-That behavior and `creator_published` are deferred. Do not add Celery in advance; choose grouped synchronous persistence or background processing only when measured product needs justify it.
+That behavior and `creator_published` remain deferred. Do not add Celery in advance; choose grouped synchronous persistence or background processing only when measured product needs justify it.
 
-Realtime notification delivery is also deliberately deferred to a separate NOTIF-RT task. The existing Django Channels + Redis infrastructure may be reused, but PostgreSQL notification rows and REST APIs must remain the source of truth.
+Web Push, browser Push API/VAPID, service-worker push handlers, OS notification prompts, FCM, and Background Sync are not part of NOTIF-RT. The current scope is in-app realtime delivery while an authenticated PWA/web session is open.
 
 # Part D — Text-to-Speech
 
-## 12. Requirement
+## 13. Requirement
 
 Source material requires:
 
@@ -240,7 +307,7 @@ Source material requires:
 - voice choice;
 - accessible UI independently of TTS.
 
-## 13. Important distinction
+## 14. Important distinction
 
 TTS is not an LLM feature.
 
@@ -261,7 +328,7 @@ Potential limitations:
 - old browser support varies;
 - playback behavior differs across platforms.
 
-## 14. TTS decision is intentionally deferred
+## 15. TTS decision is intentionally deferred
 
 Before implementing, build a small compatibility prototype on:
 
@@ -281,7 +348,7 @@ Only if consistent progress/scrubbing/voice behavior is required and browser TTS
 
 Option B adds storage/delivery complexity.
 
-## 15. Accessibility independence
+## 16. Accessibility independence
 
 NFR-16 states accessibility is independent of TTS.
 

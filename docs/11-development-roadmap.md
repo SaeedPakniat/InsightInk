@@ -273,11 +273,11 @@ BE-RT-001 implements realtime delivery because the persistent messaging domain a
 
 REST/PostgreSQL remains authoritative. WebSocket delivery is not a write source of truth.
 
-### Immediate integration gate — FE-DM — NEXT
+### Frontend messaging integration — COMPLETE
 
-The next product task is the frontend messaging UI using the existing REST API plus `/ws/messaging/` for live delivery. The frontend must refetch REST state after `sync.required` and must continue to perform all writes through REST.
+FE-DM is implemented on top of the persistent REST messaging API and the existing `/ws/messaging/` account stream. REST remains authoritative, and reconnect continues to refetch through `sync.required`.
 
-## Phase 16 — Notifications — PERSISTENT CORE COMPLETE
+## Phase 16 — Notifications — BACKEND PERSISTENCE + REALTIME COMPLETE
 
 NOTIF-001 implements the PostgreSQL-backed per-user notification foundation:
 
@@ -290,14 +290,25 @@ NOTIF-001 implements the PostgreSQL-backed per-user notification foundation:
 - minimal navigation/refetch targets instead of copied content payloads;
 - `notifications.0001_initial` migration.
 
-Still deferred from this phase:
+NOTIF-RT layers best-effort in-app delivery on top of that persisted state:
 
-- NOTIF-RT realtime delivery over the existing Channels + Redis infrastructure;
+- reuses the existing session-authenticated `/ws/messaging/` account socket;
+- reuses `messaging.user.<user_id>` account groups;
+- emits minimal `notification.created` events after PostgreSQL commit;
+- delivers to every active session for the intended recipient only;
+- keeps Redis/channel failure isolated from committed database state;
+- preserves `sync.required` reconnect/refetch recovery;
+- keeps existing messaging realtime events unchanged.
+
+Still deferred:
+
+- frontend notification UI (FE-NOTIF);
+- realtime mark-one/mark-all synchronization;
 - per-type preferences;
 - `creator_published` fan-out and followed-creator batching;
 - Web Push, only if compatibility/product requirements justify it.
 
-PostgreSQL/REST remains authoritative when realtime notification delivery is added later.
+PostgreSQL/REST remains authoritative; realtime notification delivery is only an invalidation/delivery signal.
 
 ## Phase 17 — TTS
 

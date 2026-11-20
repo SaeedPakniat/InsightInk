@@ -1,14 +1,61 @@
 # Backend Handoff
 
-- Current checkpoint: NOTIF-001 — Persistent Per-User In-App Notifications.
+- Current checkpoint: NOTIF-RT — Realtime Delivery for Persisted In-App Notifications.
 - Status: COMPLETE.
-- Starting SHA: `568f7998eff2c71c341c195a5b352a87336b0cd8`.
-- Implementation SHA: `7b2be752dd2145a1e793cb7f92e0696a2f512e5e` (`feat(notifications): add persistent in-app notifications`).
-- PostgreSQL is authoritative notification state. No notification realtime delivery exists in this checkpoint.
+- Starting SHA: `42132216fe030735e66dd328edf932bc0f5c5b71`.
+- Implementation SHA: `5454f656472a92f01894331729276927ac69eb95` (`feat(notifications): add realtime delivery`).
+- PostgreSQL Notification rows + REST remain authoritative. Realtime delivery is best-effort only.
+
+## Realtime architecture
+
+NOTIF-RT reuses the existing BE-RT-001 account-level infrastructure.
+
+WebSocket route:
+
+`/ws/messaging/`
+
+Session authentication/origin validation remain unchanged.
+
+Each authenticated session joins only:
+
+`messaging.user.<user_id>`
+
+No notification-specific socket or user-selected subscription was added. The same account group now multiplexes messaging and notification event families.
+
+The shared account publisher is `messaging.realtime.publish_user_event(...)`.
+
+Notification persistence uses `notifications.realtime.schedule_notification_created(notification)`, which registers delivery through `transaction.on_commit`.
+
+## Event contract
+
+Exact notification event:
+
+~~~json
+{
+  "type": "notification.created",
+  "notification_id": 123,
+  "notification_type": "message_received"
+}
+~~~
+
+Only these three fields are emitted.
+
+The socket does not transmit:
+
+- comment body/preview;
+- message body as notification data;
+- Idea body;
+- email;
+- moderator identity;
+- full Notification serialization;
+- private conversation content;
+- arbitrary notification payload blobs.
+
+Clients must refetch authoritative notification REST state.
 
 ## Notification types
 
-Implemented:
+Realtime delivery applies to the existing persisted types:
 
 - `message_received`
 - `creator_followed`
@@ -16,121 +63,123 @@ Implemented:
 - `idea_hidden`
 - `idea_restored`
 
-Deferred:
+`creator_published` remains deferred.
 
-- `creator_published` — follower fan-out/batching/preferences need a later explicit design.
+## Commit boundary and failure isolation
 
-## REST API contract
+Notification creation remains atomic with its domain mutation. After the PostgreSQL transaction successfully commits, the registered callback sends `notification.created`.
 
-All endpoints use existing Django session authentication.
+Rolled-back Notification rows emit no event.
 
-### List
+If Redis/Channels is unavailable after commit:
 
-`GET /api/v1/notifications/`
+- the domain mutation remains committed;
+- the Notification row remains committed;
+- REST list still returns the notification;
+- unread count remains correct;
+- the realtime frame may be missed;
+- reconnect/refetch restores client state.
 
-- authenticated recipient only;
-- cursor pagination, page size 30;
-- newest first;
-- fields: `id`, `type`, `actor`, `target`, `created_at`, `read_at`, `is_read`.
+The shared publisher catches/logs delivery errors instead of propagating them back into committed domain state.
 
-Safe target shapes:
+## Reconnect and multi-session behavior
 
-- `message_received`: `{"message_id": ..., "conversation_id": ...}`
-- `creator_followed`: `{"creator_id": ...}`
-- `comment_received`: `{"comment_id": ..., "idea_id": ...}`
-- `idea_hidden` / `idea_restored`: `{"idea_id": ..., "title": ...}`
-
-`comment_received` deliberately contains no comment body or preview. Clients must refetch authoritative comment/idea data when navigating.
-
-Actor summaries contain only `id` and `display_name`. Moderation hide/restore notifications use `actor = null` so moderator identity is not exposed to the creator.
-
-### Unread count
-
-`GET /api/v1/notifications/unread-count/`
-
-Response:
-
-~~~json
-{"unread_count": 3}
-~~~
-
-### Mark one read
-
-`POST /api/v1/notifications/{notification_id}/read/`
-
-- CSRF required;
-- idempotent;
-- returns the updated notification representation;
-- query is constrained by authenticated recipient;
-- a different authenticated account receives HTTP 404.
-
-### Mark all read
-
-`POST /api/v1/notifications/read-all/`
-
-- CSRF required;
-- updates only the authenticated recipient's unread rows.
-
-Response shape:
+Every successful connection/reconnection still receives:
 
 ~~~json
 {
-  "marked_read": 3,
-  "read_at": "..."
+  "type": "sync.required",
+  "reason": "connected"
 }
 ~~~
 
-## Persistence and domain integration
+There is no event replay log. FE-NOTIF must respond by invalidating/refetching notification list + unread-count REST queries.
 
-Notification persistence is atomic with the domain mutation:
+Every active session for the recipient account receives the same `notification.created` event. Unrelated authenticated users and anonymous users do not receive it.
 
-- Message send -> notify the other conversation participant.
-- New creator follow -> notify the creator account only on first follow creation.
-- New comment -> notify the idea creator unless the creator authored the comment.
-- Direct idea hide -> notify the idea creator, without exposing moderator identity.
-- Direct idea restore -> notify the idea creator, without exposing moderator identity.
+## Messaging coexistence
 
-If notification creation fails inside one of these services, the paired mutation rolls back. Messaging's existing Channels/Redis delivery remains post-commit and is unchanged.
+Existing messaging realtime remains on the same route/group:
+
+- `conversation.created`
+- `message.created`
+- `messages.read`
+- `sync.required`
+
+A message send can legitimately produce both:
+
+- `message.created` → messaging UI;
+- `notification.created` → notification list/badge invalidation.
+
+The messaging tests were updated to select the relevant event type from the multiplexed account stream rather than assume the next frame is always a messaging event.
+
+## REST contract remains unchanged
+
+~~~text
+GET  /api/v1/notifications/
+GET  /api/v1/notifications/unread-count/
+POST /api/v1/notifications/{notification_id}/read/
+POST /api/v1/notifications/read-all/
+~~~
+
+Session authentication and CSRF behavior are unchanged.
+
+NOTIF-RT does not add realtime synchronization for mark-one-read or mark-all-read.
 
 ## Schema
 
-Migration:
+No migration was required.
+
+Existing migration remains:
 
 `notifications.0001_initial`
 
-Local development database migration applied successfully.
+`makemigrations --check --dry-run` reports no changes.
 
 ## Verification
 
-After the final comment-payload privacy hardening:
-
-- notification focused tests: 12/12 PASS;
-- affected domains (`notifications messaging creators engagement moderation`): 152/152 PASS;
-- full backend: 417/417 PASS;
+- focused NOTIF-RT: 13/13 PASS;
+- combined messaging + notification realtime: 23/23 PASS;
+- affected domains (`notifications messaging creators engagement moderation`): 165/165 PASS;
+- full backend: 430/430 PASS;
 - `manage.py check`: PASS;
 - `makemigrations --check --dry-run`: no changes detected;
 - `pip check`: clean;
 - `git diff --check`: PASS.
 
-Real development-DB smoke:
+## Real Redis smoke
 
-`NOTIF_SMOKE_PASS`
+Result:
 
-Smoke verified all five types through real domain/API paths, unread 5 -> 4 -> 0, outsider mark-read -> 404, then rolled the disposable records back.
+`NOTIF_RT_REAL_REDIS_SMOKE_PASS`
 
-## Deliberate limitations / next boundary
+Using temporary Redis on `127.0.0.1:6380`:
 
-NOTIF-001 does not implement:
+- recipient session A received the exact `notification.created` event;
+- recipient session B received the same event;
+- unrelated authenticated socket received nothing;
+- REST list contained the persisted notification;
+- unread count was 1;
+- reconnect emitted `sync.required`;
+- REST refetch after reconnect recovered the notification/unread state.
 
-- notification WebSocket events or groups;
-- Redis delivery for notifications;
+Disposable smoke users, sessions, and notification rows were removed. The temporary Redis container was stopped.
+
+## Deliberate exclusions
+
+NOTIF-RT does not implement:
+
+- frontend notification UI;
+- Web Push / VAPID / Push API;
+- service-worker push handlers;
+- OS notification prompts;
+- Background Sync;
+- Firebase Cloud Messaging;
 - `creator_published`;
-- followed-creator batching/fan-out;
+- followed-creator fan-out/batching;
 - notification preferences;
-- Web Push;
-- background workers/Celery;
-- frontend notification UI.
+- realtime mark-read synchronization;
+- Kafka/Celery/event sourcing;
+- durable socket queues or replay logs.
 
-When explicitly requested, NOTIF-RT may reuse the existing Django Channels + Redis infrastructure. It must treat persisted Notification rows/REST as source of truth and use realtime only as delivery/invalidation, not as authoritative state.
-
-Stop at this checkpoint; do not combine NOTIF-RT into NOTIF-001.
+Next separate task when explicitly requested: FE-NOTIF. Do not combine frontend notification UI work into this backend checkpoint.
