@@ -276,24 +276,31 @@ Mute
 
 Exact mute semantics are defined when messaging is implemented.
 
-## 14. Notifications — later phase
+## 14. Notifications — persistent core implemented
+
+NOTIF-001 implements recipient-owned notification rows:
 
 ```text
 Notification
 - id
-- recipient_id
+- recipient_id -> User
 - type
-- payload
-- read_at
+- actor_id -> User (optional)
+- message_id -> Message (optional)
+- creator_id -> CreatorProfile (optional)
+- comment_id -> Comment (optional)
+- idea_id -> Idea (optional)
 - created_at
-
-NotificationPreference
-- user_id
-- notification_type
-- enabled
+- read_at (optional)
 ```
 
-Batched creator notifications may refer to multiple underlying events through payload/data rather than one row per push.
+Implemented types are `message_received`, `creator_followed`, `comment_received`, `idea_hidden`, and `idea_restored`.
+
+The relational context fields are intentionally explicit rather than storing arbitrary copied content in a JSON payload. API serializers derive minimal navigation metadata from these relations. `comment_received` exposes only comment/idea identifiers, not the comment body. Moderation hide/restore notifications do not expose the moderator actor.
+
+Indexes support recipient recency and unread queries. Deleting the recipient cascades the notification; optional context relations use `SET_NULL` so historical notification rows can remain even if a referenced context object is later removed.
+
+Notification creation is atomic with the domain mutation that produced it. `NotificationPreference`, `creator_published`, followed-creator batching, push, and realtime delivery are deferred to later checkpoints.
 
 ## 15. eBooks and membership — later phase
 
@@ -349,7 +356,7 @@ User ──1:1── CreatorProfile
  └──< CreatorFollow >── CreatorProfile ────┘
 ```
 
-Messaging now attaches to the same User foundation through Conversation and Message; notifications and membership remain later phases, while moderation is already implemented.
+Messaging and persistent Notifications now attach to the same User foundation; notification realtime delivery/preferences and membership remain later phases, while moderation is already implemented.
 
 ## 18. Database design rules
 

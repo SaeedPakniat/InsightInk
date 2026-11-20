@@ -277,14 +277,27 @@ REST/PostgreSQL remains authoritative. WebSocket delivery is not a write source 
 
 The next product task is the frontend messaging UI using the existing REST API plus `/ws/messaging/` for live delivery. The frontend must refetch REST state after `sync.required` and must continue to perform all writes through REST.
 
-## Phase 16 — Notifications
+## Phase 16 — Notifications — PERSISTENT CORE COMPLETE
 
-Build:
+NOTIF-001 implements the PostgreSQL-backed per-user notification foundation:
 
-- in-app notifications;
-- preferences;
-- followed-creator batching;
-- push only if feasible/needed.
+- notification list with cursor pagination;
+- unread count;
+- mark-one-read and mark-all-read;
+- strict recipient isolation;
+- session authentication and CSRF-preserved read mutations;
+- atomic notification creation for `message_received`, `creator_followed`, `comment_received`, `idea_hidden`, and `idea_restored`;
+- minimal navigation/refetch targets instead of copied content payloads;
+- `notifications.0001_initial` migration.
+
+Still deferred from this phase:
+
+- NOTIF-RT realtime delivery over the existing Channels + Redis infrastructure;
+- per-type preferences;
+- `creator_published` fan-out and followed-creator batching;
+- Web Push, only if compatibility/product requirements justify it.
+
+PostgreSQL/REST remains authoritative when realtime notification delivery is added later.
 
 ## Phase 17 — TTS
 

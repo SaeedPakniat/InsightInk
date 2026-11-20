@@ -158,6 +158,18 @@ decision.
 
 Status: Accepted and locked.
 
+### D-015 — Persistent notification state and privacy
+
+**Decision:** Store in-app notifications in PostgreSQL as recipient-owned state and expose them through authenticated REST APIs before adding realtime notification delivery.
+
+NOTIF-001 supports `message_received`, `creator_followed`, `comment_received`, `idea_hidden`, and `idea_restored`. Notification creation is atomic with the domain mutation that produces it. Recipient-scoped list/count/read operations never expose or mutate another user's rows.
+
+Notification payloads carry minimal safe navigation metadata. In particular, `comment_received` contains comment/idea identifiers only, not comment text; moderation hide/restore notifications do not expose moderator identity.
+
+`creator_published`, followed-creator batching, preferences, Web Push, and realtime notification delivery are deferred. Future NOTIF-RT may reuse the existing Channels + Redis infrastructure, but PostgreSQL/REST remains authoritative.
+
+Status: Accepted.
+
 ## Open questions
 
 ### Q-001 — Repository/product naming

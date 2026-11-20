@@ -124,7 +124,35 @@ Messaging rules:
 - message reports may be created only by the recipient/other participant, not by the sender or an unrelated account;
 - a message report enters the existing moderation queue. Moderator report detail exposes only the reported Message and minimal sender identity, not arbitrary private-conversation history.
 
-PostgreSQL is the message source of truth. Channels/Redis/WebSocket delivery is a separate next phase and must not replace these REST writes.
+PostgreSQL is the message source of truth. Existing Channels/Redis/WebSocket messaging delivery does not replace these REST writes.
+
+### Notifications
+
+NOTIF-001 provides persistent per-user notification state:
+
+```text
+GET  /api/v1/notifications/
+GET  /api/v1/notifications/unread-count/
+POST /api/v1/notifications/{notification_id}/read/
+POST /api/v1/notifications/read-all/
+```
+
+Notification rules:
+
+- all endpoints require the existing Django session authentication;
+- modifying read endpoints retain CSRF protection;
+- list and unread count are scoped only to the authenticated recipient;
+- mark-one-read looks up by notification id plus recipient and returns HTTP 404 to another account;
+- mark-one-read is idempotent;
+- mark-all-read changes only the authenticated recipient's unread rows;
+- list uses cursor pagination with page size 30 and newest-first ordering;
+- actor data is bounded to `id` and `display_name`;
+- `message_received` target contains message/conversation ids;
+- `creator_followed` target contains creator id;
+- `comment_received` target contains comment/idea ids only and never the comment body/preview;
+- `idea_hidden` and `idea_restored` do not expose moderator identity.
+
+PostgreSQL notification rows are authoritative. NOTIF-001 does not add notification WebSocket/Redis delivery. `creator_published`, batching, preferences, and push are deferred.
 
 ### Explore/search
 

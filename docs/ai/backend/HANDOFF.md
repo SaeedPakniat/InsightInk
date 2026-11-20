@@ -1,38 +1,136 @@
 # Backend Handoff
 
-- Current task: BE-RT-001 — Django Channels + Redis Realtime Messaging Delivery.
+- Current checkpoint: NOTIF-001 — Persistent Per-User In-App Notifications.
 - Status: COMPLETE.
-- Starting SHA: `42c15ad41a622bc81d00dd104bba4e59bf598bdc`.
-- Implementation SHA: `d14e6e2` (`feat(messaging): add redis realtime delivery`).
-- Persistent BE-DM-001 API/model contract is unchanged. PostgreSQL remains message/conversation/read-state truth.
-- Dependencies:
-  - `channels==4.3.2`
-  - `channels-redis==4.3.0`
-  - `daphne==4.2.1`
-- Channel layer: `channels_redis.core.RedisChannelLayer`, configured by `REDIS_URL` (default `redis://127.0.0.1:6379/0`) with prefix `insightink`.
-- ASGI:
-  - HTTP -> Django ASGI application
-  - WebSocket -> `AllowedHostsOriginValidator` -> `AuthMiddlewareStack` -> messaging URL router
-- Socket route: `/ws/messaging/`.
-- Auth: same Django session cookie as the REST application. No JWT/bearer socket auth was added.
-- Group: `messaging.user.<user_id>`. Every active tab/device/session for one account joins the same account group.
-- Server event contract:
-  - `{"type":"sync.required","reason":"connected"}` after connect/reconnect;
-  - `conversation.created` with safe Reader/Creator summary after Conversation commit;
-  - `message.created` with Message id, conversation id, safe sender summary, body, timestamps/read state after Message commit;
-  - `messages.read` with conversation id, reader user id, marked count, and read timestamp after read-state commit.
-- Client socket contract:
-  - `{"type":"ping"}` -> `{"type":"pong"}`;
-  - all domain/application writes are rejected with `rest_write_required`;
-  - continue to POST Conversation/Message/read mutations through REST.
-- Delivery scheduling: messaging services call realtime helpers inside their existing atomic transaction; helpers use `transaction.on_commit`. No event is deliberately published before the authoritative write commits.
-- Redis failure: delivery exceptions are logged and swallowed after commit. A successful persisted REST write remains successful even if Redis/live delivery is unavailable.
-- Reconnect: no event replay. The frontend must handle `sync.required` by invalidating/refetching the relevant REST conversation list/history/read state.
-- Tests: messaging 25/25 PASS; full backend 405/405 PASS.
-- Checks: Django check PASS; no migration drift; pip check clean; diff check clean.
-- Real Redis integration smoke PASS using Redis 8.10.3: REST-persisted Message delivered to both authenticated participant sockets.
-- Normal `run backend.sh` smoke PASS under Daphne; health endpoint returned 200.
-- Local Redis is not started automatically by project scripts. Any compatible local Redis may be used; a Docker example is documented. Docker is not an architectural dependency.
-- No frontend code changed.
-- Preserve the pre-existing unrelated working-tree edit in `backend/content/language_filters.py`; it was intentionally excluded from BE-RT-001 and has SHA-256 `0806f1a45c9480c362844b7fc7ebbaa8635a19a7bd37830f444ea0f5fab0a781`.
-- Next product task: FE-DM — build the conversation list/history/send/read UI over REST and subscribe to `/ws/messaging/` for delivery; on `sync.required`, refetch REST truth.
+- Starting SHA: `568f7998eff2c71c341c195a5b352a87336b0cd8`.
+- Implementation SHA: `7b2be752dd2145a1e793cb7f92e0696a2f512e5e` (`feat(notifications): add persistent in-app notifications`).
+- PostgreSQL is authoritative notification state. No notification realtime delivery exists in this checkpoint.
+
+## Notification types
+
+Implemented:
+
+- `message_received`
+- `creator_followed`
+- `comment_received`
+- `idea_hidden`
+- `idea_restored`
+
+Deferred:
+
+- `creator_published` — follower fan-out/batching/preferences need a later explicit design.
+
+## REST API contract
+
+All endpoints use existing Django session authentication.
+
+### List
+
+`GET /api/v1/notifications/`
+
+- authenticated recipient only;
+- cursor pagination, page size 30;
+- newest first;
+- fields: `id`, `type`, `actor`, `target`, `created_at`, `read_at`, `is_read`.
+
+Safe target shapes:
+
+- `message_received`: `{"message_id": ..., "conversation_id": ...}`
+- `creator_followed`: `{"creator_id": ...}`
+- `comment_received`: `{"comment_id": ..., "idea_id": ...}`
+- `idea_hidden` / `idea_restored`: `{"idea_id": ..., "title": ...}`
+
+`comment_received` deliberately contains no comment body or preview. Clients must refetch authoritative comment/idea data when navigating.
+
+Actor summaries contain only `id` and `display_name`. Moderation hide/restore notifications use `actor = null` so moderator identity is not exposed to the creator.
+
+### Unread count
+
+`GET /api/v1/notifications/unread-count/`
+
+Response:
+
+~~~json
+{"unread_count": 3}
+~~~
+
+### Mark one read
+
+`POST /api/v1/notifications/{notification_id}/read/`
+
+- CSRF required;
+- idempotent;
+- returns the updated notification representation;
+- query is constrained by authenticated recipient;
+- a different authenticated account receives HTTP 404.
+
+### Mark all read
+
+`POST /api/v1/notifications/read-all/`
+
+- CSRF required;
+- updates only the authenticated recipient's unread rows.
+
+Response shape:
+
+~~~json
+{
+  "marked_read": 3,
+  "read_at": "..."
+}
+~~~
+
+## Persistence and domain integration
+
+Notification persistence is atomic with the domain mutation:
+
+- Message send -> notify the other conversation participant.
+- New creator follow -> notify the creator account only on first follow creation.
+- New comment -> notify the idea creator unless the creator authored the comment.
+- Direct idea hide -> notify the idea creator, without exposing moderator identity.
+- Direct idea restore -> notify the idea creator, without exposing moderator identity.
+
+If notification creation fails inside one of these services, the paired mutation rolls back. Messaging's existing Channels/Redis delivery remains post-commit and is unchanged.
+
+## Schema
+
+Migration:
+
+`notifications.0001_initial`
+
+Local development database migration applied successfully.
+
+## Verification
+
+After the final comment-payload privacy hardening:
+
+- notification focused tests: 12/12 PASS;
+- affected domains (`notifications messaging creators engagement moderation`): 152/152 PASS;
+- full backend: 417/417 PASS;
+- `manage.py check`: PASS;
+- `makemigrations --check --dry-run`: no changes detected;
+- `pip check`: clean;
+- `git diff --check`: PASS.
+
+Real development-DB smoke:
+
+`NOTIF_SMOKE_PASS`
+
+Smoke verified all five types through real domain/API paths, unread 5 -> 4 -> 0, outsider mark-read -> 404, then rolled the disposable records back.
+
+## Deliberate limitations / next boundary
+
+NOTIF-001 does not implement:
+
+- notification WebSocket events or groups;
+- Redis delivery for notifications;
+- `creator_published`;
+- followed-creator batching/fan-out;
+- notification preferences;
+- Web Push;
+- background workers/Celery;
+- frontend notification UI.
+
+When explicitly requested, NOTIF-RT may reuse the existing Django Channels + Redis infrastructure. It must treat persisted Notification rows/REST as source of truth and use realtime only as delivery/invalidation, not as authoritative state.
+
+Stop at this checkpoint; do not combine NOTIF-RT into NOTIF-001.

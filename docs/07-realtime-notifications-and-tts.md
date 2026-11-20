@@ -1,6 +1,6 @@
 # 07 — Realtime, Notifications and Text-to-Speech
 
-Messaging realtime is now implemented. Notifications, broader Save/Library live sync, and TTS remain later phases; this document keeps their shared architecture explicit.
+Messaging realtime and the persistent PostgreSQL notification core are now implemented. Notification realtime delivery, broader Save/Library live sync, and TTS remain separate later phases; this document keeps their shared architecture explicit.
 
 # Part A — Realtime sync
 
@@ -163,35 +163,70 @@ Delivery rules:
 
 # Part C — Notifications
 
-## 9. Notification types
+## 9. Persistent in-app notifications — implemented
 
-Potential in-app events:
+NOTIF-001 adds PostgreSQL-backed, per-user in-app notifications. The notification row is authoritative state; there is no notification WebSocket delivery in this checkpoint.
 
-- save/sync status;
-- creator follow activity;
-- reply to comment;
-- creator message;
-- batched new ideas from followed creators;
-- moderation outcome where relevant.
+Implemented notification types:
+
+- `message_received`;
+- `creator_followed`;
+- `comment_received`;
+- `idea_hidden`;
+- `idea_restored`.
+
+`creator_published` is deliberately deferred. Followed-creator publishing requires fan-out/batching and preference decisions that should not be hidden inside the first persistence checkpoint.
+
+Authenticated REST endpoints:
+
+~~~text
+GET  /api/v1/notifications/
+GET  /api/v1/notifications/unread-count/
+POST /api/v1/notifications/<notification_id>/read/
+POST /api/v1/notifications/read-all/
+~~~
+
+The list is cursor-paginated. Read mutations continue to use Django session authentication and CSRF.
+
+Recipient privacy is strict:
+
+- list and unread count query only the authenticated recipient's rows;
+- mark-one-read filters by both notification id and recipient, returning 404 to another account;
+- mark-all-read updates only the authenticated recipient's unread rows;
+- serialized actors expose only id and display name;
+- moderation hide/restore notifications do not expose the moderator as an actor;
+- `comment_received` carries only `comment_id` and `idea_id`, never the comment body or preview;
+- clients navigate/refetch authoritative domain content instead of treating notification payloads as copies of private/content state.
+
+Notification persistence is atomic with the domain mutation that creates it:
+
+- sending a Message creates `message_received` for the other participant;
+- first-time CreatorFollow creation creates `creator_followed` for the creator account;
+- Comment creation creates `comment_received` for the idea creator, except self-comments;
+- direct idea hide creates `idea_hidden` for the idea creator;
+- direct idea restore creates `idea_restored` for the idea creator.
+
+If notification insertion raises inside one of these atomic services, the paired domain mutation rolls back. Realtime messaging remains separate: its existing Channels/Redis event is still scheduled after commit, while notification persistence itself is PostgreSQL state in the transaction.
+
+Schema migration:
+
+~~~text
+notifications.0001_initial
+~~~
 
 ## 10. Notification preferences
 
-Users must be able to disable specific notification types.
+Per-type notification preferences are not implemented in NOTIF-001.
 
-Preferences are server-side so they follow the account across devices.
+When added, preferences should be server-side so they follow the account across devices. Preference behavior must be decided before adding fan-out notification types.
 
-## 11. Batching
+## 11. Batching and realtime delivery
 
 The source specifically asks for new ideas from followed creators to be batched into one notification.
 
-The first implementation does not require complex distributed job infrastructure.
+That behavior and `creator_published` are deferred. Do not add Celery in advance; choose grouped synchronous persistence or background processing only when measured product needs justify it.
 
-Possible approaches when the phase begins:
-
-1. grouped in-app notification during normal processing;
-2. scheduled/background processing only if the feature actually needs it.
-
-Do not add Celery in advance.
+Realtime notification delivery is also deliberately deferred to a separate NOTIF-RT task. The existing Django Channels + Redis infrastructure may be reused, but PostgreSQL notification rows and REST APIs must remain the source of truth.
 
 # Part D — Text-to-Speech
 
