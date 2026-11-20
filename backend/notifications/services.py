@@ -2,6 +2,13 @@ from django.db import transaction
 from django.utils import timezone
 
 from .models import Notification
+from .realtime import schedule_notification_created
+
+
+def _create_notification(**kwargs):
+    notification = Notification.objects.create(**kwargs)
+    schedule_notification_created(notification)
+    return notification
 
 
 def create_message_received_notification(*, message):
@@ -11,7 +18,7 @@ def create_message_received_notification(*, message):
     else:
         recipient_id = conversation.reader_id
 
-    return Notification.objects.create(
+    return _create_notification(
         recipient_id=recipient_id,
         type=Notification.Type.MESSAGE_RECEIVED,
         actor=message.sender,
@@ -20,7 +27,7 @@ def create_message_received_notification(*, message):
 
 
 def create_creator_followed_notification(*, follow):
-    return Notification.objects.create(
+    return _create_notification(
         recipient_id=follow.creator.user_id,
         type=Notification.Type.CREATOR_FOLLOWED,
         actor=follow.user,
@@ -33,7 +40,7 @@ def create_comment_received_notification(*, comment):
     if recipient_id == comment.author_id:
         return None
 
-    return Notification.objects.create(
+    return _create_notification(
         recipient_id=recipient_id,
         type=Notification.Type.COMMENT_RECEIVED,
         actor=comment.author,
@@ -42,7 +49,7 @@ def create_comment_received_notification(*, comment):
 
 
 def create_idea_hidden_notification(*, idea):
-    return Notification.objects.create(
+    return _create_notification(
         recipient_id=idea.creator.user_id,
         type=Notification.Type.IDEA_HIDDEN,
         idea=idea,
@@ -50,7 +57,7 @@ def create_idea_hidden_notification(*, idea):
 
 
 def create_idea_restored_notification(*, idea):
-    return Notification.objects.create(
+    return _create_notification(
         recipient_id=idea.creator.user_id,
         type=Notification.Type.IDEA_RESTORED,
         idea=idea,

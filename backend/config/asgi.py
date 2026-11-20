@@ -2,7 +2,7 @@
 ASGI config for InsightInk.
 
 HTTP continues through Django. Authenticated WebSocket connections use the
-existing Django session cookie and are routed to the messaging delivery consumer.
+existing Django session cookie and are routed to the account delivery consumer.
 """
 
 import os

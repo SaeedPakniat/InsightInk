@@ -23,11 +23,11 @@ def _participant_user_ids(conversation):
     )
 
 
-def _publish_event(user_ids, payload):
+def publish_user_event(user_ids, payload):
     try:
         channel_layer = get_channel_layer()
         if channel_layer is None:
-            logger.warning("Messaging realtime event skipped: no channel layer.")
+            logger.warning("Account realtime event skipped: no channel layer.")
             return
 
         for user_id in user_ids:
@@ -40,7 +40,7 @@ def _publish_event(user_ids, payload):
             )
     except Exception:
         logger.exception(
-            "Messaging realtime delivery failed; persisted database state remains authoritative."
+            "Account realtime delivery failed; persisted database state remains authoritative."
         )
 
 
@@ -64,7 +64,7 @@ def schedule_conversation_created(conversation):
     }
     participant_ids = _participant_user_ids(conversation)
     transaction.on_commit(
-        lambda: _publish_event(participant_ids, payload)
+        lambda: publish_user_event(participant_ids, payload)
     )
 
 
@@ -90,7 +90,7 @@ def schedule_message_created(*, conversation, message):
     }
     participant_ids = _participant_user_ids(conversation)
     transaction.on_commit(
-        lambda: _publish_event(participant_ids, payload)
+        lambda: publish_user_event(participant_ids, payload)
     )
 
 
@@ -113,5 +113,5 @@ def schedule_messages_read(
     }
     participant_ids = _participant_user_ids(conversation)
     transaction.on_commit(
-        lambda: _publish_event(participant_ids, payload)
+        lambda: publish_user_event(participant_ids, payload)
     )

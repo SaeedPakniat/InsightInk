@@ -147,6 +147,13 @@ class MessagingRealtimeTests(TransactionTestCase):
         )
         return communicator
 
+    async def receive_event_type(self, communicator, event_type):
+        for _ in range(2):
+            event = await communicator.receive_json_from()
+            if event.get("type") == event_type:
+                return event
+        self.fail(f"Expected {event_type} event on account realtime socket.")
+
     def test_anonymous_websocket_is_rejected(self):
         async def scenario():
             communicator = WebsocketCommunicator(
@@ -223,8 +230,14 @@ class MessagingRealtimeTests(TransactionTestCase):
                 )()
                 self.assertTrue(persisted)
 
-                reader_event = await reader_socket.receive_json_from()
-                creator_event = await creator_socket.receive_json_from()
+                reader_event = await self.receive_event_type(
+                    reader_socket,
+                    "message.created",
+                )
+                creator_event = await self.receive_event_type(
+                    creator_socket,
+                    "message.created",
+                )
                 self.assertEqual(reader_event, creator_event)
                 self.assertEqual(
                     reader_event["type"],
@@ -294,9 +307,18 @@ class MessagingRealtimeTests(TransactionTestCase):
                 )
                 self.assertEqual(response.status_code, 201)
 
-                first = await reader_device_one.receive_json_from()
-                second = await reader_device_two.receive_json_from()
-                sender_copy = await creator_socket.receive_json_from()
+                first = await self.receive_event_type(
+                    reader_device_one,
+                    "message.created",
+                )
+                second = await self.receive_event_type(
+                    reader_device_two,
+                    "message.created",
+                )
+                sender_copy = await self.receive_event_type(
+                    creator_socket,
+                    "message.created",
+                )
                 self.assertEqual(first, second)
                 self.assertEqual(first, sender_copy)
                 self.assertEqual(first["type"], "message.created")

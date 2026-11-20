@@ -60,7 +60,7 @@ class MessagingConsumer(AsyncJsonWebsocketConsumer):
                 "type": "error",
                 "code": "rest_write_required",
                 "detail": (
-                    "Messaging writes use the REST API; WebSocket is delivery-only."
+                    "Application writes use REST APIs; WebSocket is delivery-only."
                 ),
             }
         )
